@@ -1,0 +1,15 @@
+FROM wordpress:latest
+
+# Install WP-CLI
+RUN curl -L https://github.com/wp-cli/wp-cli/releases/download/v2.8.1/wp-cli-2.8.1.phar -o wp-cli.phar \
+    && chmod +x wp-cli.phar \
+    && mv wp-cli.phar /usr/local/bin/wp
+
+# Install additional tools for debugging
+RUN apt-get update && apt-get install -y \
+    less \
+    nano \
+    && rm -rf /var/lib/apt/lists/*
+
+# Ensure wp-cli can run as www-data user
+RUN chown www-data:www-data /usr/local/bin/wp

@@ -101,24 +101,14 @@ function rae_add_cors_headers() {
 add_action('rest_api_init', 'rae_add_cors_headers');
 
 /**
- * Add custom fields to REST API responses
+ * Add featured image URL to REST API responses
  */
-function rae_add_custom_fields_to_rest() {
+function rae_add_featured_image_to_rest() {
     
-    // Add custom fields to all post types
+    // Add featured image URL to all post types
     $post_types = array('post', 'resume', 'software-project', 'media-project');
     
     foreach ($post_types as $post_type) {
-        register_rest_field($post_type, 'acf_fields', array(
-            'get_callback' => function($post) {
-                return get_fields($post['id']) ?: array();
-            },
-            'schema' => array(
-                'description' => 'Custom fields for this post',
-                'type' => 'object'
-            )
-        ));
-        
         register_rest_field($post_type, 'featured_image_url', array(
             'get_callback' => function($post) {
                 $image_id = get_post_thumbnail_id($post['id']);
@@ -131,7 +121,7 @@ function rae_add_custom_fields_to_rest() {
         ));
     }
 }
-add_action('rest_api_init', 'rae_add_custom_fields_to_rest');
+add_action('rest_api_init', 'rae_add_featured_image_to_rest');
 
 /**
  * Theme setup
