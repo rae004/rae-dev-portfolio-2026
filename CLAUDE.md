@@ -3,8 +3,8 @@
 ## Project Overview
 Building a modern portfolio website for Robert Engel showcasing his diverse career journey from music industry to cloud engineering. The site follows modern software development best practices with a headless WordPress backend and React frontend.
 
-## Current Status: ✅ PHASE 2 COMPLETE - WordPress Integration Working
-Both Phase 1 (Frontend Foundation) and Phase 2 (WordPress CMS & Data Integration) have been successfully completed. The frontend is now fully integrated with a headless WordPress backend.
+## Current Status: ✅ PHASE 2 COMPLETE - WordPress Integration Fully Functional 
+Both Phase 1 (Frontend Foundation) and Phase 2 (WordPress CMS & Data Integration) have been successfully completed and thoroughly tested. The frontend is now fully integrated with a headless WordPress backend with end-to-end data flow working perfectly.
 
 ## Architecture Completed
 - **Frontend**: React + TypeScript + Vite + TanStack Router + DaisyUI ✅
@@ -15,21 +15,23 @@ Both Phase 1 (Frontend Foundation) and Phase 2 (WordPress CMS & Data Integration
 
 ## Technology Stack (Current Working Setup)
 - **React**: 19.1.1 with TypeScript
-- **Build Tool**: Vite 7.1.7 (requires Node.js 22+, use `nvm use 22`)
-- **Package Manager**: PNPM
+- **Build Tool**: Vite 7.1.7 (Current Node.js: v18.16.0, works fine, v22+ recommended)
+- **Package Manager**: PNPM v8.6.0+
 - **Routing**: TanStack Router 1.132.41 with route generation via `pnpm routes:generate`
 - **Styling**: Tailwind CSS 3.4.18 + DaisyUI 4.12.10 (CRITICAL: v4.x only, v5.x broken)
 - **Themes**: 29+ DaisyUI themes working perfectly with smooth transitions
-- **State Management**: TanStack Query 5.90.2 ✅ IMPLEMENTED
+- **State Management**: TanStack Query 5.90.2 ✅ IMPLEMENTED + Devtools working
 - **Backend**: WordPress 6.8.3 with custom theme and post types ✅
 - **Database**: MySQL 8.0 in Docker container ✅
-- **Development Tools**: React Query Devtools, phpMyAdmin ✅
+- **Development Tools**: React Query Devtools 5.90.2, phpMyAdmin, WP-CLI 2.8.1 ✅
 
 ## Critical Technical Decisions Made
 1. **DaisyUI Version**: MUST use v4.12.10 - v5.x has breaking theme compatibility issues
 2. **Tailwind CSS**: v3.4.18 works perfectly with DaisyUI v4.x
-3. **Node Version**: Requires Node.js 22+ for Vite 7.x compatibility
+3. **Node Version**: Currently v18.16.0 works fine, v22+ recommended for optimal Vite 7.x
 4. **Module System**: CommonJS for Tailwind config, ES modules for React components
+5. **WordPress API**: Uses query parameter format `/?rest_route=` (not pretty permalinks)
+6. **ACF Dependency**: Removed - caused 500 errors, now using native WordPress features only
 
 ## Directory Structure Completed
 ```
@@ -50,6 +52,7 @@ Both Phase 1 (Frontend Foundation) and Phase 2 (WordPress CMS & Data Integration
 │   └── wp-config.php                   # WordPress configuration
 ├── scripts/              # Bash automation scripts - EMPTY
 ├── docker-compose.yml    # WordPress + MySQL + phpMyAdmin - ✅ WORKING
+├── Dockerfile.wordpress  # Custom WordPress container with WP-CLI 2.8.1 ✅
 └── documentation/        # Project documentation
     ├── rae_dev_portfolio_2026_prompt.md
     ├── rae_dev_portfolio_2026_generated_plan.md
@@ -78,19 +81,19 @@ Both Phase 1 (Frontend Foundation) and Phase 2 (WordPress CMS & Data Integration
 - **Error Handling**: Graceful degradation and user-friendly error messages ✅
 - **Loading States**: Professional spinners and loading feedback ✅
 
-## WordPress Custom Post Types & REST API
-- **Resume Items**: `http://localhost:8080/?rest_route=/wp/v2/resume`
-- **Software Projects**: `http://localhost:8080/?rest_route=/wp/v2/software-projects`
-- **Media Projects**: `http://localhost:8080/?rest_route=/wp/v2/media-projects`
-- **Blog Posts**: `http://localhost:8080/?rest_route=/wp/v2/posts`
-- **API Discovery**: `http://localhost:8080/?rest_route=/wp/v2/`
+## WordPress Custom Post Types & REST API (All Working ✅)
+- **Resume Items**: `http://localhost:8080/?rest_route=/wp/v2/resume` ✅ (3 items available)
+- **Software Projects**: `http://localhost:8080/?rest_route=/wp/v2/software-projects` ✅
+- **Media Projects**: `http://localhost:8080/?rest_route=/wp/v2/media-projects` ✅  
+- **Blog Posts**: `http://localhost:8080/?rest_route=/wp/v2/posts` ✅
+- **API Discovery**: `http://localhost:8080/?rest_route=/wp/v2/` ✅
 
 ## WordPress Theme Functions (functions.php)
 - Custom post type registration with REST API support
 - CORS headers for frontend development (localhost:5173)
-- Custom fields integration for REST API responses
-- Featured image URL exposure in API
+- Featured image URL exposure in REST API (ACF dependency removed)
 - Theme support for post thumbnails and menus
+- **CRITICAL**: No ACF (Advanced Custom Fields) dependencies - uses native WordPress only
 
 ## Key Files & Configurations
 
@@ -103,6 +106,9 @@ Both Phase 1 (Frontend Foundation) and Phase 2 (WordPress CMS & Data Integration
   "daisyui": "4.12.10",
   "react": "^19.1.1",
   "tailwindcss": "^3.4.18"
+},
+"devDependencies": {
+  "@tanstack/react-query-devtools": "^5.90.2"
 }
 ```
 
@@ -152,37 +158,54 @@ docker-compose up -d
 
 # Start React frontend
 cd frontend
-nvm use 22
+nvm use 22  # Or use current v18.16.0 (works fine)
 pnpm install
 pnpm dev  # Starts dev server on http://localhost:5173
 
 # Access points:
-# - React app: http://localhost:5173
-# - WordPress admin: http://localhost:8080/wp-admin (admin/admin123456)
-# - phpMyAdmin: http://localhost:8081
-# - WordPress REST API: http://localhost:8080/?rest_route=/wp/v2/
+# - React app: http://localhost:5173 ✅
+# - WordPress admin: http://localhost:8080/wp-admin (admin/admin123456) ✅
+# - phpMyAdmin: http://localhost:8081 ✅
+# - WordPress REST API: http://localhost:8080/?rest_route=/wp/v2/ ✅
+
+# WP-CLI Commands for debugging:
+docker exec rae-portfolio-wp wp theme list --allow-root
+docker exec rae-portfolio-wp wp post-type list --allow-root
+docker exec rae-portfolio-wp wp post list --post_type=resume --allow-root
 ```
 
 ## Critical Notes for Development
 - **DaisyUI Version**: MUST stay on v4.12.10 - DO NOT upgrade to v5.x (breaks themes)
-- **Node Version**: Requires Node.js 22+ for Vite 7.x compatibility
-- **WordPress API Format**: Use query parameter format for development (pretty permalinks not fully configured)
+- **Node Version**: Currently v18.16.0 works fine, v22+ recommended for optimal Vite 7.x
+- **WordPress API Format**: Use query parameter format `/?rest_route=` (pretty permalinks not configured)
 - **Database Access**: WordPress admin credentials are admin/admin123456
 - **Container Names**: wordpress: `rae-portfolio-wp`, database: `rae-portfolio-db`, phpmyadmin: `rae-portfolio-phpmyadmin`
+- **WP-CLI**: Available in container for debugging: `docker exec rae-portfolio-wp wp --allow-root`
+- **ACF Dependencies**: REMOVED - caused 500 errors, using native WordPress features only
 
-## Known Issues & Solutions
-1. **WordPress API returns HTML instead of JSON**
-   - **Solution**: Use query parameter format `/?rest_route=/wp/v2/endpoint`
-   - **Status**: Working as designed for development environment
+## Major Issues Resolved ✅
+1. **WordPress API 500 Errors on Custom Endpoints** ✅ FIXED
+   - **Root Cause**: ACF (Advanced Custom Fields) function calls without plugin installed
+   - **Solution**: Removed all ACF dependencies, using native WordPress features only
+   - **Result**: All custom post type endpoints now working perfectly
 
-2. **WordPress critical errors on custom endpoints**
-   - **Cause**: Sample data inserted directly to database without WordPress metadata
-   - **Solution**: Create content via WordPress admin or authenticated REST API calls
-   - **Workaround**: Static fallback content implemented in components
+2. **Missing React Query Devtools** ✅ FIXED  
+   - **Issue**: @tanstack/react-query-devtools package missing
+   - **Solution**: Installed v5.90.2 as dev dependency
+   - **Result**: Devtools working in development mode
 
-3. **Theme switching suddenly stops working**
-   - **Cause**: Likely DaisyUI v5.x upgrade
-   - **Solution**: Check package.json, ensure DaisyUI is exactly v4.12.10
+3. **WordPress Management Difficulty** ✅ ENHANCED
+   - **Enhancement**: Added WP-CLI 2.8.1 to Docker container
+   - **Implementation**: Custom Dockerfile.wordpress with WP-CLI installation
+   - **Benefit**: Easy WordPress debugging and content management
+
+## Current Working State
+- All WordPress REST API endpoints responding with JSON data ✅
+- React frontend loading dynamic WordPress content ✅  
+- Resume page fully integrated with fallback content ✅
+- Error handling and loading states working ✅
+- TanStack Query caching and retry logic active ✅
+- React Query devtools available for debugging ✅
 
 ## Major Achievements Summary
 ✅ **Phase 1**: Complete React frontend with 29+ working themes
@@ -191,11 +214,41 @@ pnpm dev  # Starts dev server on http://localhost:5173
 ✅ **Developer Experience**: React Query devtools, error handling, loading states
 ✅ **Type Safety**: Complete TypeScript integration for WordPress API
 
-## Context for Next Session
-Phase 2 (WordPress CMS & Data Integration) is now COMPLETE! 🚀 The frontend successfully communicates with WordPress backend, loads dynamic data, handles errors gracefully, and maintains all theme functionality. The Resume page demonstrates the full integration working beautifully.
+## Sample Data Available in WordPress
+```json
+// Resume Items (3 available):
+{
+  "id": 7, "title": "Music Industry Manager",
+  "content": "Managed world-class recording studios..."
+},
+{
+  "id": 6, "title": "Software Engineer", 
+  "content": "Developed e-commerce solutions using PHP, JavaScript..."
+},
+{
+  "id": 5, "title": "Senior Cloud Engineer",
+  "content": "Led cloud infrastructure initiatives using AWS, Docker..."
+}
+```
 
-Ready for Phase 3 options:
-A) Complete remaining dynamic pages (Projects, Media, Blog, Home)
-B) Move to AWS infrastructure deployment
-C) Implement contact forms with TanStack Form
-D) Focus on content management and WordPress workflow
+## Context for Next Session  
+🎉 **MAJOR MILESTONE ACHIEVED!** 🎉
+
+Phase 2 (WordPress CMS & Data Integration) is now **COMPLETE and THOROUGHLY TESTED**! 🚀 
+
+**What's Working:**
+- End-to-end data flow from WordPress to React ✅
+- Dynamic content loading with graceful fallbacks ✅
+- Professional error handling and loading states ✅
+- All 29 themes working with dynamic content ✅
+- Complete developer tooling (WP-CLI, React Query devtools) ✅
+- Production-ready architecture with TypeScript safety ✅
+
+**Ready for Phase 3 - Choose Your Adventure:**
+A) **Complete Dynamic Pages** (Projects, Media, Blog, Home) - Extend current integration
+B) **TanStack Form Integration** - Contact form with validation  
+C) **AWS Infrastructure Deployment** - CDK, LightSail, S3, CloudFront
+D) **Content Management Workflow** - WordPress admin optimization
+E) **Performance Optimization** - Bundle analysis, optimization, caching
+
+**Recommended Next Step:** Option A (Complete Dynamic Pages) to demonstrate full CMS capabilities before infrastructure deployment.
