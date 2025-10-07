@@ -1,7 +1,15 @@
 import React from 'react'
 import { Link } from '@tanstack/react-router'
+import { useBlogPosts } from '../hooks/useWordPress'
 
 const HomePage: React.FC = () => {
+  // Get recent blog posts for featured content
+  const { data: recentPosts, isLoading: postsLoading } = useBlogPosts({
+    per_page: 3,
+    orderby: 'date',
+    order: 'desc'
+  })
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -53,6 +61,44 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Latest Blog Posts Section */}
+      {(recentPosts && recentPosts.length > 0) && (
+        <section className="py-16 bg-base-100">
+          <div className="container mx-auto px-4">
+            <div className="max-w-4xl mx-auto">
+              <h2 className="text-3xl font-bold text-center mb-8">Latest Posts</h2>
+              
+              {postsLoading ? (
+                <div className="flex justify-center">
+                  <span className="loading loading-spinner loading-lg"></span>
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-3 gap-6">
+                  {recentPosts.slice(0, 3).map((post, index) => (
+                    <div key={post.id || index} className="card bg-base-200 shadow-lg">
+                      <div className="card-body">
+                        <h3 className="card-title text-lg">{post.title.rendered}</h3>
+                        <p className="text-sm text-base-content/70">
+                          {post.excerpt.rendered ? 
+                            post.excerpt.rendered.replace(/<[^>]*>/g, '').substring(0, 100) + '...' :
+                            'Read this latest blog post...'
+                          }
+                        </p>
+                        <div className="card-actions justify-end">
+                          <Link to="/blog" className="btn btn-primary btn-sm">
+                            Read More
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Quick Links Section */}
       <section className="py-16 bg-base-200">

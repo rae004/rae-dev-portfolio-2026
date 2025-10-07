@@ -1,7 +1,20 @@
 import React from 'react'
+import { useBlogPosts } from '../hooks/useWordPress'
+import type { WordPressPost } from '../types/wordpress'
 
 const BlogPage: React.FC = () => {
-  const blogPosts = [
+  const { 
+    data: wpBlogPosts, 
+    isLoading, 
+    error 
+  } = useBlogPosts({
+    per_page: 20,
+    orderby: 'date',
+    order: 'desc'
+  })
+
+  // Fallback blog posts for when WordPress is unavailable
+  const fallbackPosts = [
     {
       title: "From Audio Engineering to Cloud Engineering",
       excerpt: "My journey transitioning from the music industry to cloud computing and the transferable skills that made it possible.",
@@ -25,10 +38,58 @@ const BlogPage: React.FC = () => {
     }
   ]
 
+  // Transform WordPress data to match component expectations
+  const transformWpBlogPost = (wp: WordPressPost) => {
+    const content = wp.content.rendered.replace(/<[^>]*>/g, '') // Strip HTML
+    const wordCount = content.split(/\s+/).length
+    const readTime = Math.max(1, Math.ceil(wordCount / 200)) // ~200 words per minute
+    
+    // Try to extract tags from content or use defaults
+    const tagsMatch = content.match(/Tags?:?\s*([^.]+)/i)
+    
+    return {
+      title: wp.title.rendered,
+      excerpt: wp.excerpt.rendered ? 
+        wp.excerpt.rendered.replace(/<[^>]*>/g, '').trim() : 
+        content.substring(0, 200) + '...',
+      date: new Date(wp.date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: '2-digit', 
+        day: '2-digit'
+      }),
+      readTime: `${readTime} min read`,
+      tags: tagsMatch ? 
+        tagsMatch[1].split(/[,;]/).map(t => t.trim()).filter(Boolean) : 
+        ["Blog"]
+    }
+  }
+
+  // Use WordPress data if available, otherwise fallback
+  const blogPosts = error || !wpBlogPosts ? 
+    fallbackPosts : 
+    wpBlogPosts.map(transformWpBlogPost)
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl font-bold mb-8">Blog</h1>
+        
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex justify-center items-center py-12">
+            <span className="loading loading-spinner loading-lg"></span>
+          </div>
+        )}
+
+        {/* Error State with Fallback Content */}
+        {error && (
+          <div className="alert alert-warning mb-8">
+            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.876a2 2 0 001.789-2.894l-6.938-13.856a2 2 0 00-3.578 0L.394 16.106A2 2 0 002.183 19z" />
+            </svg>
+            <span>Unable to load blog posts from CMS. Showing featured posts instead.</span>
+          </div>
+        )}
         
         <div className="hero bg-base-200 rounded-lg mb-12">
           <div className="hero-content text-center">
