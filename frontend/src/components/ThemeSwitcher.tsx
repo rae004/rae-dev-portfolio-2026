@@ -8,38 +8,6 @@ const themes = [
   'cmyk', 'autumn', 'business', 'acid', 'lemonade', 'night', 'coffee', 'winter'
 ]
 
-// Theme color mappings for previews (representing primary, secondary, accent colors)
-const themeColors: Record<string, { primary: string; secondary: string; accent: string }> = {
-  light: { primary: '#570df8', secondary: '#f000b8', accent: '#37cdbe' },
-  dark: { primary: '#661ae6', secondary: '#d926aa', accent: '#1fb2a5' },
-  cupcake: { primary: '#65c3c8', secondary: '#ef9fbc', accent: '#eeaf3a' },
-  bumblebee: { primary: '#e0a82e', secondary: '#f9d72f', accent: '#18d7ed' },
-  emerald: { primary: '#66cc8a', secondary: '#377cfb', accent: '#ea5234' },
-  corporate: { primary: '#4b6bfb', secondary: '#7b92b2', accent: '#67cba0' },
-  synthwave: { primary: '#e779c1', secondary: '#58c7f3', accent: '#f3cc30' },
-  retro: { primary: '#ef9995', secondary: '#a4cbb4', accent: '#fbbf24' },
-  cyberpunk: { primary: '#ff7598', secondary: '#75d1f0', accent: '#c07eec' },
-  valentine: { primary: '#e96d7b', secondary: '#a991f7', accent: '#88dbdd' },
-  halloween: { primary: '#f28c18', secondary: '#6d3a9c', accent: '#51a800' },
-  garden: { primary: '#5c7f67', secondary: '#ecf4e7', accent: '#9bb86f' },
-  forest: { primary: '#1eb854', secondary: '#1fd65f', accent: '#b91c1c' },
-  aqua: { primary: '#09ecf3', secondary: '#966fb3', accent: '#ffe999' },
-  lofi: { primary: '#0d0d0d', secondary: '#1a1a1a', accent: '#262626' },
-  pastel: { primary: '#d1c1d7', secondary: '#f9dcc4', accent: '#fef08a' },
-  fantasy: { primary: '#6e0b75', secondary: '#007ebd', accent: '#f471b5' },
-  wireframe: { primary: '#b8b8b8', secondary: '#b8b8b8', accent: '#b8b8b8' },
-  black: { primary: '#343232', secondary: '#343232', accent: '#343232' },
-  luxury: { primary: '#ffffff', secondary: '#152747', accent: '#513448' },
-  dracula: { primary: '#ff79c6', secondary: '#bd93f9', accent: '#ffb86c' },
-  cmyk: { primary: '#179cff', secondary: '#ff0097', accent: '#ffed4e' },
-  autumn: { primary: '#8c0327', secondary: '#d85251', accent: '#f3cc30' },
-  business: { primary: '#1c4ed8', secondary: '#7c3aed', accent: '#f59e0b' },
-  acid: { primary: '#ff00f4', secondary: '#ff7400', accent: '#ffff00' },
-  lemonade: { primary: '#519903', secondary: '#e9e92f', accent: '#ffe302' },
-  night: { primary: '#38bdf8', secondary: '#818cf8', accent: '#f471b5' },
-  coffee: { primary: '#db924b', secondary: '#263e3f', accent: '#10576d' },
-  winter: { primary: '#047aed', secondary: '#463aa2', accent: '#c148ac' },
-}
 
 const ThemeSwitcher: React.FC = () => {
   const [currentTheme, setCurrentTheme] = useState('light')

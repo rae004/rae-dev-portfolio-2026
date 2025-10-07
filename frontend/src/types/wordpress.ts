@@ -30,10 +30,10 @@ export interface WordPressPost {
   sticky: boolean
   template: string
   format: string
-  meta: Record<string, any>
+  meta: Record<string, unknown>
   categories: number[]
   tags: number[]
-  acf_fields?: Record<string, any>
+  acf_fields?: Record<string, unknown>
   featured_image_url?: string
   _links: {
     self: Array<{ href: string }>
@@ -69,7 +69,7 @@ export interface WordPressError {
   data: {
     status: number
   }
-  additional_errors?: any[]
+  additional_errors?: unknown[]
 }
 
 // API Response types for collections

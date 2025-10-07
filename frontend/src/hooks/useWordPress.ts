@@ -139,7 +139,7 @@ export function useBlogPost(
 
 // WordPress health check hook
 export function useWordPressHealth(
-  options?: Omit<UseQueryOptions<{ namespace: string; routes: Record<string, any> }, WordPressAPIError>, 'queryKey' | 'queryFn'>
+  options?: Omit<UseQueryOptions<{ namespace: string; routes: Record<string, unknown> }, WordPressAPIError>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
     queryKey: queryKeys.health,

@@ -16,7 +16,7 @@ class WordPressAPIError extends Error {
     message: string,
     public code: string,
     public status: number,
-    public data?: any
+    public data?: unknown
   ) {
     super(message)
     this.name = 'WordPressAPIError'
@@ -130,8 +130,8 @@ export const wordpressApi = {
   },
 
   // Health check
-  async healthCheck(): Promise<{ namespace: string; routes: Record<string, any> }> {
-    return apiRequest<{ namespace: string; routes: Record<string, any> }>('/')
+  async healthCheck(): Promise<{ namespace: string; routes: Record<string, unknown> }> {
+    return apiRequest<{ namespace: string; routes: Record<string, unknown> }>('/')
   },
 }
 
