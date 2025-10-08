@@ -1,0 +1,6 @@
+dist/
+node_modules/
+*.gen.ts
+routeTree.gen.ts
+pnpm-lock.yaml
+package-lock.json
