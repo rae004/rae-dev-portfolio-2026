@@ -26,7 +26,7 @@ class WordPressAPIError extends Error {
 // Helper function to build API URLs
 function buildApiUrl(endpoint: string, params?: WordPressQueryParams): string {
   const url = new URL(`${WP_API_BASE}${WP_API_ROUTE}${endpoint}`)
-  
+
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
@@ -38,18 +38,18 @@ function buildApiUrl(endpoint: string, params?: WordPressQueryParams): string {
       }
     })
   }
-  
+
   return url.toString()
 }
 
 // Generic API request function
 async function apiRequest<T>(endpoint: string, params?: WordPressQueryParams): Promise<T> {
   const url = buildApiUrl(endpoint, params)
-  
+
   try {
     const response = await fetch(url, {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
       },
     })
@@ -65,7 +65,7 @@ async function apiRequest<T>(endpoint: string, params?: WordPressQueryParams): P
           response.status
         )
       }
-      
+
       throw new WordPressAPIError(
         errorData.message || `HTTP ${response.status}`,
         errorData.code || 'api_error',
@@ -80,7 +80,7 @@ async function apiRequest<T>(endpoint: string, params?: WordPressQueryParams): P
     if (error instanceof WordPressAPIError) {
       throw error
     }
-    
+
     // Network or other errors
     throw new WordPressAPIError(
       error instanceof Error ? error.message : 'Unknown error occurred',

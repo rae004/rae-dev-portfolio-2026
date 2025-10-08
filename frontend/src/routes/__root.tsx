@@ -4,7 +4,7 @@ import Navigation from '../components/Navigation'
 
 export const Route = createRootRoute({
   component: () => (
-    <div className="min-h-screen">
+    <div className='min-h-screen'>
       <Navigation />
       <main>
         <Outlet />

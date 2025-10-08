@@ -20,7 +20,8 @@ export const queryKeys = {
   softwareProjects: {
     all: ['software-projects'] as const,
     lists: () => [...queryKeys.softwareProjects.all, 'list'] as const,
-    list: (params?: WordPressQueryParams) => [...queryKeys.softwareProjects.lists(), params] as const,
+    list: (params?: WordPressQueryParams) =>
+      [...queryKeys.softwareProjects.lists(), params] as const,
     details: () => [...queryKeys.softwareProjects.all, 'detail'] as const,
     detail: (id: number) => [...queryKeys.softwareProjects.details(), id] as const,
   },
@@ -139,7 +140,10 @@ export function useBlogPost(
 
 // WordPress health check hook
 export function useWordPressHealth(
-  options?: Omit<UseQueryOptions<{ namespace: string; routes: Record<string, unknown> }, WordPressAPIError>, 'queryKey' | 'queryFn'>
+  options?: Omit<
+    UseQueryOptions<{ namespace: string; routes: Record<string, unknown> }, WordPressAPIError>,
+    'queryKey' | 'queryFn'
+  >
 ) {
   return useQuery({
     queryKey: queryKeys.health,
