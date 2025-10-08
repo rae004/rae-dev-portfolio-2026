@@ -1,11 +1,24 @@
 import React from 'react'
 import { Link } from '@tanstack/react-router'
-import { useBlogPosts } from '../hooks/useWordPress'
+import { useBlogPosts, useSoftwareProjects, useMediaProjects } from '../hooks/useWordPress'
 
 const HomePage: React.FC = () => {
   // Get recent blog posts for featured content
   const { data: recentPosts, isLoading: postsLoading } = useBlogPosts({
     per_page: 3,
+    orderby: 'date',
+    order: 'desc',
+  })
+
+  // Get recent projects for featured content
+  const { data: softwareProjects, isLoading: softwareLoading } = useSoftwareProjects({
+    per_page: 2,
+    orderby: 'date',
+    order: 'desc',
+  })
+
+  const { data: mediaProjects, isLoading: mediaLoading } = useMediaProjects({
+    per_page: 2,
     orderby: 'date',
     order: 'desc',
   })
@@ -97,6 +110,92 @@ const HomePage: React.FC = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Recent Projects Section */}
+      {((softwareProjects && softwareProjects.length > 0) ||
+        (mediaProjects && mediaProjects.length > 0)) && (
+        <section className='py-16 bg-base-200'>
+          <div className='container mx-auto px-4'>
+            <div className='max-w-6xl mx-auto'>
+              <h2 className='text-3xl font-bold text-center mb-8'>Recent Projects</h2>
+
+              {softwareLoading || mediaLoading ? (
+                <div className='flex justify-center'>
+                  <span className='loading loading-spinner loading-lg'></span>
+                </div>
+              ) : (
+                <div className='grid md:grid-cols-2 gap-8'>
+                  {/* Software Projects */}
+                  {softwareProjects && softwareProjects.length > 0 && (
+                    <div>
+                      <h3 className='text-xl font-semibold mb-4 flex items-center'>
+                        💻 Software Projects
+                        <Link to='/projects' className='btn btn-ghost btn-sm ml-auto'>
+                          View All →
+                        </Link>
+                      </h3>
+                      <div className='space-y-4'>
+                        {softwareProjects.slice(0, 2).map((project, index) => (
+                          <div key={project.id || index} className='card bg-base-100 shadow-lg'>
+                            <div className='card-body'>
+                              <h4 className='card-title text-lg'>{project.title.rendered}</h4>
+                              <p className='text-sm text-base-content/70'>
+                                {project.excerpt.rendered
+                                  ? project.excerpt.rendered
+                                      .replace(/<[^>]*>/g, '')
+                                      .substring(0, 120) + '...'
+                                  : 'Explore this software project...'}
+                              </p>
+                              <div className='card-actions justify-end'>
+                                <Link to='/projects' className='btn btn-primary btn-sm'>
+                                  Learn More
+                                </Link>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Media Projects */}
+                  {mediaProjects && mediaProjects.length > 0 && (
+                    <div>
+                      <h3 className='text-xl font-semibold mb-4 flex items-center'>
+                        🎵 Media Projects
+                        <Link to='/media' className='btn btn-ghost btn-sm ml-auto'>
+                          View All →
+                        </Link>
+                      </h3>
+                      <div className='space-y-4'>
+                        {mediaProjects.slice(0, 2).map((project, index) => (
+                          <div key={project.id || index} className='card bg-base-100 shadow-lg'>
+                            <div className='card-body'>
+                              <h4 className='card-title text-lg'>{project.title.rendered}</h4>
+                              <p className='text-sm text-base-content/70'>
+                                {project.excerpt.rendered
+                                  ? project.excerpt.rendered
+                                      .replace(/<[^>]*>/g, '')
+                                      .substring(0, 120) + '...'
+                                  : 'Discover this media project...'}
+                              </p>
+                              <div className='card-actions justify-end'>
+                                <Link to='/media' className='btn btn-primary btn-sm'>
+                                  Learn More
+                                </Link>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
