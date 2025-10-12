@@ -12,14 +12,21 @@ const WP_API_BASE = 'http://localhost:8080'
 const WP_API_ROUTE = '/?rest_route=/wp/v2'
 
 class WordPressAPIError extends Error {
+  public code: string
+  public status: number
+  public data?: unknown
+
   constructor(
     message: string,
-    public code: string,
-    public status: number,
-    public data?: unknown
+    code: string,
+    status: number,
+    data?: unknown
   ) {
     super(message)
     this.name = 'WordPressAPIError'
+    this.code = code
+    this.status = status
+    this.data = data
   }
 }
 

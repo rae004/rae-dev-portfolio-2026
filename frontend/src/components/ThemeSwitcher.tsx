@@ -48,7 +48,7 @@ const ThemeSwitcher: React.FC = () => {
     setSupportedThemes(availableThemes)
 
     // Log debug info in development
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       logThemeDebugInfo(themes)
     }
 
