@@ -45,10 +45,10 @@ export class RaePortfolioStack extends cdk.Stack {
       certificate = acm.Certificate.fromCertificateArn(this, 'Certificate', certificateArn);
     }
 
-    // CloudFront Distribution with Origin Access Control (OAC) - AWS Best Practice
+    // Frontend CloudFront Distribution with Origin Access Control (OAC) - AWS Best Practice
     const apiFqdn = envName === 'prod' ? `api.${domainName}` : `api-dev.${domainName}`;
     const frontendFqdn = envName === 'prod' ? domainName : `${envName}.${domainName}`;
-    const distribution = new cloudfront.Distribution(this, 'Distribution', {
+    const frontendDistribution = new cloudfront.Distribution(this, 'FrontendDistribution', {
       defaultBehavior: {
         origin: origins.S3BucketOrigin.withOriginAccessControl(websiteBucket), // Modern OAC approach
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -57,17 +57,6 @@ export class RaePortfolioStack extends cdk.Stack {
         allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD,
         cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD,
         compress: true,
-      },
-      additionalBehaviors: {
-        '/api/*': {
-          origin: new origins.HttpOrigin(apiFqdn, {
-            protocolPolicy: cloudfront.OriginProtocolPolicy.HTTPS_ONLY,
-          }),
-          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-          cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
-          originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER,
-          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
-        },
       },
       domainNames: certificate ? [frontendFqdn] : undefined,
       certificate,
@@ -85,7 +74,7 @@ export class RaePortfolioStack extends cdk.Stack {
       }],
       priceClass: cloudfront.PriceClass.PRICE_CLASS_100, // US, Canada, Europe
       enabled: true,
-      comment: `CloudFront distribution for ${frontendFqdn}`,
+      comment: `Frontend CloudFront distribution for ${frontendFqdn}`,
       httpVersion: cloudfront.HttpVersion.HTTP2_AND_3,
     });
 
@@ -98,18 +87,23 @@ export class RaePortfolioStack extends cdk.Stack {
       bundleId: envName === 'prod' ? 'micro_3_0' : 'nano_3_0', // Prod: $5/month, Dev: $3.50/month
       availabilityZone: `${this.region}a`,
       userData: `#!/bin/bash
-        # Simplified Bitnami-compatible WordPress setup script
+        # Enhanced WordPress setup script with CloudFront HTTPS configuration
         set -euo pipefail
         
         # Logging setup
         LOG_FILE="/var/log/wordpress-setup.log"
         exec 1> >(tee -a "$LOG_FILE")
         exec 2> >(tee -a "$LOG_FILE" >&2)
-        echo "$(date): Starting simplified WordPress setup for Bitnami"
+        echo "$(date): Starting WordPress setup with HTTPS configuration"
+        
+        # Set WordPress URL environment variables
+        export WP_HOME="https://${apiFqdn}"
+        export WP_SITEURL="https://${apiFqdn}"
+        echo "WordPress URLs will be set to: $WP_HOME"
         
         # Wait for Bitnami initialization to complete (critical!)
         echo "Waiting for Bitnami services to initialize completely..."
-        sleep 180  # 3 minutes minimum for full Bitnami initialization
+        sleep 300  # 5 minutes for full initialization (increased from 3)
         
         # Auto-detect WordPress directory structure (modern vs legacy Bitnami)
         if [ -d "/opt/bitnami/wordpress" ]; then
@@ -123,16 +117,20 @@ export class RaePortfolioStack extends cdk.Stack {
             exit 1
         fi
         
-        # Check if services are running
+        # Enhanced service checking with retries
         check_service() {
             local service="$1"
-            if /opt/bitnami/ctlscript.sh status "$service" | grep -q "already running"; then
-                echo "$service is running"
-                return 0
-            else
-                echo "WARNING: $service is not running"
-                return 1
-            fi
+            local max_attempts=10
+            for attempt in $(seq 1 $max_attempts); do
+                if /opt/bitnami/ctlscript.sh status "$service" | grep -q "already running"; then
+                    echo "$service is running (attempt $attempt)"
+                    return 0
+                fi
+                echo "Waiting for $service... (attempt $attempt/$max_attempts)"
+                sleep 15
+            done
+            echo "WARNING: $service failed to start after $max_attempts attempts"
+            return 1
         }
         
         # Wait for services to be ready
@@ -140,60 +138,173 @@ export class RaePortfolioStack extends cdk.Stack {
         check_service apache || echo "Apache status check failed"
         check_service mysql || echo "MySQL status check failed"
         
-        # Basic WordPress accessibility test
+        # Enhanced WordPress accessibility test
         echo "Testing WordPress accessibility..."
-        for i in {1..5}; do
-            if curl -f -s -o /dev/null "http://localhost/"; then
-                echo "WordPress is accessible via HTTP"
+        for i in {1..10}; do
+            if curl -f -s -o /dev/null "http://localhost/" && curl -f -s -o /dev/null "http://localhost/wp-admin/"; then
+                echo "WordPress is accessible via HTTP (attempt $i)"
                 break
-            elif [ $i -eq 5 ]; then
-                echo "WARNING: WordPress not accessible after 5 attempts"
+            elif [ $i -eq 10 ]; then
+                echo "WARNING: WordPress not accessible after 10 attempts"
             else
                 echo "Attempt $i: WordPress not accessible, waiting 30s..."
                 sleep 30
             fi
         done
         
-        # Configure WordPress URL using WP-CLI (if available)
-        echo "Configuring WordPress..."
-        cd "$WP_ROOT" || exit 1
-        
-        # Get public IP
+        # Get public IP for logging
         PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
         echo "Public IP: $PUBLIC_IP"
+        echo "CloudFront Domain: ${apiFqdn}"
         
-        # Use WP-CLI if available, otherwise skip configuration
-        if command -v wp >/dev/null 2>&1; then
-            echo "WP-CLI found, configuring WordPress URLs..."
-            wp option update home "http://$PUBLIC_IP" --allow-root --quiet || echo "Failed to update home URL"
-            wp option update siteurl "http://$PUBLIC_IP" --allow-root --quiet || echo "Failed to update site URL"
-        else
-            echo "WP-CLI not found, skipping URL configuration"
-        fi
+        # Enhanced wp-config.php configuration for CloudFront HTTPS
+        echo "Configuring wp-config.php for CloudFront HTTPS..."
+        cd "$WP_ROOT" || exit 1
         
-        # Create simple health check endpoint
-        cat > health-check.php << 'EOF'
+        # Backup original wp-config.php
+        cp wp-config.php wp-config.php.original
+        
+        # Create CloudFront-optimized wp-config.php
+        cat > wp-config-cloudfront.php << 'WPCONFIG'
 <?php
-// Simple health check for Bitnami WordPress
-header('Content-Type: application/json');
-$health = ['status' => 'ok', 'timestamp' => date('c')];
-
-// Basic WordPress check
-if (file_exists('wp-config.php')) {
-    $health['wordpress'] = 'detected';
-} else {
-    $health['wordpress'] = 'missing';
-    $health['status'] = 'error';
+// CloudFront HTTPS detection - MUST be at the top before any WordPress loads
+if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+    $_SERVER['HTTPS'] = 'on';
+    $_SERVER['SERVER_PORT'] = 443;
+    $_SERVER['REQUEST_SCHEME'] = 'https';
 }
 
-http_response_code($health['status'] === 'ok' ? 200 : 503);
+// Force correct host for CloudFront
+if (isset($_SERVER['HTTP_X_FORWARDED_HOST']) && $_SERVER['HTTP_X_FORWARDED_HOST'] === '${apiFqdn}') {
+    $_SERVER['HTTP_HOST'] = '${apiFqdn}';
+    $_SERVER['REQUEST_SCHEME'] = 'https';
+    $_SERVER['HTTPS'] = 'on';
+    $_SERVER['SERVER_PORT'] = 443;
+}
+
+// Ensure HTTP_HOST is always set for all requests
+if (!isset($_SERVER['HTTP_HOST'])) {
+    $_SERVER['HTTP_HOST'] = '${apiFqdn}';
+}
+WPCONFIG
+        
+        # Insert CloudFront detection at the beginning of wp-config.php
+        {
+            cat wp-config-cloudfront.php
+            echo ""
+            tail -n +2 wp-config.php  # Skip the <?php opening tag from original
+        } > wp-config-new.php
+        
+        # Add HTTPS constants before the "stop editing" line
+        sed -i '/\/\* That.s all, stop editing! Happy publishing\. \*\//i\\n// FORCE HTTPS URLs - These override database options and ensure HTTPS everywhere\ndefine( '\''WP_HOME'\'', '\''https://${apiFqdn}'\'' );\ndefine( '\''WP_SITEURL'\'', '\''https://${apiFqdn}'\'' );\n\n// Force SSL for admin area\ndefine( '\''FORCE_SSL_ADMIN'\'', true );\n\n// Allow WordPress to detect proper HTTPS behind reverse proxy/CloudFront\ndefine( '\''WP_CONTENT_URL'\'', '\''https://${apiFqdn}/wp-content'\'' );\n\n// WP-CLI compatibility\nif ( defined( '\''WP_CLI'\'' ) ) {\n\t$_SERVER['\''HTTP_HOST'\''] = '\''${apiFqdn}'\'';\n\t$_SERVER['\''REQUEST_SCHEME'\''] = '\''https'\'';\n\t$_SERVER['\''HTTPS'\''] = '\''on'\'';\n\t$_SERVER['\''SERVER_PORT'\''] = 443;\n}\n' wp-config-new.php
+        
+        # Replace the original wp-config.php
+        mv wp-config-new.php wp-config.php
+        chown bitnami:bitnami wp-config.php
+        chmod 644 wp-config.php
+        
+        # Clean up temporary files
+        rm -f wp-config-cloudfront.php
+        
+        echo "wp-config.php updated for CloudFront HTTPS support"
+        
+        # Enhanced WordPress URL configuration with retries
+        if command -v wp >/dev/null 2>&1; then
+            echo "WP-CLI found, configuring WordPress for HTTPS..."
+            
+            # Wait longer for WordPress database to be fully ready
+            sleep 60
+            
+            # Multiple attempts to update WordPress URLs
+            for attempt in {1..5}; do
+                echo "Attempt $attempt to update WordPress URLs..."
+                
+                if wp option update home "$WP_HOME" --allow-root --quiet && \
+                   wp option update siteurl "$WP_SITEURL" --allow-root --quiet; then
+                    echo "Successfully updated WordPress URLs"
+                    break
+                elif [ $attempt -eq 5 ]; then
+                    echo "Failed to update WordPress URLs after 5 attempts"
+                else
+                    echo "URL update failed, waiting 30s before retry..."
+                    sleep 30
+                fi
+            done
+            
+            # Verify the configuration
+            echo "Verifying WordPress URL configuration..."
+            HOME_URL=$(wp option get home --allow-root --quiet 2>/dev/null || echo "failed")
+            SITE_URL=$(wp option get siteurl --allow-root --quiet 2>/dev/null || echo "failed")
+            echo "Configured home URL: $HOME_URL"
+            echo "Configured site URL: $SITE_URL"
+            
+            # Additional WordPress configuration
+            wp option update FORCE_SSL_ADMIN 1 --allow-root --quiet || echo "Failed to set FORCE_SSL_ADMIN"
+            
+        else
+            echo "WP-CLI not found, skipping WordPress URL configuration"
+        fi
+        
+        # Create enhanced health check endpoint  
+        echo "Creating enhanced health check endpoint..."
+        cat > "$WP_ROOT/health-check.php" << 'HEALTHEOF'
+<?php
+/**
+ * WordPress Health Check Endpoint for CloudFront
+ */
+header("Content-Type: application/json");
+header("Access-Control-Allow-Origin: *");
+
+$health = [
+    "status" => "ok",
+    "timestamp" => date("c"),
+    "server_ip" => $_SERVER["SERVER_ADDR"] ?? "unknown",
+    "client_ip" => $_SERVER["REMOTE_ADDR"] ?? "unknown"
+];
+
+if (file_exists("wp-config.php")) {
+    $health["wordpress"] = "detected";
+    
+    define("WP_USE_THEMES", false);
+    require_once("wp-load.php");
+    
+    $health["wordpress_home"] = home_url();
+    $health["wordpress_siteurl"] = site_url();
+    $health["https_configured"] = (strpos(home_url(), "https://") === 0);
+    $health["ssl_admin_enabled"] = get_option("FORCE_SSL_ADMIN") ? true : false;
+    
+    $expected_domain = "https://${apiFqdn}";
+    $health["urls_correctly_configured"] = (
+        home_url() === $expected_domain && 
+        site_url() === $expected_domain
+    );
+    
+    $health["wp_home_constant"] = defined("WP_HOME") ? WP_HOME : "not defined";
+    $health["wp_siteurl_constant"] = defined("WP_SITEURL") ? WP_SITEURL : "not defined";
+    
+} else {
+    $health["wordpress"] = "missing";
+    $health["status"] = "error";
+}
+
+http_response_code($health["status"] === "ok" ? 200 : 503);
 echo json_encode($health, JSON_PRETTY_PRINT);
 ?>
-EOF
+HEALTHEOF
         
-        echo "$(date): WordPress setup completed"
-        echo "Health check: http://$PUBLIC_IP/health-check.php"
-        echo "WordPress admin: http://$PUBLIC_IP/wp-admin/"
+        # Set proper permissions for health check
+        chmod 644 "$WP_ROOT/health-check.php"
+        chown bitnami:bitnami "$WP_ROOT/health-check.php" 2>/dev/null || echo "Could not set health-check.php ownership"
+        
+        # Restart Apache to ensure all changes take effect
+        echo "Restarting Apache to apply configuration changes..."
+        /opt/bitnami/ctlscript.sh restart apache
+        
+        echo "$(date): Enhanced WordPress setup completed successfully"
+        echo "Health check: https://${apiFqdn}/health-check.php"
+        echo "WordPress admin: https://${apiFqdn}/wp-admin/"
+        echo "Direct IP access: http://$PUBLIC_IP/wp-admin/"
+        echo "Setup log: $LOG_FILE"
       `,
       tags: [{
         key: 'Environment',
@@ -209,9 +320,35 @@ EOF
       staticIpName: `rae-portfolio-wp-ip-${envName}`,
     });
 
+    // WordPress CloudFront Distribution for HTTPS API access
+    const wordpressDistribution = new cloudfront.Distribution(this, 'WordPressDistribution', {
+      defaultBehavior: {
+        origin: new origins.HttpOrigin(`${staticIp.attrIpAddress}.nip.io`, {
+          protocolPolicy: cloudfront.OriginProtocolPolicy.HTTP_ONLY,
+          customHeaders: {
+            'X-Forwarded-Host': apiFqdn, // Pass the custom domain to WordPress
+            'X-Forwarded-Proto': 'https', // Tell WordPress the request came via HTTPS
+          },
+        }),
+        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED, // WordPress is dynamic content
+        originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER,
+        allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+        cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD,
+        compress: true,
+      },
+      domainNames: certificate ? [apiFqdn] : undefined,
+      certificate,
+      priceClass: cloudfront.PriceClass.PRICE_CLASS_100, // US, Canada, Europe
+      enabled: true,
+      comment: `WordPress CloudFront distribution for ${apiFqdn}`,
+      httpVersion: cloudfront.HttpVersion.HTTP2_AND_3,
+    });
+
+
     // Lambda function for LightSail automation
     const lightsailAutomationFunction = new lambda.Function(this, 'LightsailAutomationFunction', {
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_22_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset('./lambda/lightsail-automation'),
       timeout: cdk.Duration.minutes(15),
@@ -251,10 +388,10 @@ EOF
 
     // Lambda function for WordPress configuration validation
     const wordpressConfigFunction = new lambda.Function(this, 'WordPressConfigFunction', {
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_22_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset('./lambda/wordpress-config'),
-      timeout: cdk.Duration.minutes(15), // Maximum allowed Lambda timeout
+      timeout: cdk.Duration.minutes(5), // Reduced timeout
       environment: {
         NODE_OPTIONS: '--enable-source-maps',
       },
@@ -266,6 +403,10 @@ EOF
       actions: [
         'lightsail:GetInstance',
         'lightsail:GetInstances',
+        'lightsail:GetCertificate',
+        'lightsail:GetCertificates',
+        'lightsail:AttachCertificateToInstance',
+        'lightsail:DetachCertificateFromInstance',
       ],
       resources: ['*'],
     }));
@@ -284,6 +425,7 @@ EOF
         StaticIpAddress: staticIp.attrIpAddress,
         Domain: domainName,
         Environment: envName,
+        CloudFrontDomain: apiFqdn,
       },
     });
 
@@ -298,12 +440,12 @@ EOF
         domainName: domainName,
       });
 
-      // A Record for root domain
-      new route53.ARecord(this, 'AliasRecord', {
+      // A Record for frontend domain
+      new route53.ARecord(this, 'FrontendAliasRecord', {
         zone: hostedZone,
         recordName: frontendFqdn,
         target: route53.RecordTarget.fromAlias(
-          new targets.CloudFrontTarget(distribution)
+          new targets.CloudFrontTarget(frontendDistribution)
         ),
       });
 
@@ -312,15 +454,17 @@ EOF
         new route53.CnameRecord(this, 'WwwRecord', {
           zone: hostedZone,
           recordName: `www.${frontendFqdn}`,
-          domainName: distribution.distributionDomainName,
+          domainName: frontendDistribution.distributionDomainName,
         });
       }
 
-      // CNAME for API subdomain pointing to WordPress
-      new route53.CnameRecord(this, 'ApiRecord', {
+      // A Record for API subdomain pointing to WordPress CloudFront
+      new route53.ARecord(this, 'ApiAliasRecord', {
         zone: hostedZone,
         recordName: apiFqdn,
-        domainName: staticIp.attrIpAddress,
+        target: route53.RecordTarget.fromAlias(
+          new targets.CloudFrontTarget(wordpressDistribution)
+        ),
       });
     }
 
@@ -329,7 +473,7 @@ EOF
     new s3deploy.BucketDeployment(this, 'DeployWebsite', {
       sources: [s3deploy.Source.asset('../frontend/dist')],
       destinationBucket: websiteBucket,
-      distribution,
+      distribution: frontendDistribution,
       distributionPaths: ['/*'],
       retainOnDelete: envName === 'prod',
     });
@@ -340,14 +484,24 @@ EOF
       description: 'S3 bucket name for website hosting',
     });
 
-    new cdk.CfnOutput(this, 'DistributionId', {
-      value: distribution.distributionId,
-      description: 'CloudFront distribution ID',
+    new cdk.CfnOutput(this, 'FrontendDistributionId', {
+      value: frontendDistribution.distributionId,
+      description: 'Frontend CloudFront distribution ID',
     });
 
-    new cdk.CfnOutput(this, 'DistributionDomainName', {
-      value: distribution.distributionDomainName,
-      description: 'CloudFront distribution domain name',
+    new cdk.CfnOutput(this, 'FrontendDistributionDomainName', {
+      value: frontendDistribution.distributionDomainName,
+      description: 'Frontend CloudFront distribution domain name',
+    });
+
+    new cdk.CfnOutput(this, 'WordPressDistributionId', {
+      value: wordpressDistribution.distributionId,
+      description: 'WordPress CloudFront distribution ID',
+    });
+
+    new cdk.CfnOutput(this, 'WordPressDistributionDomainName', {
+      value: wordpressDistribution.distributionDomainName,
+      description: 'WordPress CloudFront distribution domain name',
     });
 
     new cdk.CfnOutput(this, 'WordPressPublicIP', {

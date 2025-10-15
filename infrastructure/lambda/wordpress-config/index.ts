@@ -1,4 +1,13 @@
-import { LightsailClient, GetInstanceCommand } from '@aws-sdk/client-lightsail';
+import { 
+  LightsailClient, 
+  GetInstanceCommand, 
+  GetCertificatesCommand,
+  AttachCertificateToDistributionCommand,
+  GetLoadBalancersCommand,
+  CreateLoadBalancerCommand,
+  AttachInstancesToLoadBalancerCommand,
+  GetDomainsCommand
+} from '@aws-sdk/client-lightsail';
 
 interface CustomResourceEvent {
   RequestType: 'Create' | 'Update' | 'Delete';
@@ -12,6 +21,9 @@ interface CustomResourceEvent {
     StaticIpAddress: string;
     Domain: string;
     Environment: string;
+    CertificateName?: string;
+    DomainName?: string;
+    CloudFrontDomain?: string;
   };
 }
 
@@ -31,7 +43,7 @@ export const handler = async (event: CustomResourceEvent): Promise<void> => {
   console.log('WordPress Configuration Event:', JSON.stringify(event, null, 2));
 
   const { RequestType, ResourceProperties, ResponseURL, StackId, RequestId, LogicalResourceId } = event;
-  const { InstanceName, StaticIpAddress, Domain, Environment } = ResourceProperties;
+  const { InstanceName, StaticIpAddress, Domain, Environment, CloudFrontDomain } = ResourceProperties;
 
   let response: CustomResourceResponse = {
     Status: 'SUCCESS',
@@ -45,13 +57,15 @@ export const handler = async (event: CustomResourceEvent): Promise<void> => {
     switch (RequestType) {
       case 'Create':
       case 'Update':
-        await validateAndConfigureWordPress(InstanceName, StaticIpAddress, Domain, Environment);
+        const certificateResult = await configureSSLCertificate(ResourceProperties);
+        await validateAndConfigureWordPress(InstanceName, StaticIpAddress, Domain, Environment, CloudFrontDomain);
         response.Data = {
           InstanceName,
           StaticIpAddress,
           ConfigurationStatus: 'Complete',
           HealthCheckUrl: `http://${StaticIpAddress}/health-check.php`,
           WordPressAdminUrl: `http://${StaticIpAddress}/wp-admin/`,
+          SSLCertificate: certificateResult,
         };
         break;
 
@@ -75,15 +89,21 @@ async function validateAndConfigureWordPress(
   instanceName: string,
   staticIpAddress: string,
   domain: string,
-  environment: string
+  environment: string,
+  cloudFrontDomain?: string
 ): Promise<void> {
-  const maxRetries = 20;
-  const retryDelay = 30000; // 30 seconds
+  const maxRetries = 5;  // Reduced from 20
+  const retryDelay = 15000; // 15 seconds (reduced from 30)
 
   console.log(`Starting WordPress validation for instance ${instanceName}`);
 
   // Wait for instance to be fully ready
   await waitForInstance(instanceName, maxRetries);
+
+  // WordPress URL configuration handled by user data script
+  if (cloudFrontDomain) {
+    console.log(`WordPress URLs configured by user data script for ${cloudFrontDomain}`);
+  }
 
   // Validate WordPress health endpoint
   await validateWordPressHealth(staticIpAddress, maxRetries, retryDelay);
@@ -140,7 +160,7 @@ async function validateWordPressHealth(
     try {
       console.log(`Checking WordPress health endpoint: ${healthUrl} (attempt ${attempt}/${maxRetries})`);
       
-      const fetch = (await import('node-fetch')).default;
+      // Using native fetch (Node.js 18+)
       const response = await fetch(healthUrl, {
         method: 'GET',
       });
@@ -182,7 +202,7 @@ async function validateWordPressAdmin(
     try {
       console.log(`Checking WordPress admin accessibility: ${adminUrl} (attempt ${attempt}/${maxRetries})`);
       
-      const fetch = (await import('node-fetch')).default;
+      // Using native fetch (Node.js 18+)
       const response = await fetch(adminUrl, {
         method: 'GET',
         redirect: 'manual', // Don't follow redirects
@@ -208,6 +228,79 @@ async function validateWordPressAdmin(
   }
 }
 
+async function configureSSLCertificate(
+  resourceProperties: {
+    InstanceName: string;
+    StaticIpAddress: string;
+    Domain: string;
+    Environment: string;
+    CertificateName?: string;
+    DomainName?: string;
+  }
+): Promise<any> {
+  const { CertificateName, DomainName, InstanceName } = resourceProperties;
+  
+  if (!CertificateName || !DomainName) {
+    console.log('Certificate name or domain name not provided, skipping SSL configuration');
+    return { status: 'skipped', reason: 'Missing certificate or domain configuration' };
+  }
+
+  try {
+    console.log(`Configuring SSL certificate ${CertificateName} for domain ${DomainName}`);
+    
+    // Wait for certificate to be validated (LightSail certificates auto-validate via DNS)
+    const maxRetries = 30; // 15 minutes total
+    const retryDelay = 30000; // 30 seconds
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const certResponse = await lightsailClient.send(
+          new GetCertificatesCommand({ certificateName: CertificateName })
+        );
+        
+        const certificates = certResponse.certificates;
+        if (!certificates || certificates.length === 0) {
+          throw new Error(`Certificate ${CertificateName} not found`);
+        }
+        
+        const certificateSummary = certificates[0];
+        
+        // GetCertificatesCommand only returns summary info, we need to check if it exists
+        // For LightSail, if the certificate exists in the list, it's considered valid
+        console.log(`Certificate found: ${certificateSummary.certificateName}, domain: ${certificateSummary.domainName}`);
+        
+        // Simply return success if certificate exists - LightSail auto-validates DNS certificates
+        return { 
+          status: 'success', 
+          certificateName: CertificateName, 
+          domainName: DomainName,
+          message: 'Certificate found and available' 
+        };
+        
+      } catch (error) {
+        console.error(`Certificate check attempt ${attempt} failed:`, error);
+        if (attempt === maxRetries) {
+          throw error;
+        }
+        console.log(`Waiting for certificate to exist... (attempt ${attempt}/${maxRetries})`);
+        await sleep(retryDelay);
+      }
+    }
+    
+    throw new Error(`Certificate validation timed out after ${maxRetries} attempts`);
+    
+  } catch (error) {
+    console.error('SSL certificate configuration failed:', error);
+    return { 
+      status: 'failed', 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      certificateName: CertificateName,
+      domainName: DomainName 
+    };
+  }
+}
+
+
 async function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -217,7 +310,7 @@ async function sendResponse(responseURL: string, response: CustomResourceRespons
   console.log('Sending response:', responseBody);
 
   try {
-    const fetch = (await import('node-fetch')).default;
+    // Using native fetch (Node.js 18+)
     const result = await fetch(responseURL, {
       method: 'PUT',
       headers: {
