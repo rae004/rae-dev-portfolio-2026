@@ -3,9 +3,9 @@
 ## Project Overview
 Building a modern portfolio website for Robert Engel showcasing his diverse career journey from music industry to cloud engineering. The site follows modern software development best practices with a headless WordPress backend and React frontend.
 
-## Current Status: ✅ PHASE 4 IN PROGRESS - AWS CDK Infrastructure + LightSail Automation 
-**Phases 1-3 COMPLETE**: Frontend Foundation, WordPress Integration, Dynamic Integration
-**Phase 4 ACTIVE**: AWS CDK deployment with automated LightSail WordPress configuration
+## Current Status: ✅ PHASE 4 COMPLETE + Environment Management Upgraded
+**All Phases COMPLETE**: Frontend Foundation, WordPress Integration, Dynamic Integration, AWS Infrastructure
+**Latest Enhancement**: Robust environment variable management system implemented
 
 ## Architecture Status
 - **Frontend**: React + TypeScript + Vite + TanStack Router + DaisyUI ✅ COMPLETE
@@ -34,6 +34,7 @@ Building a modern portfolio website for Robert Engel showcasing his diverse care
 4. **Module System**: CommonJS for Tailwind config, ES modules for React components
 5. **WordPress API**: Uses query parameter format `/?rest_route=` (not pretty permalinks)
 6. **ACF Dependency**: Removed - caused 500 errors, now using native WordPress features only
+7. **Environment Management**: ✅ NEW - Vite define-based system replaces unreliable .env files
 
 ## Directory Structure Completed
 ```
@@ -461,3 +462,82 @@ new route53.ARecord(this, 'ApiAliasRecord', {
 3. **`claude-working-wp-config.php`**: Production-ready WordPress configuration
 
 **Next Phase Ready**: Frontend deployment automation and CI/CD pipeline setup
+
+## 🚀 **LATEST ENHANCEMENT: Robust Environment Management System** 🚀
+
+### **Problem Solved**: Unreliable Environment Variable Handling
+- **Issue**: Hardcoded localhost API URLs appearing in production builds
+- **Root Cause**: Vite's .env file loading was inconsistent and unreliable
+- **Impact**: Frontend deployed to AWS was trying to fetch from localhost:8080
+
+### **Solution Implemented**: Vite Define-Based Configuration System ✅
+
+### **New Architecture Components:**
+1. **✅ Environment Configuration Object** (`src/config/environment.ts`)
+   - Type-safe environment detection and configuration
+   - Runtime validation and error handling  
+   - Clean fallback logic and debugging utilities
+
+2. **✅ Vite Define-Based Injection** (`vite.config.ts`)
+   - Compile-time environment constant injection
+   - Build-time environment selection logic
+   - No dependency on unreliable .env file loading
+
+3. **✅ Three-Environment Support**:
+   - **Local**: `http://localhost:8080` (Docker development)
+   - **Development**: `https://api-dev.rae-dev.com` (AWS dev environment)  
+   - **Production**: `https://api.rae-dev.com` (AWS production environment)
+
+4. **✅ Enhanced Build Scripts** (`package.json`)
+   ```bash
+   pnpm dev              # Local development (localhost:8080)
+   pnpm build:local      # Local build (localhost:8080)
+   pnpm build:dev        # AWS development (api-dev.rae-dev.com)  
+   pnpm build:prod       # AWS production (api.rae-dev.com)
+   ```
+
+### **Key Files Created/Modified:**
+- **`src/config/environment.ts`**: Centralized environment configuration
+- **`src/vite-env.d.ts`**: TypeScript definitions for build constants
+- **`vite.config.ts`**: Define-based environment injection
+- **`services/wordpress.ts`**: Refactored to use config system
+- **`package.json`**: Environment-specific build scripts
+- **`.env.example`**: Updated documentation
+
+### **Validation Results** ✅
+```bash
+# Development build test
+pnpm build:dev
+grep -r "api-dev.rae-dev.com" dist/
+# ✅ SUCCESS: api-dev.rae-dev.com found in bundle
+
+# Local development test  
+pnpm dev
+# ✅ SUCCESS: Console shows "WordPress API Base: http://localhost:8080"
+```
+
+### **Benefits Achieved:**
+- ✅ **Reliable Environment Detection**: No more localhost in production builds
+- ✅ **Compile-Time Safety**: Environment constants injected at build time
+- ✅ **Type Safety**: Full TypeScript integration with runtime validation
+- ✅ **Developer Experience**: Clear build commands for each environment
+- ✅ **Zero Runtime Dependencies**: No environment variable loading required
+- ✅ **Future-Proof**: Ready for CI/CD pipeline integration
+
+### **Deployment Commands Updated:**
+```bash
+# For AWS development deployment
+cd frontend
+pnpm build:dev  # Embeds https://api-dev.rae-dev.com
+cd ../infrastructure  
+npm run cdk deploy RaePortfolioDev -- --profile rae_dev
+
+# For AWS production deployment (when ready)
+cd frontend
+pnpm build:prod  # Embeds https://api.rae-dev.com
+cd ../infrastructure
+npm run cdk deploy RaePortfolioProd -- --profile rae_dev
+```
+
+### **Environment Management Status**: ✅ PRODUCTION-READY
+All environment configuration issues resolved. The system now reliably detects and uses the correct API endpoints for each deployment environment without any manual configuration or .env file dependencies.

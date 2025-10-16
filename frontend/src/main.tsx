@@ -8,3 +8,4 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>
 )
+console.log('VITE_WP_API_BASE:', import.meta.env.VITE_WP_API_BASE)

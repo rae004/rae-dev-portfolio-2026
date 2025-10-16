@@ -6,11 +6,16 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:local": "tsc -b && vite build --mode development",
+    "build:dev": "tsc -b && VITE_ENV=development vite build --mode production",
+    "build:prod": "tsc -b && VITE_ENV=production vite build --mode production",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "preview": "vite preview",
+    "preview:dev": "VITE_ENV=development vite preview",
+    "preview:prod": "VITE_ENV=production vite preview",
     "routes:generate": "tsr generate",
     "routes:watch": "tsr watch"
   },

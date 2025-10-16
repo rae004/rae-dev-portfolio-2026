@@ -6,22 +6,28 @@ import type {
   WordPressQueryParams,
   WordPressError,
 } from '../types/wordpress'
+import { getWordPressApiBase, validateEnvironment, devLog } from '../config/environment'
 
-// WordPress API base URL - using query parameter format since pretty permalinks may not be enabled
-const WP_API_BASE = 'http://localhost:8080'
+// Initialize and validate environment configuration
+const environmentConfig = validateEnvironment()
+
+// WordPress API configuration
+const WP_API_BASE = getWordPressApiBase()
 const WP_API_ROUTE = '/?rest_route=/wp/v2'
+
+// Log configuration for debugging
+devLog('WordPress Service initialized:', {
+  environment: environmentConfig.name,
+  apiBase: WP_API_BASE,
+  apiRoute: WP_API_ROUTE,
+})
 
 class WordPressAPIError extends Error {
   public code: string
   public status: number
   public data?: unknown
 
-  constructor(
-    message: string,
-    code: string,
-    status: number,
-    data?: unknown
-  ) {
+  constructor(message: string, code: string, status: number, data?: unknown) {
     super(message)
     this.name = 'WordPressAPIError'
     this.code = code
