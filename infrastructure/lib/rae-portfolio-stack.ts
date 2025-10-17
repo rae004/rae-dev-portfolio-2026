@@ -324,7 +324,7 @@ HEALTHEOF
     const corsResponseHeadersPolicy = new cloudfront.ResponseHeadersPolicy(this, 'WordPressCorsPolicy', {
       responseHeadersPolicyName: `rae-portfolio-cors-policy-${envName}`,
       comment: 'CORS headers policy for WordPress REST API',
-      corsConfig: {
+      corsBehavior: {
         accessControlAllowCredentials: true,
         accessControlAllowHeaders: ['Content-Type', 'Authorization', 'X-WP-Nonce', 'X-Requested-With'],
         accessControlAllowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'],
