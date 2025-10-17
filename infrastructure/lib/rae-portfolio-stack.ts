@@ -320,6 +320,25 @@ HEALTHEOF
       staticIpName: `rae-portfolio-wp-ip-${envName}`,
     });
 
+    // CORS Response Headers Policy for WordPress API
+    const corsResponseHeadersPolicy = new cloudfront.ResponseHeadersPolicy(this, 'WordPressCorsPolicy', {
+      responseHeadersPolicyName: `rae-portfolio-cors-policy-${envName}`,
+      comment: 'CORS headers policy for WordPress REST API',
+      corsConfig: {
+        accessControlAllowCredentials: true,
+        accessControlAllowHeaders: ['Content-Type', 'Authorization', 'X-WP-Nonce', 'X-Requested-With'],
+        accessControlAllowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'],
+        accessControlAllowOrigins: [
+          'http://localhost:5173',           // Local development
+          `https://${frontendFqdn}`,         // Frontend domain (dev.rae-dev.com or rae-dev.com)
+          'https://rae-dev.com'              // Production domain
+        ],
+        accessControlExposeHeaders: ['X-WP-Total', 'X-WP-TotalPages'],
+        accessControlMaxAge: cdk.Duration.hours(24),
+        originOverride: false,
+      },
+    });
+
     // WordPress CloudFront Distribution for HTTPS API access
     const wordpressDistribution = new cloudfront.Distribution(this, 'WordPressDistribution', {
       defaultBehavior: {
@@ -333,6 +352,7 @@ HEALTHEOF
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED, // WordPress is dynamic content
         originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER,
+        responseHeadersPolicy: corsResponseHeadersPolicy, // Apply CORS headers policy
         allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
         cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD,
         compress: true,
