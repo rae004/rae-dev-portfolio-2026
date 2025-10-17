@@ -86,15 +86,37 @@ function rae_register_custom_post_types() {
 add_action('init', 'rae_register_custom_post_types');
 
 /**
- * Add CORS headers for frontend development
+ * Add CORS headers for frontend across all environments
  */
 function rae_add_cors_headers() {
-    header('Access-Control-Allow-Origin: http://localhost:5173');
+    // Get the origin from the request
+    $origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
+
+    // Define allowed origins for all environments
+    $allowed_origins = array(
+        'http://localhost:5173',           // Local development
+        'https://dev.rae-dev.com',         // AWS development environment
+        'https://rae-dev.com'              // Production environment (future)
+    );
+
+    // Check if origin is in allowed list
+    if (in_array($origin, $allowed_origins)) {
+        header('Access-Control-Allow-Origin: ' . $origin);
+    } else {
+        // Fallback for development - allow localhost variations
+        if (strpos($origin, 'localhost') !== false || strpos($origin, '127.0.0.1') !== false) {
+            header('Access-Control-Allow-Origin: ' . $origin);
+        }
+    }
+
     header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-WP-Nonce');
+    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-WP-Nonce, X-Requested-With');
     header('Access-Control-Allow-Credentials: true');
+    header('Access-Control-Max-Age: 86400'); // Cache preflight for 24 hours
     
+    // Handle preflight OPTIONS requests
     if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        status_header(200);
         exit(0);
     }
 }
