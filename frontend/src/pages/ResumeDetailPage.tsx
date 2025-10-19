@@ -174,6 +174,13 @@ const ResumeDetailPage: React.FC = () => {
           </div>
         </div>
       )}
+      {!nextResume && !previousResume && (
+        <div className='flex justify-center items-center'>
+          <Link to='/resume' className='btn btn-primary'>
+            Back to Resume
+          </Link>
+        </div>
+      )}
     </div>
   )
 }
