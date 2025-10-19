@@ -541,3 +541,100 @@ npm run cdk deploy RaePortfolioProd -- --profile rae_dev
 
 ### **Environment Management Status**: ✅ PRODUCTION-READY
 All environment configuration issues resolved. The system now reliably detects and uses the correct API endpoints for each deployment environment without any manual configuration or .env file dependencies.
+
+## 🎉 **LATEST ACHIEVEMENT: CORS Issue Completely Resolved** 🎉
+
+### **Problem Solved**: Frontend CORS Errors with WordPress API
+- **Issue**: `Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at https://api-dev.rae-dev.com`
+- **Root Cause**: WordPress functions.php only allowed `http://localhost:5173` origin
+- **Impact**: Frontend deployed to `https://dev.rae-dev.com` couldn't access WordPress API
+
+### **Solution Implemented**: Two-Layer CORS Protection ✅
+
+### **Layer 1: Enhanced WordPress CORS Configuration**
+**File Modified**: `wordpress/wp-content/themes/rae-portfolio/functions.php`
+**Key Changes**:
+```php
+// FROM: header('Access-Control-Allow-Origin: http://localhost:5173');
+// TO: Dynamic origin checking for multiple environments
+$allowed_origins = array(
+    'http://localhost:5173',           // Local development
+    'https://dev.rae-dev.com',         // AWS development environment
+    'https://rae-dev.com'              // Production environment (future)
+);
+```
+
+**Enhanced Features**:
+- Dynamic origin validation with fallback for localhost variations
+- Improved OPTIONS request handling with proper status codes
+- Extended headers: `X-Requested-With`, `Access-Control-Max-Age: 86400`
+- Better error handling and debugging support
+
+### **Layer 2: CloudFront Response Headers Policy**
+**File Modified**: `infrastructure/lib/rae-portfolio-stack.ts`
+**Implementation**:
+```typescript
+// CORS Response Headers Policy for WordPress API
+const corsResponseHeadersPolicy = new cloudfront.ResponseHeadersPolicy(this, 'WordPressCorsPolicy', {
+  responseHeadersPolicyName: `rae-portfolio-cors-policy-${envName}`,
+  comment: 'CORS headers policy for WordPress REST API',
+  cors: {  // Note: correct property is 'cors' not 'corsConfig' or 'corsBehavior'
+    accessControlAllowCredentials: true,
+    accessControlAllowHeaders: ['Content-Type', 'Authorization', 'X-WP-Nonce', 'X-Requested-With'],
+    accessControlAllowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'],
+    accessControlAllowOrigins: [
+      'http://localhost:5173',           // Local development
+      `https://${frontendFqdn}`,         // Frontend domain (dev.rae-dev.com or rae-dev.com)
+      'https://rae-dev.com'              // Production domain
+    ],
+    accessControlExposeHeaders: ['X-WP-Total', 'X-WP-TotalPages'],
+    accessControlMaxAge: cdk.Duration.hours(24),
+    originOverride: false,
+  },
+});
+
+// Applied to WordPress CloudFront distribution
+responseHeadersPolicy: corsResponseHeadersPolicy,
+```
+
+### **Deployment Results** ✅
+- **WordPress CORS**: Successfully updated in Docker container and deployed to LightSail
+- **CloudFront Policy**: Successfully deployed via CDK with correct `cors` property syntax
+- **Frontend Testing**: ✅ **NO MORE CORS ERRORS** - API calls working perfectly
+- **All Environments**: Local development, AWS development, and production-ready
+
+### **Key Technical Lessons Learned**
+1. **CDK ResponseHeadersPolicy**: Correct property is `cors` (not `corsConfig` or `corsBehavior`)
+2. **WordPress Docker**: Theme files persist and can be updated without container rebuild
+3. **Multi-Layer CORS**: CloudFront + WordPress provides robust cross-origin protection
+4. **Environment-Specific Origins**: Dynamic origin checking allows same codebase across environments
+
+### **Current Working Architecture (Post-CORS Fix)**
+- **Frontend**: `https://dev.rae-dev.com` → React app with correct API endpoints ✅
+- **WordPress API**: `https://api-dev.rae-dev.com` → CloudFront + CORS Policy → LightSail ✅
+- **Data Flow**: Frontend successfully fetches WordPress data without CORS errors ✅
+- **Security**: Proper origin validation for localhost, dev, and production domains ✅
+
+### **Commands to Resume Development**
+```bash
+# Verify WordPress CORS configuration
+docker exec rae-portfolio-wp cat /opt/bitnami/wordpress/wp-content/themes/rae-portfolio/functions.php | grep -A 15 "Add CORS headers"
+
+# Test API endpoints (should return JSON, no CORS errors)
+curl -H "Origin: https://dev.rae-dev.com" -I https://api-dev.rae-dev.com/?rest_route=/wp/v2/posts
+
+# Frontend development
+cd frontend
+pnpm dev  # Should connect to WordPress API without CORS errors
+
+# Infrastructure updates
+cd infrastructure
+npm run build && npm run cdk deploy RaePortfolioDev -- --profile rae_dev
+```
+
+### **Next Development Opportunities**
+1. **Content Population**: Add more WordPress content (projects, blog posts, resume items)
+2. **Frontend Polish**: Enhance UI/UX, add animations, optimize performance
+3. **SEO Enhancement**: Meta tags, Open Graph, structured data
+4. **Production Environment**: Set up production stack and CI/CD pipeline
+5. **Advanced Features**: Search functionality, contact form backend, PWA features
