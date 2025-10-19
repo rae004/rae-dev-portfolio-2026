@@ -3,9 +3,9 @@
 ## Project Overview
 Building a modern portfolio website for Robert Engel showcasing his diverse career journey from music industry to cloud engineering. The site follows modern software development best practices with a headless WordPress backend and React frontend.
 
-## Current Status: ✅ PHASE 4 COMPLETE + Environment Management Upgraded
+## Current Status: ✅ PHASE 4 COMPLETE + Employment Date Enhancement Implemented
 **All Phases COMPLETE**: Frontend Foundation, WordPress Integration, Dynamic Integration, AWS Infrastructure
-**Latest Enhancement**: Robust environment variable management system implemented
+**Latest Enhancement**: Employment date fields with WordPress admin integration and frontend display
 
 ## Architecture Status
 - **Frontend**: React + TypeScript + Vite + TanStack Router + DaisyUI ✅ COMPLETE
@@ -638,3 +638,105 @@ npm run build && npm run cdk deploy RaePortfolioDev -- --profile rae_dev
 3. **SEO Enhancement**: Meta tags, Open Graph, structured data
 4. **Production Environment**: Set up production stack and CI/CD pipeline
 5. **Advanced Features**: Search functionality, contact form backend, PWA features
+
+## 🎉 **LATEST ENHANCEMENT: Employment Date Fields Implementation** 🎉
+
+### **Problem Solved**: Resume Items Needed Employment Date Management
+- **Issue**: Resume items lacked professional employment date tracking and display
+- **User Request**: WordPress admin interface for managing employment dates with date pickers
+- **Frontend Requirement**: Display format "Music Industry Manager - June 2020 - Present"
+
+### **Solution Implemented**: Complete Employment Date System ✅
+
+### **WordPress Admin Enhancement:**
+1. **✅ Employment Date Meta Box**: Professional date picker interface
+   - Start Date (HTML5 date picker)
+   - Currently Employed checkbox (hides end date when checked)  
+   - End Date (HTML5 date picker, conditionally shown)
+   - Smart JavaScript: End date field toggles based on employment status
+
+2. **✅ Block Editor Issue Resolution**: 
+   - **Problem**: Block Editor auto-save causing 404 REST API errors
+   - **Solution**: Disabled Block Editor (`show_in_rest: false`) for resume post type
+   - **Result**: Classic Editor with perfect meta box integration, no 404 errors
+
+3. **✅ Data Storage Architecture**:
+   - Formatted dates: `"June 2020"`, `"Present"` (human-readable)
+   - Raw dates: `"2020-06-01"` (for sorting/filtering)
+   - Boolean flag: `currently_employed` status
+
+### **REST API Integration:**
+1. **✅ Custom REST Endpoint**: `/wp/v2/resume` (since Block Editor disabled)
+   - Maintains exact same API structure as built-in endpoints
+   - Public access for frontend consumption
+   - Includes employment_dates object in response
+
+2. **✅ API Response Structure**:
+   ```json
+   "employment_dates": {
+     "start_date": "June 2020",
+     "end_date": "Present", 
+     "currently_employed": true,
+     "start_date_raw": "2020-06-01",
+     "end_date_raw": null,
+     "formatted_range": "June 2020 - Present"
+   }
+   ```
+
+### **Frontend Display Enhancement:**
+1. **✅ ResumePage Updated**: `frontend/src/pages/ResumePage.tsx`
+   - Displays employment dates in resume item titles
+   - Format: "Music Industry Manager - June 2020 - Present"
+   - Graceful fallbacks for items without employment dates
+   - Smart conditional rendering based on data availability
+
+2. **✅ TypeScript Integration**: `frontend/src/types/wordpress.ts`
+   - Added `EmploymentDates` interface
+   - Updated `ResumeItem` interface with optional employment_dates
+   - Full type safety throughout the application
+
+### **Key Technical Decisions:**
+1. **Classic Editor Over Block Editor**: Better for headless CMS workflow
+2. **Custom REST Endpoint**: Maintains frontend compatibility without Block Editor
+3. **Dual Date Storage**: Human-readable + raw formats for different use cases
+4. **No Pretty Permalinks**: Maintains query parameter format to avoid infrastructure changes
+
+### **Files Modified:**
+1. **`wordpress/wp-content/themes/rae-portfolio/functions.php`**:
+   - Employment date meta box registration and callbacks
+   - Custom REST API endpoint (`/wp/v2/resume`)
+   - Data validation and sanitization logic
+   - Meta box JavaScript for UI interactions
+
+2. **`frontend/src/types/wordpress.ts`**:
+   - `EmploymentDates` interface definition
+   - Updated `ResumeItem` interface
+
+3. **`frontend/src/pages/ResumePage.tsx`**:
+   - Employment date display in resume titles
+   - Conditional rendering logic for dates
+
+### **Current Status**: ✅ FULLY IMPLEMENTED AND WORKING
+- **WordPress Admin**: Date pickers save employment dates successfully
+- **REST API**: Returns employment date data in structured format  
+- **Frontend**: Displays "Title - Date Range" format correctly
+- **No 404 Errors**: WordPress admin save functionality works perfectly
+- **Backward Compatible**: Existing resume items without dates display normally
+
+### **Testing Commands:**
+```bash
+# Test WordPress admin employment dates
+# → Go to http://localhost:8080/wp-admin, edit resume items
+
+# Test REST API response
+curl -s "http://localhost:8080/?rest_route=/wp/v2/resume" | jq '.[0].employment_dates'
+
+# Test frontend display  
+cd frontend && pnpm dev
+# → Visit http://localhost:5173/resume
+```
+
+### **Example Working Data:**
+- **WordPress Input**: Start Date: 2020-06-01, Currently Employed: Yes
+- **API Output**: `"formatted_range": "June 2020 - Present"`
+- **Frontend Display**: "Music Industry Manager - June 2020 - Present"
