@@ -49,9 +49,20 @@ export interface WordPressPost {
   }
 }
 
+// Employment date information for resume items
+export interface EmploymentDates {
+  start_date: string | null
+  end_date: string | null
+  currently_employed: boolean
+  start_date_raw: string | null
+  end_date_raw: string | null
+  formatted_range: string | null
+}
+
 // Specific types for our custom post types
 export interface ResumeItem extends WordPressPost {
   type: 'resume'
+  employment_dates?: EmploymentDates
 }
 
 export interface SoftwareProject extends WordPressPost {

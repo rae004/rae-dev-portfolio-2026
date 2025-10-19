@@ -1,5 +1,6 @@
 import React from 'react'
 import { useResumeItems } from '../hooks/useWordPress'
+import type { ResumeItem } from '../types/wordpress.ts'
 
 const ResumePage: React.FC = () => {
   const {
@@ -50,12 +51,14 @@ const ResumePage: React.FC = () => {
 
             {resumeItems && resumeItems.length > 0 ? (
               <div className='space-y-6'>
-                {resumeItems.map(item => (
+                {resumeItems.sort(sortResumeItems).map(item => (
                   <div key={item.id}>
                     <h3 className='text-xl font-semibold'>{item.title.rendered}</h3>
-                    <p className='text-base-content/70'>
-                      {item.type} • {new Date(item.date).toLocaleDateString()}
-                    </p>
+                    {item.employment_dates?.formatted_range && (
+                      <p className='text-base-content/70'>
+                        {item.employment_dates.formatted_range}
+                      </p>
+                    )}
                     <div
                       className='mt-2 prose prose-sm max-w-none'
                       dangerouslySetInnerHTML={{ __html: item.content.rendered }}
@@ -150,3 +153,19 @@ const ResumePage: React.FC = () => {
 }
 
 export default ResumePage
+
+function sortResumeItems(a: ResumeItem, b: ResumeItem) {
+  // Items with "Present" end date go first
+  if (a.employment_dates?.end_date === 'Present' && b.employment_dates?.end_date !== 'Present') {
+    return -1
+  }
+  if (b.employment_dates?.end_date === 'Present' && a.employment_dates?.end_date !== 'Present') {
+    return 1
+  }
+
+  // If both are "Present" or both are not "Present", sort by end_date_raw desc
+  const aEndDate = a.employment_dates?.end_date_raw || ''
+  const bEndDate = b.employment_dates?.end_date_raw || ''
+
+  return bEndDate.localeCompare(aEndDate)
+}
