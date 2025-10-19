@@ -313,6 +313,26 @@ function rae_add_skills_to_rest() {
         )
     ));
     
+    // Add skills_weight field to skill post type
+    register_rest_field('skill', 'skills_weight', array(
+        'get_callback' => function($post) {
+            $weight = get_post_meta($post['id'], '_skill_weight', true);
+            return $weight !== '' ? (int)$weight : 0;
+        },
+        'update_callback' => function($value, $post) {
+            $weight = is_numeric($value) ? (int)$value : 0;
+            // Validate weight range (-999 to 999)
+            $weight = max(-999, min(999, $weight));
+            return update_post_meta($post->ID, '_skill_weight', $weight);
+        },
+        'schema' => array(
+            'description' => 'Skill weight for sorting (higher numbers appear first, default: 0)',
+            'type' => 'integer',
+            'minimum' => -999,
+            'maximum' => 999
+        )
+    ));
+    
     // Register meta fields for Block Editor support
     register_meta('skill', '_skill_type', array(
         'type' => 'string',
@@ -327,6 +347,16 @@ function rae_add_skills_to_rest() {
     register_meta('skill', '_skill_value', array(
         'type' => 'string',
         'description' => 'Skill name',
+        'single' => true,
+        'show_in_rest' => true,
+        'auth_callback' => function() {
+            return current_user_can('edit_posts');
+        }
+    ));
+    
+    register_meta('skill', '_skill_weight', array(
+        'type' => 'integer',
+        'description' => 'Skill weight for sorting',
         'single' => true,
         'show_in_rest' => true,
         'auth_callback' => function() {
@@ -488,6 +518,7 @@ function rae_prepare_skill_item($post) {
     // Get skill meta
     $skills_type = get_post_meta($post->ID, '_skill_type', true);
     $skills_value = get_post_meta($post->ID, '_skill_value', true);
+    $skills_weight = get_post_meta($post->ID, '_skill_weight', true);
     
     // Get featured image
     $featured_image_id = get_post_thumbnail_id($post->ID);
@@ -524,6 +555,7 @@ function rae_prepare_skill_item($post) {
         'featured_image_url' => $featured_image_url,
         'skills_type' => $skills_type ?: null,
         'skills_value' => $skills_value ?: null,
+        'skills_weight' => $skills_weight !== '' ? (int)$skills_weight : 0,
         '_links' => array(
             'self' => array(
                 array(
@@ -863,6 +895,7 @@ function rae_skills_meta_box_callback($post) {
     // Get current values
     $skills_type = get_post_meta($post->ID, '_skill_type', true);
     $skills_value = get_post_meta($post->ID, '_skill_value', true);
+    $skills_weight = get_post_meta($post->ID, '_skill_weight', true);
     
     // Get existing skill types and values for autocomplete
     global $wpdb;
@@ -919,6 +952,24 @@ function rae_skills_meta_box_callback($post) {
                     <?php endforeach; ?>
                 </datalist>
                 <p class="description">Enter the actual skill name (e.g., "TypeScript", "AWS", "Docker"). This is what will be displayed on the frontend.</p>
+            </td>
+        </tr>
+        <tr>
+            <th scope="row">
+                <label for="skill_weight">Skill Weight</label>
+            </th>
+            <td>
+                <input type="number" 
+                       id="skill_weight" 
+                       name="skill_weight" 
+                       value="<?php echo esc_attr($skills_weight); ?>" 
+                       style="width: 100px;" 
+                       min="-999" 
+                       max="999" 
+                       step="1"
+                       placeholder="0" />
+                <p class="description">Weight for sorting (higher numbers appear first). Default: 0. Range: -999 to 999.</p>
+                <p class="description"><strong>Examples:</strong> Primary skills: 10, Standard skills: 0, Learning skills: -5</p>
             </td>
         </tr>
     </table>
@@ -1041,6 +1092,17 @@ function rae_save_skills_meta($post_id) {
         } else {
             delete_post_meta($post_id, '_skill_value');
         }
+    }
+    
+    // Save skill weight
+    if (isset($_POST['skill_weight'])) {
+        $skill_weight = intval($_POST['skill_weight']);
+        // Validate weight range (-999 to 999)
+        $skill_weight = max(-999, min(999, $skill_weight));
+        update_post_meta($post_id, '_skill_weight', $skill_weight);
+    } else {
+        // Default to 0 if not provided
+        update_post_meta($post_id, '_skill_weight', 0);
     }
 }
 add_action('save_post', 'rae_save_skills_meta');

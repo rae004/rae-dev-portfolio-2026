@@ -78,6 +78,7 @@ export interface SkillItem extends WordPressPost {
   type: 'skill'
   skills_type: string // Dynamic category name (e.g., "Languages & Frameworks", "Cloud & DevOps")
   skills_value: string // Actual skill name (e.g., "TypeScript", "AWS", "Docker")
+  skills_weight: number // Weight for sorting (higher numbers appear first, default: 0)
 }
 
 // WordPress API Error Response
