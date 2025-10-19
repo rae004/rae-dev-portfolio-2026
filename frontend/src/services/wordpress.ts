@@ -3,6 +3,7 @@ import type {
   ResumeItem,
   SoftwareProject,
   MediaProject,
+  SkillItem,
   WordPressQueryParams,
   WordPressError,
 } from '../types/wordpress'
@@ -131,6 +132,15 @@ export const wordpressApi = {
 
   async getMediaProject(id: number): Promise<MediaProject> {
     return apiRequest<MediaProject>(`/media-projects/${id}`)
+  },
+
+  // Skills
+  async getSkills(params?: WordPressQueryParams): Promise<SkillItem[]> {
+    return apiRequest<SkillItem[]>('/skills', params)
+  },
+
+  async getSkill(id: number): Promise<SkillItem> {
+    return apiRequest<SkillItem>(`/skills/${id}`)
   },
 
   // Blog posts

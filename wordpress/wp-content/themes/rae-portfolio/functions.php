@@ -81,6 +81,29 @@ function rae_register_custom_post_types() {
         'rewrite' => array('slug' => 'media-projects'),
         'has_archive' => true,
     ));
+
+    // Skills Post Type
+    register_post_type('skill', array(
+        'labels' => array(
+            'name' => 'Skills',
+            'singular_name' => 'Skill',
+            'add_new' => 'Add New Skill',
+            'add_new_item' => 'Add New Skill',
+            'edit_item' => 'Edit Skill',
+            'new_item' => 'New Skill',
+            'view_item' => 'View Skill',
+            'search_items' => 'Search Skills',
+            'not_found' => 'No skills found',
+            'not_found_in_trash' => 'No skills found in trash'
+        ),
+        'public' => true,
+        'show_in_rest' => false, // Disable Block Editor to prevent auto-save 404 errors
+        'rest_base' => 'skills',
+        'supports' => array('title', 'editor', 'excerpt', 'custom-fields', 'thumbnail'),
+        'menu_icon' => 'dashicons-star-filled',
+        'rewrite' => array('slug' => 'skills'),
+        'has_archive' => true,
+    ));
 }
 add_action('init', 'rae_register_custom_post_types');
 
@@ -127,7 +150,7 @@ add_action('rest_api_init', 'rae_add_cors_headers');
 function rae_add_featured_image_to_rest() {
     
     // Add featured image URL to all post types
-    $post_types = array('post', 'resume', 'software-project', 'media-project');
+    $post_types = array('post', 'resume', 'software-project', 'media-project', 'skill');
     
     foreach ($post_types as $post_type) {
         register_rest_field($post_type, 'featured_image_url', array(
@@ -258,6 +281,62 @@ function rae_add_employment_dates_to_rest() {
 add_action('rest_api_init', 'rae_add_employment_dates_to_rest');
 
 /**
+ * Add skills fields to REST API for skill post type
+ */
+function rae_add_skills_to_rest() {
+    
+    // Add skills_type field to skill post type
+    register_rest_field('skill', 'skills_type', array(
+        'get_callback' => function($post) {
+            return get_post_meta($post['id'], '_skill_type', true) ?: null;
+        },
+        'update_callback' => function($value, $post) {
+            return update_post_meta($post->ID, '_skill_type', sanitize_text_field($value));
+        },
+        'schema' => array(
+            'description' => 'Skill category (e.g., "Languages & Frameworks", "Cloud & DevOps")',
+            'type' => 'string'
+        )
+    ));
+    
+    // Add skills_value field to skill post type
+    register_rest_field('skill', 'skills_value', array(
+        'get_callback' => function($post) {
+            return get_post_meta($post['id'], '_skill_value', true) ?: null;
+        },
+        'update_callback' => function($value, $post) {
+            return update_post_meta($post->ID, '_skill_value', sanitize_text_field($value));
+        },
+        'schema' => array(
+            'description' => 'Actual skill name (e.g., "TypeScript", "AWS", "Docker")',
+            'type' => 'string'
+        )
+    ));
+    
+    // Register meta fields for Block Editor support
+    register_meta('skill', '_skill_type', array(
+        'type' => 'string',
+        'description' => 'Skill category',
+        'single' => true,
+        'show_in_rest' => true,
+        'auth_callback' => function() {
+            return current_user_can('edit_posts');
+        }
+    ));
+    
+    register_meta('skill', '_skill_value', array(
+        'type' => 'string',
+        'description' => 'Skill name',
+        'single' => true,
+        'show_in_rest' => true,
+        'auth_callback' => function() {
+            return current_user_can('edit_posts');
+        }
+    ));
+}
+add_action('rest_api_init', 'rae_add_skills_to_rest');
+
+/**
  * Helper function to format employment date range
  */
 function rae_format_employment_date_range($start_date, $end_date, $currently_employed) {
@@ -319,6 +398,146 @@ function rae_register_custom_resume_endpoint() {
     ));
 }
 add_action('rest_api_init', 'rae_register_custom_resume_endpoint');
+
+/**
+ * Custom REST API endpoint for skills (since show_in_rest is disabled)
+ */
+function rae_register_custom_skills_endpoint() {
+    register_rest_route('wp/v2', '/skills', array(
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => 'rae_get_skills',
+        'permission_callback' => '__return_true', // Public endpoint for frontend
+        'args' => array(
+            'per_page' => array(
+                'default' => 100,
+                'sanitize_callback' => 'absint',
+            ),
+            'page' => array(
+                'default' => 1,
+                'sanitize_callback' => 'absint',
+            ),
+            'orderby' => array(
+                'default' => 'date',
+                'sanitize_callback' => 'sanitize_text_field',
+            ),
+            'order' => array(
+                'default' => 'desc',
+                'sanitize_callback' => 'sanitize_text_field',
+            ),
+        ),
+    ));
+    
+    // Individual skill endpoint
+    register_rest_route('wp/v2', '/skills/(?P<id>\d+)', array(
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => 'rae_get_single_skill',
+        'permission_callback' => '__return_true', // Public endpoint for frontend
+        'args' => array(
+            'id' => array(
+                'validate_callback' => function($param, $request, $key) {
+                    return is_numeric($param);
+                }
+            ),
+        ),
+    ));
+}
+add_action('rest_api_init', 'rae_register_custom_skills_endpoint');
+
+/**
+ * Callback function to get skills
+ */
+function rae_get_skills($request) {
+    $args = array(
+        'post_type' => 'skill',
+        'post_status' => 'publish',
+        'posts_per_page' => $request->get_param('per_page'),
+        'paged' => $request->get_param('page'),
+        'orderby' => $request->get_param('orderby'),
+        'order' => $request->get_param('order'),
+    );
+    
+    $posts = get_posts($args);
+    $data = array();
+    
+    foreach ($posts as $post) {
+        $data[] = rae_prepare_skill_item($post);
+    }
+    
+    return rest_ensure_response($data);
+}
+
+/**
+ * Callback function to get single skill
+ */
+function rae_get_single_skill($request) {
+    $id = $request->get_param('id');
+    $post = get_post($id);
+    
+    if (empty($post) || $post->post_type !== 'skill' || $post->post_status !== 'publish') {
+        return new WP_Error('not_found', 'Skill not found', array('status' => 404));
+    }
+    
+    $data = rae_prepare_skill_item($post);
+    return rest_ensure_response($data);
+}
+
+/**
+ * Helper function to prepare skill item data for REST API response
+ */
+function rae_prepare_skill_item($post) {
+    // Get skill meta
+    $skills_type = get_post_meta($post->ID, '_skill_type', true);
+    $skills_value = get_post_meta($post->ID, '_skill_value', true);
+    
+    // Get featured image
+    $featured_image_id = get_post_thumbnail_id($post->ID);
+    $featured_image_url = $featured_image_id ? wp_get_attachment_image_url($featured_image_id, 'full') : null;
+    
+    return array(
+        'id' => $post->ID,
+        'date' => $post->post_date,
+        'date_gmt' => $post->post_date_gmt,
+        'guid' => array(
+            'rendered' => get_permalink($post->ID)
+        ),
+        'modified' => $post->post_modified,
+        'modified_gmt' => $post->post_modified_gmt,
+        'slug' => $post->post_name,
+        'status' => $post->post_status,
+        'type' => $post->post_type,
+        'link' => get_permalink($post->ID),
+        'title' => array(
+            'rendered' => get_the_title($post->ID)
+        ),
+        'content' => array(
+            'rendered' => apply_filters('the_content', $post->post_content),
+            'protected' => false
+        ),
+        'excerpt' => array(
+            'rendered' => get_the_excerpt($post),
+            'protected' => false
+        ),
+        'featured_media' => $featured_image_id ?: 0,
+        'template' => '',
+        'meta' => array(),
+        'class_list' => get_post_class('', $post->ID),
+        'featured_image_url' => $featured_image_url,
+        'skills_type' => $skills_type ?: null,
+        'skills_value' => $skills_value ?: null,
+        '_links' => array(
+            'self' => array(
+                array(
+                    'href' => rest_url('wp/v2/skills/' . $post->ID)
+                )
+            ),
+            'collection' => array(
+                array(
+                    'href' => rest_url('wp/v2/skills')
+                )
+            )
+        )
+    );
+}
 
 /**
  * Callback function to get resume items
@@ -451,6 +670,21 @@ function rae_add_employment_dates_meta_box() {
     );
 }
 add_action('add_meta_boxes', 'rae_add_employment_dates_meta_box');
+
+/**
+ * Add skills meta box to skills post type
+ */
+function rae_add_skills_meta_box() {
+    add_meta_box(
+        'rae_skills_details',
+        'Skill Details',
+        'rae_skills_meta_box_callback',
+        'skill',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'rae_add_skills_meta_box');
 
 /**
  * Employment dates meta box callback
@@ -618,6 +852,198 @@ function rae_save_employment_dates_meta($post_id) {
     }
 }
 add_action('save_post', 'rae_save_employment_dates_meta');
+
+/**
+ * Skills meta box callback with dynamic text inputs and autocomplete
+ */
+function rae_skills_meta_box_callback($post) {
+    // Add nonce for security
+    wp_nonce_field('rae_skills_details_nonce', 'rae_skills_details_nonce_field');
+    
+    // Get current values
+    $skills_type = get_post_meta($post->ID, '_skill_type', true);
+    $skills_value = get_post_meta($post->ID, '_skill_value', true);
+    
+    // Get existing skill types and values for autocomplete
+    global $wpdb;
+    $existing_types = $wpdb->get_col(
+        "SELECT DISTINCT meta_value FROM {$wpdb->postmeta} 
+         WHERE meta_key = '_skill_type' 
+         AND meta_value != '' 
+         ORDER BY meta_value"
+    );
+    $existing_values = $wpdb->get_col(
+        "SELECT DISTINCT meta_value FROM {$wpdb->postmeta} 
+         WHERE meta_key = '_skill_value' 
+         AND meta_value != '' 
+         ORDER BY meta_value"
+    );
+    
+    ?>
+    <table class="form-table">
+        <tr>
+            <th scope="row">
+                <label for="skill_type">Skill Category</label>
+            </th>
+            <td>
+                <input type="text" 
+                       id="skill_type" 
+                       name="skill_type" 
+                       value="<?php echo esc_attr($skills_type); ?>" 
+                       style="width: 300px;" 
+                       list="skill_type_list"
+                       placeholder="e.g., Languages & Frameworks, Cloud & DevOps" />
+                <datalist id="skill_type_list">
+                    <?php foreach ($existing_types as $type): ?>
+                        <option value="<?php echo esc_attr($type); ?>">
+                    <?php endforeach; ?>
+                </datalist>
+                <p class="description">Enter the skill category (e.g., "Languages & Frameworks", "Cloud & DevOps"). Use existing categories for consistency.</p>
+            </td>
+        </tr>
+        <tr>
+            <th scope="row">
+                <label for="skill_value">Skill Name</label>
+            </th>
+            <td>
+                <input type="text" 
+                       id="skill_value" 
+                       name="skill_value" 
+                       value="<?php echo esc_attr($skills_value); ?>" 
+                       style="width: 300px;" 
+                       list="skill_value_list"
+                       placeholder="e.g., TypeScript, AWS, Docker" />
+                <datalist id="skill_value_list">
+                    <?php foreach ($existing_values as $value): ?>
+                        <option value="<?php echo esc_attr($value); ?>">
+                    <?php endforeach; ?>
+                </datalist>
+                <p class="description">Enter the actual skill name (e.g., "TypeScript", "AWS", "Docker"). This is what will be displayed on the frontend.</p>
+            </td>
+        </tr>
+    </table>
+    
+    <script type="text/javascript">
+        jQuery(document).ready(function($) {
+            // Enhanced autocomplete and validation
+            $('#skill_type, #skill_value').on('input', function() {
+                // Add visual feedback for new vs existing values
+                var $input = $(this);
+                var value = $input.val();
+                var datalistId = $input.attr('list');
+                var existsInList = false;
+                
+                $('#' + datalistId + ' option').each(function() {
+                    if ($(this).val() === value) {
+                        existsInList = true;
+                        return false;
+                    }
+                });
+                
+                if (existsInList) {
+                    $input.css('border-color', '#00a32a'); // Green for existing
+                } else if (value.length > 0) {
+                    $input.css('border-color', '#dba617'); // Yellow for new
+                } else {
+                    $input.css('border-color', ''); // Default
+                }
+            });
+            
+            // Auto-populate title field if empty
+            $('#skill_value').on('blur', function() {
+                var skillValue = $(this).val();
+                var $titleField = $('#title');
+                
+                if (skillValue && !$titleField.val()) {
+                    $titleField.val(skillValue);
+                }
+            });
+        });
+    </script>
+    
+    <style>
+        .form-table th {
+            width: 150px;
+        }
+        
+        .form-table input[type="text"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        
+        .form-table .description {
+            font-style: italic;
+            color: #666;
+            margin-top: 5px;
+            max-width: 400px;
+        }
+        
+        .form-table input[type="text"]:focus {
+            border-color: #0073aa;
+            box-shadow: 0 0 2px rgba(0, 115, 170, 0.3);
+            outline: none;
+        }
+    </style>
+    <?php
+}
+
+/**
+ * Save skills meta data with validation
+ */
+function rae_save_skills_meta($post_id) {
+    // Check if nonce is valid
+    if (!isset($_POST['rae_skills_details_nonce_field']) || 
+        !wp_verify_nonce($_POST['rae_skills_details_nonce_field'], 'rae_skills_details_nonce')) {
+        return;
+    }
+    
+    // Check if user has permission to edit post
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+    
+    // Check if this is an autosave
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    
+    // Only save for skill post type
+    if (get_post_type($post_id) !== 'skill') {
+        return;
+    }
+    
+    // Save skill type (category)
+    if (isset($_POST['skill_type'])) {
+        $skill_type = sanitize_text_field(trim($_POST['skill_type']));
+        if (!empty($skill_type)) {
+            update_post_meta($post_id, '_skill_type', $skill_type);
+        } else {
+            delete_post_meta($post_id, '_skill_type');
+        }
+    }
+    
+    // Save skill value (actual skill name)
+    if (isset($_POST['skill_value'])) {
+        $skill_value = sanitize_text_field(trim($_POST['skill_value']));
+        if (!empty($skill_value)) {
+            update_post_meta($post_id, '_skill_value', $skill_value);
+            
+            // Auto-update title if it's empty or matches the old skill value
+            $current_title = get_the_title($post_id);
+            if (empty($current_title) || $current_title === 'Auto Draft') {
+                wp_update_post(array(
+                    'ID' => $post_id,
+                    'post_title' => $skill_value
+                ));
+            }
+        } else {
+            delete_post_meta($post_id, '_skill_value');
+        }
+    }
+}
+add_action('save_post', 'rae_save_skills_meta');
 
 /**
  * Enqueue admin styles and scripts

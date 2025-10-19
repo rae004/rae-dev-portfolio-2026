@@ -1,5 +1,7 @@
 import React from 'react'
-import { useResumeItems } from '../hooks/useWordPress'
+import { useResumeItems, useSkills } from '../hooks/useWordPress'
+import { useGroupedSkills } from '../hooks/useGroupedSkills'
+import SkillsGroup from '../components/SkillsGroup'
 import type { ResumeItem } from '../types/wordpress.ts'
 
 const ResumePage: React.FC = () => {
@@ -12,6 +14,17 @@ const ResumePage: React.FC = () => {
     orderby: 'date',
     order: 'desc',
   })
+
+  const {
+    data: skills = [],
+    isLoading: skillsLoading,
+    error: skillsError,
+  } = useSkills({
+    status: 'publish',
+    per_page: 100,
+  })
+
+  const groupedSkills = useGroupedSkills(skills)
 
   return (
     <div className='container mx-auto px-4 py-8'>
@@ -122,29 +135,68 @@ const ResumePage: React.FC = () => {
             <h2 className='card-title text-2xl'>Technical Skills</h2>
             <div className='divider'></div>
 
-            <div className='grid md:grid-cols-2 gap-6'>
-              <div>
-                <h3 className='text-lg font-semibold mb-3'>Languages & Frameworks</h3>
-                <div className='flex flex-wrap gap-2'>
-                  <span className='badge badge-primary'>TypeScript</span>
-                  <span className='badge badge-primary'>JavaScript</span>
-                  <span className='badge badge-primary'>Python</span>
-                  <span className='badge badge-primary'>PHP</span>
-                  <span className='badge badge-primary'>React</span>
-                </div>
+            {skillsLoading && (
+              <div className='flex justify-center items-center py-8'>
+                <span className='loading loading-spinner loading-lg'></span>
+                <span className='ml-3'>Loading skills data...</span>
               </div>
+            )}
 
-              <div>
-                <h3 className='text-lg font-semibold mb-3'>Cloud & DevOps</h3>
-                <div className='flex flex-wrap gap-2'>
-                  <span className='badge badge-secondary'>AWS</span>
-                  <span className='badge badge-secondary'>CDK</span>
-                  <span className='badge badge-secondary'>CI/CD</span>
-                  <span className='badge badge-secondary'>Docker</span>
-                  <span className='badge badge-secondary'>IaC</span>
+            {skillsError && (
+              <div className='alert alert-warning mb-4'>
+                <svg
+                  xmlns='http://www.w3.org/2000/svg'
+                  className='stroke-current shrink-0 h-6 w-6'
+                  fill='none'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth='2'
+                    d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z'
+                  />
+                </svg>
+                <span>Skills data unavailable, showing fallback content</span>
+              </div>
+            )}
+
+            {skills.length > 0 ? (
+              <SkillsGroup groupedSkills={groupedSkills} layout='grid' pillSize='md' />
+            ) : !skillsLoading && !skillsError ? (
+              <div className='text-center py-8'>
+                <p className='text-base-content/70'>
+                  No skills found. Please add some skills in WordPress.
+                </p>
+              </div>
+            ) : null}
+
+            {/* Fallback static content if skills are not available */}
+            {(skillsError || skills.length === 0) && !skillsLoading && (
+              <div className='space-y-6 opacity-60'>
+                <div>
+                  <h3 className='text-lg font-semibold mb-3'>Languages & Frameworks</h3>
+                  <div className='flex flex-wrap gap-2'>
+                    <span className='badge badge-primary'>TypeScript</span>
+                    <span className='badge badge-primary'>JavaScript</span>
+                    <span className='badge badge-primary'>Python</span>
+                    <span className='badge badge-primary'>PHP</span>
+                    <span className='badge badge-primary'>React</span>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className='text-lg font-semibold mb-3'>Cloud & DevOps</h3>
+                  <div className='flex flex-wrap gap-2'>
+                    <span className='badge badge-secondary'>AWS</span>
+                    <span className='badge badge-secondary'>CDK</span>
+                    <span className='badge badge-secondary'>CI/CD</span>
+                    <span className='badge badge-secondary'>Docker</span>
+                    <span className='badge badge-secondary'>IaC</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

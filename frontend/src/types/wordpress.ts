@@ -73,6 +73,13 @@ export interface MediaProject extends WordPressPost {
   type: 'media-project'
 }
 
+// Flexible Skills type for dynamic categorization
+export interface SkillItem extends WordPressPost {
+  type: 'skill'
+  skills_type: string // Dynamic category name (e.g., "Languages & Frameworks", "Cloud & DevOps")
+  skills_value: string // Actual skill name (e.g., "TypeScript", "AWS", "Docker")
+}
+
 // WordPress API Error Response
 export interface WordPressError {
   code: string
@@ -88,6 +95,7 @@ export type ResumeResponse = ResumeItem[]
 export type SoftwareProjectResponse = SoftwareProject[]
 export type MediaProjectResponse = MediaProject[]
 export type BlogPostResponse = WordPressPost[]
+export type SkillResponse = SkillItem[]
 
 // Query parameters for WordPress API
 export interface WordPressQueryParams {

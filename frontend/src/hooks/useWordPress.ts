@@ -4,6 +4,7 @@ import type {
   ResumeItem,
   SoftwareProject,
   MediaProject,
+  SkillItem,
   WordPressPost,
   WordPressQueryParams,
 } from '../types/wordpress'
@@ -31,6 +32,13 @@ export const queryKeys = {
     list: (params?: WordPressQueryParams) => [...queryKeys.mediaProjects.lists(), params] as const,
     details: () => [...queryKeys.mediaProjects.all, 'detail'] as const,
     detail: (id: number) => [...queryKeys.mediaProjects.details(), id] as const,
+  },
+  skills: {
+    all: ['skills'] as const,
+    lists: () => [...queryKeys.skills.all, 'list'] as const,
+    list: (params?: WordPressQueryParams) => [...queryKeys.skills.lists(), params] as const,
+    details: () => [...queryKeys.skills.all, 'detail'] as const,
+    detail: (id: number) => [...queryKeys.skills.details(), id] as const,
   },
   blog: {
     all: ['blog'] as const,
@@ -109,6 +117,30 @@ export function useMediaProject(
   return useQuery({
     queryKey: queryKeys.mediaProjects.detail(id),
     queryFn: () => wordpressApi.getMediaProject(id),
+    enabled: !!id,
+    ...options,
+  })
+}
+
+// Skills hooks
+export function useSkills(
+  params?: WordPressQueryParams,
+  options?: Omit<UseQueryOptions<SkillItem[], WordPressAPIError>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery({
+    queryKey: queryKeys.skills.list(params),
+    queryFn: () => wordpressApi.getSkills(params),
+    ...options,
+  })
+}
+
+export function useSkill(
+  id: number,
+  options?: Omit<UseQueryOptions<SkillItem, WordPressAPIError>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery({
+    queryKey: queryKeys.skills.detail(id),
+    queryFn: () => wordpressApi.getSkill(id),
     enabled: !!id,
     ...options,
   })
