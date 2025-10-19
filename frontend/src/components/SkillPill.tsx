@@ -11,6 +11,10 @@ interface SkillPillProps {
 function getCategoryBadgeClass(category: string): string {
   if (!category) return 'badge-neutral'
 
+  if (category === 'Languages & Frameworks') return 'badge-info'
+  if (category === 'Soft Skills') return 'badge-secondary'
+  if (category === 'Cloud & DevOps') return 'badge-warning'
+
   // Simple string hash function for consistent color assignment
   const hash = category.split('').reduce((a, b) => {
     a = (a << 5) - a + b.charCodeAt(0)

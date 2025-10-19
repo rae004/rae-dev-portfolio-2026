@@ -1014,7 +1014,8 @@ function rae_resume_skills_meta_box_callback($post) {
         </div>
         
         <div class="skills-by-category" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 15px;">
-            <?php foreach ($skills_by_category as $category => $skills): ?>
+            <?php unset($skills);
+            foreach ($skills_by_category as $category => $skills): ?>
                 <div class="category-group" style="margin-bottom: 20px;">
                     <h4 style="margin: 0 0 10px 0; color: #23282d; border-bottom: 1px solid #ddd; padding-bottom: 5px;">
                         <?php echo esc_html($category); ?>

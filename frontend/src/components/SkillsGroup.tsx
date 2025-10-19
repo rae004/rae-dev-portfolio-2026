@@ -54,8 +54,8 @@ const SkillsGroup: React.FC<SkillsGroupProps> = ({
   return (
     <div className={`flex flex-row items-baseline justify-around space-y-6 ${className}`}>
       {categories.map(category => (
-        <div key={category} className='space-y-3'>
-          <h3 className='text-lg font-semibold text-base-content'>{category}</h3>
+        <div key={category} className='space-y-3 space-x-6'>
+          <h3 className='text-lg font-semibold text-base-content text-center'>{category}</h3>
           <div className='flex flex-wrap gap-2'>
             {groupedSkills[category].map((skill, index) => (
               <SkillPill
