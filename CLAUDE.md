@@ -3,9 +3,9 @@
 ## Project Overview
 Building a modern portfolio website for Robert Engel showcasing his diverse career journey from music industry to cloud engineering. The site follows modern software development best practices with a headless WordPress backend and React frontend.
 
-## Current Status: ✅ PHASE 4 COMPLETE + Employment Date Enhancement Implemented
+## Current Status: ✅ PHASE 4 COMPLETE + Skills Custom Post Type System Implemented
 **All Phases COMPLETE**: Frontend Foundation, WordPress Integration, Dynamic Integration, AWS Infrastructure
-**Latest Enhancement**: Employment date fields with WordPress admin integration and frontend display
+**Latest Enhancement**: Complete dynamic Skills system with flexible categorization and WordPress integration
 
 ## Architecture Status
 - **Frontend**: React + TypeScript + Vite + TanStack Router + DaisyUI ✅ COMPLETE
@@ -740,3 +740,272 @@ cd frontend && pnpm dev
 - **WordPress Input**: Start Date: 2020-06-01, Currently Employed: Yes
 - **API Output**: `"formatted_range": "June 2020 - Present"`
 - **Frontend Display**: "Music Industry Manager - June 2020 - Present"
+
+## 🎯 **LATEST ENHANCEMENT: Employment Date Sorting Implementation** 🎯
+
+### **Problem Solved**: Resume Items Needed Professional Chronological Ordering
+- **Issue**: Resume items displayed in database order, not professional timeline order
+- **User Request**: Sort by employment end dates with current positions ("Present") appearing first
+- **Business Logic**: Most recent/current experience should be prominently displayed
+
+### **Solution Implemented**: Intelligent Client-Side Sorting ✅
+
+### **Sorting Algorithm Implementation:**
+1. **✅ Priority Sorting**: Items with `end_date = "Present"` always appear first
+2. **✅ Chronological Sorting**: Past positions sorted by `end_date_raw` in descending order (most recent first)
+3. **✅ Graceful Fallbacks**: Items without employment dates handled appropriately
+4. **✅ Performance Optimized**: Client-side sorting with extracted sort function for reusability
+
+### **Technical Implementation:**
+**File Modified**: `frontend/src/pages/ResumePage.tsx`
+**Key Changes**:
+```typescript
+// Extracted sort function for reusability and performance
+function sortResumeItems(a: ResumeItem, b: ResumeItem) {
+  // Items with "Present" end date go first
+  if (a.employment_dates?.end_date === 'Present' && b.employment_dates?.end_date !== 'Present') {
+    return -1
+  }
+  if (b.employment_dates?.end_date === 'Present' && a.employment_dates?.end_date !== 'Present') {
+    return 1
+  }
+
+  // If both are "Present" or both are not "Present", sort by end_date_raw desc
+  const aEndDate = a.employment_dates?.end_date_raw || ''
+  const bEndDate = b.employment_dates?.end_date_raw || ''
+
+  return bEndDate.localeCompare(aEndDate)
+}
+
+// Applied in component
+{resumeItems.sort(sortResumeItems).map(item => (
+```
+
+### **Business Logic Results:**
+- **✅ Current Positions**: Always displayed first (most important for recruiters)
+- **✅ Recent Experience**: Most recent past positions appear next
+- **✅ Career Progression**: Clear timeline showing professional growth
+- **✅ User Experience**: Logical ordering matches standard resume best practices
+
+### **Code Quality Improvements:**
+1. **✅ Extracted Function**: `sortResumeItems` function extracted for reusability
+2. **✅ TypeScript Integration**: Proper typing with `ResumeItem` interface
+3. **✅ Performance**: Single sort operation, no unnecessary re-renders
+4. **✅ Readability**: Clear comments explaining business logic
+
+### **Frontend Display Format (Final)**:
+Current positions display as: `"Senior Cloud Engineer - June 2020 - Present"`
+Past positions display as: `"Software Engineer - January 2018 - May 2020"`
+
+### **Sorting Order Example:**
+1. Senior Cloud Engineer (June 2020 - Present) ← **Current position first**
+2. Software Engineer (January 2018 - May 2020) ← **Most recent past position**
+3. Music Industry Manager (June 2015 - December 2017) ← **Older experience**
+
+### **Status**: ✅ FULLY IMPLEMENTED AND WORKING
+- **Sorting Logic**: Professional chronological order implemented
+- **User Feedback**: User confirmed sorting and employment dates work wonderfully
+- **Code Quality**: Clean, maintainable, and performant implementation
+- **Business Value**: Resume now follows industry standard ordering conventions
+
+## 🎉 **LATEST ACHIEVEMENT: Skills Custom Post Type System - COMPLETE & TESTED** 🎉
+
+### **Problem Solved**: Dynamic Skills Management System for Portfolio
+- **Issue**: Static hardcoded skills in frontend needed dynamic WordPress-driven categorization
+- **User Request**: Flexible Skills system with dynamic categories like "Languages & Frameworks", "Cloud & DevOps"
+- **Frontend Requirement**: Replace static badges with WordPress-powered grouped skills display
+
+### **Solution Implemented**: Complete Dynamic Skills System ✅ WORKING
+
+### **Phase 1: WordPress Backend Implementation ✅ COMPLETE**
+1. **✅ Skills Custom Post Type**: Complete registration with Classic Editor
+   - Post type: `skill` with `show_in_rest: false` (prevents Block Editor 404 errors)
+   - Custom REST endpoint: `/wp/v2/skills` (built-in replacement)
+   - Features: title, editor, custom fields, thumbnail, featured image integration
+
+2. **✅ Flexible Skills Meta Box**: Dynamic WordPress admin interface
+   - **skills_type**: Text input with autocomplete for category names (e.g., "Languages & Frameworks")
+   - **skills_value**: Text input with autocomplete for skill names (e.g., "TypeScript", "AWS") 
+   - Database-driven autocomplete suggestions for consistency
+   - Visual feedback: green borders for existing values, yellow for new values
+   - Auto-title population from skill_value for better UX
+   - Professional CSS styling and JavaScript interactions
+
+3. **✅ REST API Integration**: Complete meta field exposure
+   - Custom REST endpoints: `/wp/v2/skills` and `/wp/v2/skills/{id}`
+   - `skills_type` and `skills_value` fields in API responses
+   - Public endpoints for frontend consumption
+   - Consistent API structure with other post types
+   - Featured image URL integration
+
+### **Phase 2: Frontend TypeScript Integration ✅ COMPLETE**
+1. **✅ Type-Safe Interfaces**: `frontend/src/types/wordpress.ts`
+   ```typescript
+   export interface SkillItem extends WordPressPost {
+     type: 'skill'
+     skills_type: string  // Dynamic category name
+     skills_value: string // Actual skill name
+   }
+   export type SkillResponse = SkillItem[]
+   ```
+
+2. **✅ API Service Methods**: `frontend/src/services/wordpress.ts`
+   - `getSkills(params)` and `getSkill(id)` methods
+   - Complete error handling and type safety
+   - Environment-aware API base URLs
+
+3. **✅ React Query Hooks**: `frontend/src/hooks/useWordPress.ts`
+   - `useSkills(params)` and `useSkill(id)` hooks with caching
+   - Consistent query key patterns: `['skills', 'list', params]`
+   - Optimal performance with React Query 5.90.2
+
+### **Phase 3: Dynamic Components System ✅ COMPLETE**
+1. **✅ SkillPill Component**: `frontend/src/components/SkillPill.tsx`
+   - Category-based color assignment using string hash algorithm
+   - Automatic DaisyUI badge styling with 6 semantic colors
+   - Size variants (sm, md, lg) and tooltip support
+   - Consistent colors per category across page loads
+
+2. **✅ SkillsGroup Component**: `frontend/src/components/SkillsGroup.tsx`
+   - Two layout modes: `grid` (categorized sections) and `inline` (mixed)
+   - Automatic alphabetical sorting within categories
+   - Empty state handling with user guidance
+   - Professional spacing and responsive design
+
+3. **✅ Dynamic Grouping Logic**: `frontend/src/hooks/useGroupedSkills.ts`
+   - `useGroupedSkills(skills)`: Groups skills by category automatically
+   - `useSkillsByCategory(skills, category)`: Filters skills by specific category
+   - `useSkillCategories(skills)`: Returns unique category list
+   - Memoized calculations for optimal performance
+
+### **Phase 4: ResumePage Integration ✅ COMPLETE & TESTED**
+1. **✅ Dynamic Skills Display**: `frontend/src/pages/ResumePage.tsx`
+   - Replaced static "Technical Skills" section with WordPress-driven content
+   - Loading states, error handling, and graceful fallbacks
+   - Skills data loaded via React Query with caching (per_page: 100)
+   - Fallback to static content if WordPress unavailable
+   - Professional warning messages for skills data issues
+
+### **Critical Issue Resolution ✅ COMPLETE**
+**Problem**: WordPress Block Editor causing 404 errors when saving skills
+- **Root Cause**: Block Editor auto-save trying to use non-existent built-in REST endpoints
+- **Solution**: Disabled Block Editor (`show_in_rest: false`) + created custom REST endpoints
+- **Result**: Classic Editor with perfect meta box integration, no 404 errors
+
+**Files Modified for Fix**:
+- `wordpress/wp-content/themes/rae-portfolio/functions.php`:
+  - Changed `'show_in_rest' => false` for skills post type
+  - Added `rae_register_custom_skills_endpoint()` function
+  - Added `rae_get_skills()` and `rae_prepare_skill_item()` callbacks
+  - Maintains exact same API structure as built-in endpoints
+
+### **Current Status**: ✅ FULLY IMPLEMENTED AND TESTED
+- **WordPress Admin**: Skills creation with autocomplete working perfectly, no 404 errors
+- **REST API**: Custom `/wp/v2/skills` endpoint returning structured data with meta fields
+- **Frontend**: Dynamic grouping and display based on WordPress content ✅ CONFIRMED WORKING
+- **Type Safety**: Complete TypeScript coverage with zero compilation errors
+- **Performance**: Efficient React Query caching and memoized calculations
+- **User Experience**: Professional loading states, error handling, visual feedback
+
+### **Test Results Summary**
+**✅ WordPress Backend Testing**:
+- Skills custom post type registered and working
+- 3 test skills created successfully via WP-CLI with meta fields
+- WordPress admin meta box with autocomplete functional
+- Classic Editor saving without errors
+
+**✅ REST API Testing**:
+```bash
+curl "http://localhost:8080/?rest_route=/wp/v2/skills" 
+# Returns 3 skills with proper skills_type and skills_value fields
+# Example: {"skills_type": "Languages & Frameworks", "skills_value": "TypeScript"}
+```
+
+**✅ Frontend Integration Testing**:
+- Dynamic skills displaying on http://localhost:5173/resume ✅ USER CONFIRMED
+- Skills grouped by category (Languages & Frameworks, Cloud & DevOps)
+- Different badge colors per category via hash algorithm
+- Loading states and error handling working
+- Fallback to static skills when WordPress unavailable
+
+### **WordPress Admin Workflow (TESTED & WORKING)**
+```bash
+# Skill Creation Process:
+# 1. Go to http://localhost:8080/wp-admin → Skills → Add New
+# 2. Skill Category: "Languages & Frameworks" (autocomplete suggestions)
+# 3. Skill Value: "JavaScript" (autocomplete suggestions)  
+# 4. Title auto-populates as "JavaScript"
+# 5. Click "Publish" → SUCCESS (no 404 errors)
+```
+
+### **API Data Structure (VERIFIED)**
+```json
+{
+  "id": 26,
+  "title": {"rendered": "React"},
+  "skills_type": "Languages & Frameworks", 
+  "skills_value": "React",
+  "featured_image_url": null,
+  "type": "skill",
+  "_links": {"self": [{"href": "http://localhost:8080/wp-json/wp/v2/skills/26"}]}
+}
+```
+
+### **Color Assignment Algorithm**
+Skills automatically get consistent colors based on category using string hash:
+- "Languages & Frameworks" → Always same badge color (determined by hash)
+- "Cloud & DevOps" → Always same badge color (determined by hash)
+- New categories get assigned from 6 DaisyUI semantic colors: primary, secondary, accent, info, success, warning
+
+### **Files Successfully Created/Modified**
+1. **WordPress Backend**:
+   - `wordpress/wp-content/themes/rae-portfolio/functions.php`: Skills post type, meta box, custom REST API
+
+2. **Frontend Types & Services**:
+   - `frontend/src/types/wordpress.ts`: SkillItem interface and SkillResponse type
+   - `frontend/src/services/wordpress.ts`: getSkills() and getSkill() API methods
+   - `frontend/src/hooks/useWordPress.ts`: useSkills() and useSkill() React Query hooks
+
+3. **Frontend Components**:
+   - `frontend/src/components/SkillPill.tsx`: Individual skill badge component with hash-based colors
+   - `frontend/src/components/SkillsGroup.tsx`: Grouped skills display component (grid/inline layouts)
+   - `frontend/src/hooks/useGroupedSkills.ts`: Skills grouping logic with memoization
+
+4. **Frontend Integration**:
+   - `frontend/src/pages/ResumePage.tsx`: Dynamic skills section replacement with loading states
+
+### **Key Technical Achievements**
+1. **Complete Flexibility**: No hardcoded categories - everything managed via WordPress admin
+2. **Autocomplete Consistency**: Database-driven suggestions prevent duplicate entries
+3. **Professional UX**: Loading states, error handling, visual feedback throughout
+4. **Type Safety**: Full TypeScript integration from backend to frontend
+5. **Performance**: Memoized grouping logic and efficient React Query caching
+6. **Classic Editor Solution**: Avoided Block Editor conflicts with custom REST endpoints
+
+### **Next Development Opportunities**
+1. **Skills Relationship System**: Connect skills to Resume Items, Projects, and Media Projects
+2. **Bulk Skills Management**: Import/export capabilities for large skill sets
+3. **Skills Analytics**: Track which skills are most utilized across portfolio
+4. **Advanced Search**: Frontend search and filtering across all skills
+5. **Skill Proficiency Levels**: Add proficiency ratings to skills (beginner, intermediate, expert)
+
+### **Commands to Resume Development**
+```bash
+# Test complete skills workflow
+curl -s "http://localhost:8080/?rest_route=/wp/v2/skills" | jq '[.[] | {skills_type, skills_value}]'
+
+# Frontend development
+cd frontend && pnpm dev
+# → Visit http://localhost:5173/resume (Skills section fully dynamic)
+
+# WordPress admin testing
+# → Visit http://localhost:8080/wp-admin → Skills → Add New (Classic Editor, no errors)
+
+# Create test skill via WP-CLI
+docker exec rae-portfolio-wp wp post create --post_type=skill --post_title="Docker" --post_status=publish --allow-root
+docker exec rae-portfolio-wp wp post meta add [POST_ID] _skill_type "Cloud & DevOps" --allow-root  
+docker exec rae-portfolio-wp wp post meta add [POST_ID] _skill_value "Docker" --allow-root
+```
+
+### **System Integration Status**: ✅ PRODUCTION-READY
+The Skills system is now fully integrated and tested end-to-end. Frontend displays dynamic skills from WordPress, WordPress admin allows skill creation without errors, and the REST API provides structured data. The system supports unlimited skill categories and maintains consistency through autocomplete suggestions.
