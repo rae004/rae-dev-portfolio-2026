@@ -1,8 +1,9 @@
 import React from 'react'
 import SkillPill from './SkillPill'
+import type { SkillItem } from '../types/wordpress'
 
 interface SkillsGroupProps {
-  groupedSkills: Record<string, string[]>
+  groupedSkills: Record<string, SkillItem[]>
   layout?: 'grid' | 'inline'
   pillSize?: 'sm' | 'md' | 'lg'
   className?: string
@@ -29,18 +30,18 @@ const SkillsGroup: React.FC<SkillsGroupProps> = ({
   if (layout === 'inline') {
     // Inline layout - all skills in a single row with category indicators
     const allSkills = categories.flatMap(category =>
-      groupedSkills[category].map(skillName => ({
-        skillName,
+      groupedSkills[category].map(skill => ({
+        skill,
         category,
       }))
     )
 
     return (
       <div className={`flex flex-wrap gap-2 ${className}`}>
-        {allSkills.map(({ skillName, category }, index) => (
+        {allSkills.map(({ skill, category }, index) => (
           <SkillPill
-            key={`${category}-${skillName}-${index}`}
-            skillName={skillName}
+            key={`${category}-${skill.id}-${index}`}
+            skillName={skill.skills_value || skill.title.rendered}
             category={category}
             size={pillSize}
           />
@@ -56,10 +57,10 @@ const SkillsGroup: React.FC<SkillsGroupProps> = ({
         <div key={category} className='space-y-3'>
           <h3 className='text-lg font-semibold text-base-content'>{category}</h3>
           <div className='flex flex-wrap gap-2'>
-            {groupedSkills[category].map((skillName, index) => (
+            {groupedSkills[category].map((skill, index) => (
               <SkillPill
-                key={`${category}-${skillName}-${index}`}
-                skillName={skillName}
+                key={`${category}-${skill.id}-${index}`}
+                skillName={skill.skills_value || skill.title.rendered}
                 category={category}
                 size={pillSize}
               />

@@ -63,6 +63,7 @@ export interface EmploymentDates {
 export interface ResumeItem extends WordPressPost {
   type: 'resume'
   employment_dates?: EmploymentDates
+  related_skills: SkillItem[] // New field for explicit skill relationships
 }
 
 export interface SoftwareProject extends WordPressPost {

@@ -1,7 +1,8 @@
 import React from 'react'
 import { useResumeItems, useSkills } from '../hooks/useWordPress'
-import { useGroupedSkills } from '../hooks/useGroupedSkills'
+import { groupSkillsByCategory, sortSkillsInCategories } from '../utils/skillMatching'
 import SkillsGroup from '../components/SkillsGroup'
+import ResumeItemCard from '../components/ResumeItemCard'
 import type { ResumeItem } from '../types/wordpress.ts'
 
 const ResumePage: React.FC = () => {
@@ -24,7 +25,7 @@ const ResumePage: React.FC = () => {
     per_page: 100,
   })
 
-  const groupedSkills = useGroupedSkills(skills)
+  const groupedSkills = sortSkillsInCategories(groupSkillsByCategory(skills))
 
   return (
     <div className='container mx-auto px-4 py-8'>
@@ -63,20 +64,16 @@ const ResumePage: React.FC = () => {
             )}
 
             {resumeItems && resumeItems.length > 0 ? (
-              <div className='space-y-6'>
+              <div className='space-y-8'>
                 {resumeItems.sort(sortResumeItems).map(item => (
-                  <div key={item.id}>
-                    <h3 className='text-xl font-semibold'>{item.title.rendered}</h3>
-                    {item.employment_dates?.formatted_range && (
-                      <p className='text-base-content/70'>
-                        {item.employment_dates.formatted_range}
-                      </p>
-                    )}
-                    <div
-                      className='mt-2 prose prose-sm max-w-none'
-                      dangerouslySetInnerHTML={{ __html: item.content.rendered }}
-                    />
-                  </div>
+                  <ResumeItemCard
+                    key={item.id}
+                    resumeItem={item}
+                    allSkills={skills}
+                    layout='summary'
+                    showSkills={true}
+                    maxSkillsPreview={4}
+                  />
                 ))}
               </div>
             ) : resumeItems && resumeItems.length === 0 ? (
