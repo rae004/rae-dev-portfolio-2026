@@ -105,35 +105,75 @@ const ResumeDetailPage: React.FC = () => {
       </div>
 
       {/* Navigation */}
-      <div className='flex justify-between items-center'>
-        <div>
-          {previousResume && (
-            <Link
-              to='/resume/$resumeId'
-              params={{ resumeId: previousResume.id.toString() }}
-              className='btn btn-outline btn-primary'
-            >
-              ← Previous: {previousResume.title.rendered}
-            </Link>
-          )}
-        </div>
+      {previousResume && nextResume && (
+        <div className='flex justify-between items-center'>
+          <div>
+            {previousResume && (
+              <Link
+                to='/resume/$resumeId'
+                params={{ resumeId: previousResume.id.toString() }}
+                className='btn btn-outline btn-primary'
+              >
+                ← Previous: {previousResume.title.rendered}
+              </Link>
+            )}
+          </div>
 
-        <Link to='/resume' className='btn btn-primary'>
-          Back to Resume
-        </Link>
+          <Link to='/resume' className='btn btn-primary'>
+            Back to Resume
+          </Link>
 
-        <div>
-          {nextResume && (
-            <Link
-              to='/resume/$resumeId'
-              params={{ resumeId: nextResume.id.toString() }}
-              className='btn btn-outline btn-primary'
-            >
-              Next: {nextResume.title.rendered} →
-            </Link>
-          )}
+          <div>
+            {nextResume && (
+              <Link
+                to='/resume/$resumeId'
+                params={{ resumeId: nextResume.id.toString() }}
+                className='btn btn-outline btn-primary'
+              >
+                Next: {nextResume.title.rendered} →
+              </Link>
+            )}
+          </div>
         </div>
-      </div>
+      )}
+      {previousResume && !nextResume && (
+        <div className='flex justify-between items-center'>
+          <div>
+            {previousResume && (
+              <Link
+                to='/resume/$resumeId'
+                params={{ resumeId: previousResume.id.toString() }}
+                className='btn btn-outline btn-primary'
+              >
+                ← Previous: {previousResume.title.rendered}
+              </Link>
+            )}
+          </div>
+
+          <Link to='/resume' className='btn btn-primary'>
+            Back to Resume
+          </Link>
+        </div>
+      )}
+      {nextResume && !previousResume && (
+        <div className='flex justify-between items-center'>
+          <Link to='/resume' className='btn btn-primary'>
+            Back to Resume
+          </Link>
+
+          <div>
+            {nextResume && (
+              <Link
+                to='/resume/$resumeId'
+                params={{ resumeId: nextResume.id.toString() }}
+                className='btn btn-outline btn-primary'
+              >
+                Next: {nextResume.title.rendered} →
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
