@@ -7,6 +7,7 @@ import {
   sortSkillsInCategories,
 } from '../utils/skillMatching'
 import SkillsGroup from '../components/SkillsGroup'
+import ResumeItemPagination from '../components/ResumeItemPagination.tsx'
 
 const ResumeDetailPage: React.FC = () => {
   const { resumeId } = useParams({ from: '/resume/$resumeId' })
@@ -60,6 +61,11 @@ const ResumeDetailPage: React.FC = () => {
   const previousResume = currentIndex > 0 ? sortedResumes[currentIndex - 1] : null
   const nextResume =
     currentIndex < sortedResumes.length - 1 ? sortedResumes[currentIndex + 1] : null
+  const paginationProps = {
+    nextResume,
+    previousResume,
+    paginationWrapperClasses: ['flex justify-center items-center gap-24'],
+  }
 
   return (
     <div className='container mx-auto px-4 py-8'>
@@ -105,82 +111,7 @@ const ResumeDetailPage: React.FC = () => {
       </div>
 
       {/* Navigation */}
-      {previousResume && nextResume && (
-        <div className='flex justify-between items-center'>
-          <div>
-            {previousResume && (
-              <Link
-                to='/resume/$resumeId'
-                params={{ resumeId: previousResume.id.toString() }}
-                className='btn btn-outline btn-primary'
-              >
-                ← Previous: {previousResume.title.rendered}
-              </Link>
-            )}
-          </div>
-
-          <Link to='/resume' className='btn btn-primary'>
-            Back to Resume
-          </Link>
-
-          <div>
-            {nextResume && (
-              <Link
-                to='/resume/$resumeId'
-                params={{ resumeId: nextResume.id.toString() }}
-                className='btn btn-outline btn-primary'
-              >
-                Next: {nextResume.title.rendered} →
-              </Link>
-            )}
-          </div>
-        </div>
-      )}
-      {previousResume && !nextResume && (
-        <div className='flex justify-between items-center'>
-          <div>
-            {previousResume && (
-              <Link
-                to='/resume/$resumeId'
-                params={{ resumeId: previousResume.id.toString() }}
-                className='btn btn-outline btn-primary'
-              >
-                ← Previous: {previousResume.title.rendered}
-              </Link>
-            )}
-          </div>
-
-          <Link to='/resume' className='btn btn-primary'>
-            Back to Resume
-          </Link>
-        </div>
-      )}
-      {nextResume && !previousResume && (
-        <div className='flex justify-between items-center'>
-          <Link to='/resume' className='btn btn-primary'>
-            Back to Resume
-          </Link>
-
-          <div>
-            {nextResume && (
-              <Link
-                to='/resume/$resumeId'
-                params={{ resumeId: nextResume.id.toString() }}
-                className='btn btn-outline btn-primary'
-              >
-                Next: {nextResume.title.rendered} →
-              </Link>
-            )}
-          </div>
-        </div>
-      )}
-      {!nextResume && !previousResume && (
-        <div className='flex justify-center items-center'>
-          <Link to='/resume' className='btn btn-primary'>
-            Back to Resume
-          </Link>
-        </div>
-      )}
+      <ResumeItemPagination {...paginationProps} />
     </div>
   )
 }
