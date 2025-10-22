@@ -5,6 +5,7 @@ interface SkillPillProps {
   category?: string
   size?: 'sm' | 'md' | 'lg'
   className?: string
+  infoUrl?: string // Optional URL to make the skill pill clickable
 }
 
 // Category-based badge color assignment using string hash
@@ -39,6 +40,7 @@ const SkillPill: React.FC<SkillPillProps> = ({
   category,
   size = 'md',
   className = '',
+  infoUrl,
 }) => {
   const badgeColorClass = getCategoryBadgeClass(category || '')
 
@@ -48,11 +50,31 @@ const SkillPill: React.FC<SkillPillProps> = ({
     lg: 'badge-lg',
   }[size]
 
+  // Build title text
+  const titleText = category ? `${skillName} (${category})` : skillName
+  const finalTitle = infoUrl ? `${titleText} - Click to learn more` : titleText
+
+  // Base badge classes
+  const badgeClasses = `badge ${badgeColorClass} ${sizeClass} ${className}`
+
+  // If infoUrl is provided, render as a clickable link
+  if (infoUrl) {
+    return (
+      <a
+        href={infoUrl}
+        target='_blank'
+        rel='noopener noreferrer'
+        className={`${badgeClasses} hover:scale-105 transition-transform cursor-pointer no-underline`}
+        title={finalTitle}
+      >
+        {skillName}
+      </a>
+    )
+  }
+
+  // Otherwise, render as a regular span
   return (
-    <span
-      className={`badge ${badgeColorClass} ${sizeClass} ${className}`}
-      title={category ? `${skillName} (${category})` : skillName}
-    >
+    <span className={badgeClasses} title={finalTitle}>
       {skillName}
     </span>
   )

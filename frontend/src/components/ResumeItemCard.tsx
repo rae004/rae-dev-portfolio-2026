@@ -72,6 +72,7 @@ const ResumeItemCard: React.FC<ResumeItemCardProps> = ({
                 skillName={skill.skills_value || skill.title.rendered}
                 category={skill.skills_type}
                 size='sm'
+                infoUrl={skill.skills_info_url}
               />
             ))}
             {remainingCount > 0 && (

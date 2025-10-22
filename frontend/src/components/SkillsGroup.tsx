@@ -44,6 +44,7 @@ const SkillsGroup: React.FC<SkillsGroupProps> = ({
             skillName={skill.skills_value || skill.title.rendered}
             category={category}
             size={pillSize}
+            infoUrl={skill.skills_info_url}
           />
         ))}
       </div>
@@ -63,6 +64,7 @@ const SkillsGroup: React.FC<SkillsGroupProps> = ({
                 skillName={skill.skills_value || skill.title.rendered}
                 category={category}
                 size={pillSize}
+                infoUrl={skill.skills_info_url}
               />
             ))}
           </div>

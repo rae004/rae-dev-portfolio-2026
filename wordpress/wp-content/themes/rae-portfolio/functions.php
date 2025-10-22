@@ -333,6 +333,27 @@ function rae_add_skills_to_rest() {
         )
     ));
     
+    // Add skills_info_url field to skill post type
+    register_rest_field('skill', 'skills_info_url', array(
+        'get_callback' => function($post) {
+            return get_post_meta($post['id'], '_skill_info_url', true) ?: null;
+        },
+        'update_callback' => function($value, $post) {
+            $url = sanitize_text_field($value);
+            if (!empty($url)) {
+                $url = esc_url_raw($url);
+                return update_post_meta($post->ID, '_skill_info_url', $url);
+            } else {
+                return delete_post_meta($post->ID, '_skill_info_url');
+            }
+        },
+        'schema' => array(
+            'description' => 'Skill information URL (documentation, tutorial, etc.)',
+            'type' => 'string',
+            'format' => 'uri'
+        )
+    ));
+    
     // Register meta fields for Block Editor support
     register_meta('skill', '_skill_type', array(
         'type' => 'string',
@@ -357,6 +378,16 @@ function rae_add_skills_to_rest() {
     register_meta('skill', '_skill_weight', array(
         'type' => 'integer',
         'description' => 'Skill weight for sorting',
+        'single' => true,
+        'show_in_rest' => true,
+        'auth_callback' => function() {
+            return current_user_can('edit_posts');
+        }
+    ));
+    
+    register_meta('skill', '_skill_info_url', array(
+        'type' => 'string',
+        'description' => 'Skill information URL',
         'single' => true,
         'show_in_rest' => true,
         'auth_callback' => function() {
@@ -519,6 +550,7 @@ function rae_prepare_skill_item($post) {
     $skills_type = get_post_meta($post->ID, '_skill_type', true);
     $skills_value = get_post_meta($post->ID, '_skill_value', true);
     $skills_weight = get_post_meta($post->ID, '_skill_weight', true);
+    $skills_info_url = get_post_meta($post->ID, '_skill_info_url', true);
     
     // Get featured image
     $featured_image_id = get_post_thumbnail_id($post->ID);
@@ -556,6 +588,7 @@ function rae_prepare_skill_item($post) {
         'skills_type' => $skills_type ?: null,
         'skills_value' => $skills_value ?: null,
         'skills_weight' => $skills_weight !== '' ? (int)$skills_weight : 0,
+        'skills_info_url' => $skills_info_url ?: null,
         '_links' => array(
             'self' => array(
                 array(
@@ -1243,6 +1276,7 @@ function rae_skills_meta_box_callback($post) {
     $skills_type = get_post_meta($post->ID, '_skill_type', true);
     $skills_value = get_post_meta($post->ID, '_skill_value', true);
     $skills_weight = get_post_meta($post->ID, '_skill_weight', true);
+    $skills_info_url = get_post_meta($post->ID, '_skill_info_url', true);
     
     // Get existing skill types and values for autocomplete
     global $wpdb;
@@ -1319,6 +1353,21 @@ function rae_skills_meta_box_callback($post) {
                 <p class="description"><strong>Examples:</strong> Primary skills: 10, Standard skills: 0, Learning skills: -5</p>
             </td>
         </tr>
+        <tr>
+            <th scope="row">
+                <label for="skill_info_url">Information URL</label>
+            </th>
+            <td>
+                <input type="url" 
+                       id="skill_info_url" 
+                       name="skill_info_url" 
+                       value="<?php echo esc_attr($skills_info_url); ?>" 
+                       style="width: 400px;" 
+                       placeholder="https://example.com/documentation" />
+                <p class="description">Optional URL to documentation, tutorial, or information about this skill. This will make skill pills clickable on the frontend.</p>
+                <p class="description"><strong>Examples:</strong> https://react.dev, https://docs.aws.amazon.com, https://docs.docker.com</p>
+            </td>
+        </tr>
     </table>
     
     <script type="text/javascript">
@@ -1356,6 +1405,29 @@ function rae_skills_meta_box_callback($post) {
                     $titleField.val(skillValue);
                 }
             });
+            
+            // URL validation feedback
+            $('#skill_info_url').on('input blur', function() {
+                var $input = $(this);
+                var url = $input.val().trim();
+                
+                if (url === '') {
+                    $input.css('border-color', ''); // Default
+                } else if (isValidUrl(url)) {
+                    $input.css('border-color', '#00a32a'); // Green for valid URL
+                } else {
+                    $input.css('border-color', '#dc3545'); // Red for invalid URL
+                }
+            });
+            
+            function isValidUrl(string) {
+                try {
+                    new URL(string);
+                    return true;
+                } catch (_) {
+                    return false;
+                }
+            }
         });
     </script>
     
@@ -1450,6 +1522,23 @@ function rae_save_skills_meta($post_id) {
     } else {
         // Default to 0 if not provided
         update_post_meta($post_id, '_skill_weight', 0);
+    }
+    
+    // Save skill information URL
+    if (isset($_POST['skill_info_url'])) {
+        $skill_info_url = sanitize_text_field(trim($_POST['skill_info_url']));
+        if (!empty($skill_info_url)) {
+            // Validate URL format
+            $skill_info_url = esc_url_raw($skill_info_url);
+            if (filter_var($skill_info_url, FILTER_VALIDATE_URL)) {
+                update_post_meta($post_id, '_skill_info_url', $skill_info_url);
+            } else {
+                // Invalid URL - delete meta
+                delete_post_meta($post_id, '_skill_info_url');
+            }
+        } else {
+            delete_post_meta($post_id, '_skill_info_url');
+        }
     }
 }
 add_action('save_post', 'rae_save_skills_meta');
