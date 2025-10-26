@@ -100,7 +100,7 @@ class RAE_Employment_Dates_Meta_Box {
             jQuery(document).ready(function($) {
                 // Function to toggle end date field
                 function toggleEndDateField() {
-                    var isCurrentlyEmployed = $('#resume_currently_employed').is(':checked');
+                    const isCurrentlyEmployed = $('#resume_currently_employed').is(':checked');
                     if (isCurrentlyEmployed) {
                         $('#end_date_row').hide();
                         $('#resume_end_date').val('');

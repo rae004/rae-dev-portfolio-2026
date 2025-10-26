@@ -163,12 +163,12 @@ class RAE_Meta_Boxes {
                 
                 // Update selected skills display
                 updateSelectedSkills: function(containerClass) {
-                    var selectedSkills = [];
+                    const selectedSkills = [];
                     jQuery("." + containerClass + " input[type=checkbox]:checked").each(function() {
                         selectedSkills.push(jQuery(this).data("skill-name"));
                     });
                     
-                    var html = "";
+                    let html = "";
                     if (selectedSkills.length > 0) {
                         selectedSkills.forEach(function(skill) {
                             html += "<span class=\"rae-skill-pill\">" + skill + "</span>";

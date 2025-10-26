@@ -183,17 +183,17 @@ class RAE_Resume_Skills_Meta_Box {
         ?>
         <script type="text/javascript">
             jQuery(document).ready(function($) {
-                var $searchInput = $('#skills-search');
-                var $selectedDisplay = $('#selected-skills-display');
-                var $noSkillsMessage = $('.no-skills-selected');
+                const $searchInput = $('#skills-search');
+                const $selectedDisplay = $('#selected-skills-display');
+                const $noSkillsMessage = $('.no-skills-selected');
                 
                 // Search functionality
                 $searchInput.on('input', function() {
-                    var searchTerm = $(this).val().toLowerCase();
+                    const searchTerm = $(this).val().toLowerCase();
                     
                     $('.skill-checkbox-label').each(function() {
-                        var skillName = $(this).data('skill-value').toLowerCase();
-                        var categoryName = $(this).data('skill-category').toLowerCase();
+                        const skillName = $(this).data('skill-value').toLowerCase();
+                        const categoryName = $(this).data('skill-category').toLowerCase();
                         
                         if (skillName.includes(searchTerm) || categoryName.includes(searchTerm)) {
                             $(this).show();
@@ -204,8 +204,8 @@ class RAE_Resume_Skills_Meta_Box {
                     
                     // Show/hide category headers
                     $('.category-group').each(function() {
-                        var $group = $(this);
-                        var hasVisibleSkills = $group.find('.skill-checkbox-label:visible').length > 0;
+                        const $group = $(this);
+                        const hasVisibleSkills = $group.find('.skill-checkbox-label:visible').length > 0;
                         $group.toggle(hasVisibleSkills);
                     });
                 });
@@ -218,25 +218,25 @@ class RAE_Resume_Skills_Meta_Box {
                 
                 // Remove skill functionality
                 $(document).on('click', '.remove-skill', function() {
-                    var skillId = $(this).closest('.selected-skill-pill').data('skill-id');
+                    const skillId = $(this).closest('.selected-skill-pill').data('skill-id');
                     $('input[value="' + skillId + '"]').prop('checked', false).trigger('change');
                 });
                 
                 // Select all in category
                 $('.category-select-all').on('click', function() {
-                    var category = $(this).data('category');
-                    var $categoryGroup = $(this).closest('.category-group');
-                    var $checkboxes = $categoryGroup.find('input[type="checkbox"]');
-                    var allChecked = $checkboxes.filter(':checked').length === $checkboxes.length;
+                    const category = $(this).data('category');
+                    const $categoryGroup = $(this).closest('.category-group');
+                    const $checkboxes = $categoryGroup.find('input[type="checkbox"]');
+                    const allChecked = $checkboxes.filter(':checked').length === $checkboxes.length;
                     
                     $checkboxes.prop('checked', !allChecked).trigger('change');
                     $(this).text(allChecked ? 'Select All' : 'Deselect All');
                 });
                 
                 function updateSelectedSkillsDisplay() {
-                    var selectedSkills = [];
+                    const selectedSkills = [];
                     $('input[name="resume_related_skills[]"]:checked').each(function() {
-                        var $label = $(this).closest('.skill-checkbox-label');
+                        const $label = $(this).closest('.skill-checkbox-label');
                         selectedSkills.push({
                             id: $(this).val(),
                             name: $label.data('skill-value')
@@ -246,7 +246,7 @@ class RAE_Resume_Skills_Meta_Box {
                     if (selectedSkills.length === 0) {
                         $selectedDisplay.html('<span class="no-skills-selected" style="color: #666; font-style: italic;">No skills selected</span>');
                     } else {
-                        var html = '';
+                        let html = '';
                         selectedSkills.forEach(function(skill) {
                             html += '<span class="selected-skill-pill" data-skill-id="' + skill.id + '" ' +
                                    'style="display: inline-block; margin: 2px 5px 2px 0; padding: 4px 8px; background: #0073aa; color: white; border-radius: 3px; font-size: 12px;">' +
@@ -258,8 +258,8 @@ class RAE_Resume_Skills_Meta_Box {
                 
                 function highlightSelectedSkills() {
                     $('.skill-checkbox-label').each(function() {
-                        var $label = $(this);
-                        var $checkbox = $label.find('input[type="checkbox"]');
+                        const $label = $(this);
+                        const $checkbox = $label.find('input[type="checkbox"]');
                         
                         if ($checkbox.is(':checked')) {
                             $label.css({
@@ -278,10 +278,10 @@ class RAE_Resume_Skills_Meta_Box {
                 // Update category select all text
                 function updateSelectAllText() {
                     $('.category-group').each(function() {
-                        var $group = $(this);
-                        var $checkboxes = $group.find('input[type="checkbox"]');
-                        var $selectAll = $group.find('.category-select-all');
-                        var checkedCount = $checkboxes.filter(':checked').length;
+                        const $group = $(this);
+                        const $checkboxes = $group.find('input[type="checkbox"]');
+                        const $selectAll = $group.find('.category-select-all');
+                        const checkedCount = $checkboxes.filter(':checked').length;
                         
                         $selectAll.text(checkedCount === $checkboxes.length ? 'Deselect All' : 'Select All');
                     });
