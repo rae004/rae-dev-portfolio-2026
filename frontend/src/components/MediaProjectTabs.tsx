@@ -89,11 +89,9 @@ const MediaProjectTabs: React.FC<MediaProjectTabsProps> = ({
       <div className='min-h-[400px]'>
         {activeTab === 'all' && (
           <div className='space-y-8'>
-            {/* Show all projects mixed together, sorted by date */}
+            {/* Show all projects mixed together, already sorted by their respective release dates */}
             {renderProjects(
-              [...musicProjects, ...audioPostProjects, ...uncategorizedProjects].sort(
-                (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-              ),
+              [...musicProjects, ...audioPostProjects, ...uncategorizedProjects],
               'No projects found. Create some media projects in WordPress to get started.'
             )}
           </div>

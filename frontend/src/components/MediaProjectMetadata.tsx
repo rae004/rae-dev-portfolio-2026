@@ -606,10 +606,10 @@ const MediaProjectMetadata: React.FC<MediaProjectMetadataProps> = ({ project }) 
       {/* Main Metadata Card */}
       <div className='card bg-base-100 shadow-xl'>
         <div className='card-body'>
-          <h2 className='card-title'>
+          <h2 className='flex flex-wrap card-title'>
             Project Details
             <div
-              className={`badge ${isMusicProject(project) ? 'badge-primary' : 'badge-secondary'}`}
+              className={`badge ${isMusicProject(project) ? 'badge-primary' : 'badge-secondary'} text-nowrap`}
             >
               {isMusicProject(project) ? 'Music' : 'Audio Post Production'}
             </div>

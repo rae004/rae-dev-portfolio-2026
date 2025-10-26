@@ -8,6 +8,8 @@ import {
   filterMusicProjects,
   filterAudioPostProjects,
   sortProjectsByDate,
+  sortMusicProjectsByReleaseDate,
+  sortAudioPostProjectsByReleaseDate,
   type MusicProjectFilters,
   type AudioPostProjectFilters,
 } from '../utils/mediaProjectUtils'
@@ -94,9 +96,9 @@ const EnhancedMediaPage: React.FC = () => {
     }
 
     return {
-      musicProjects: sortProjectsByDate(filteredMusic, 'desc') as MusicProject[],
-      audioPostProjects: sortProjectsByDate(filteredAudioPost, 'desc') as AudioPostProject[],
-      uncategorizedProjects: projectsData.uncategorizedProjects,
+      musicProjects: sortMusicProjectsByReleaseDate(filteredMusic, 'desc'),
+      audioPostProjects: sortAudioPostProjectsByReleaseDate(filteredAudioPost, 'desc'),
+      uncategorizedProjects: sortProjectsByDate(projectsData.uncategorizedProjects, 'desc'),
     }
   }, [projectsData, filters])
 
