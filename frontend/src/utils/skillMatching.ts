@@ -76,30 +76,6 @@ export function getResumeSkills(resumeItem: ResumeItem, allSkills: SkillItem[]):
   return findSkillsInContent(fullContent, allSkills)
 }
 
-// Generate hash-based color class for skill categories (for consistent coloring)
-export function getCategoryColorClass(category: string): string {
-  const colors = [
-    'badge-primary',
-    'badge-secondary',
-    'badge-accent',
-    'badge-neutral',
-    'badge-info',
-    'badge-success',
-    'badge-warning',
-    'badge-error',
-  ]
-
-  // Simple hash function for consistent color assignment
-  let hash = 0
-  for (let i = 0; i < category.length; i++) {
-    const char = category.charCodeAt(i)
-    hash = (hash << 5) - hash + char
-    hash = hash & hash // Convert to 32-bit integer
-  }
-
-  return colors[Math.abs(hash) % colors.length]
-}
-
 // Helper to get skill preview (top N skills for list views)
 export function getSkillPreview(skills: SkillItem[], maxSkills: number = 3): SkillItem[] {
   return skills.slice(0, maxSkills)

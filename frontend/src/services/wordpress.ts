@@ -1,13 +1,13 @@
 import type {
-  WordPressPost,
-  ResumeItem,
-  SoftwareProject,
   MediaProject,
+  ResumeItem,
   SkillItem,
-  WordPressQueryParams,
+  SoftwareProject,
   WordPressError,
+  WordPressPost,
+  WordPressQueryParams,
 } from '../types/wordpress'
-import { getWordPressApiBase, validateEnvironment, devLog } from '../config/environment'
+import { devLog, getWordPressApiBase, validateEnvironment } from '../config/environment'
 
 // Initialize and validate environment configuration
 const environmentConfig = validateEnvironment()
@@ -88,8 +88,7 @@ async function apiRequest<T>(endpoint: string, params?: WordPressQueryParams): P
       )
     }
 
-    const data = await response.json()
-    return data
+    return await response.json()
   } catch (error) {
     if (error instanceof WordPressAPIError) {
       throw error

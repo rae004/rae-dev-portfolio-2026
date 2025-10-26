@@ -93,13 +93,6 @@ export interface WordPressError {
   additional_errors?: unknown[]
 }
 
-// API Response types for collections
-export type ResumeResponse = ResumeItem[]
-export type SoftwareProjectResponse = SoftwareProject[]
-export type MediaProjectResponse = MediaProject[]
-export type BlogPostResponse = WordPressPost[]
-export type SkillResponse = SkillItem[]
-
 // Query parameters for WordPress API
 export interface WordPressQueryParams {
   page?: number
