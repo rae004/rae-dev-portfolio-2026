@@ -236,7 +236,7 @@ const EnhancedMediaPage: React.FC = () => {
                     Skills utilized across all media projects, grouped by category.
                   </p>
                   <div className='divider'></div>
-                  <SkillsGroup groupedSkills={mediaProjectSkills} />
+                  <SkillsGroup groupedSkills={mediaProjectSkills} className={'flex-wrap'} />
                 </div>
               </div>
             )}

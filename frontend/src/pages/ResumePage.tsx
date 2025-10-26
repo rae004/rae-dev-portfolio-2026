@@ -159,7 +159,12 @@ const ResumePage: React.FC = () => {
             )}
 
             {skills.length > 0 ? (
-              <SkillsGroup groupedSkills={groupedSkills} layout='grid' pillSize='md' />
+              <SkillsGroup
+                groupedSkills={groupedSkills}
+                layout='grid'
+                pillSize='md'
+                className={'flex-wrap'}
+              />
             ) : !skillsLoading && !skillsError ? (
               <div className='text-center py-8'>
                 <p className='text-base-content/70'>
