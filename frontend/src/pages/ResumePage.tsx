@@ -129,7 +129,7 @@ const ResumePage: React.FC = () => {
 
         <div className='card bg-base-100 shadow-xl'>
           <div className='card-body'>
-            <h2 className='card-title text-2xl'>Technical Skills</h2>
+            <h2 className='card-title text-2xl'>Skills</h2>
             <div className='divider'></div>
 
             {skillsLoading && (

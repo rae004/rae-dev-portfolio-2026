@@ -70,8 +70,66 @@ export interface SoftwareProject extends WordPressPost {
   type: 'software-project'
 }
 
+// Streaming link interface for music projects
+export interface StreamingLink {
+  platform: string
+  url: string
+  type: 'audio' | 'video'
+}
+
+// Base media project interface
 export interface MediaProject extends WordPressPost {
   type: 'media-project'
+  project_type: 'Music' | 'Audio_Post_Production' | null
+  related_skills: SkillItem[] // New field for explicit skill relationships
+
+  // Music-specific fields
+  music_artist_name?: string | null
+  music_album_names?: string[] | null
+  music_songs_list?: string[] | null
+  music_release_date?: string | null
+  music_artist_website?: string | null
+  music_online_links?: StreamingLink[] | null
+  music_genre?: string | null
+  music_record_label?: string | null
+  music_duration?: string | null
+  music_studio?: string | null
+  music_producer?: string | null
+  music_collaborators?: string[] | null
+
+  // Audio Post Production fields
+  audio_project_name?: string | null
+  audio_director?: string | null
+  audio_writers?: string[] | null
+  audio_producers?: string[] | null
+  audio_actors?: string[] | null
+  audio_studios?: string[] | null
+  audio_genre?: string | null
+  audio_release_date?: string | null
+  audio_project_type?: string | null
+  audio_duration?: string | null
+  audio_language?: string | null
+  audio_engineer?: string | null
+  audio_sound_designer?: string | null
+  audio_awards?: string | null
+  audio_distribution?: string | null
+}
+
+// Discriminated union types for type-safe access
+export interface MusicProject extends MediaProject {
+  project_type: 'Music'
+  related_skills: SkillItem[] // Explicit for type safety
+  music_artist_name: string | null
+  music_genre: string | null
+  music_record_label: string | null
+}
+
+export interface AudioPostProject extends MediaProject {
+  project_type: 'Audio_Post_Production'
+  related_skills: SkillItem[] // Explicit for type safety
+  audio_director: string | null
+  audio_studios: string[] | null
+  audio_genre: string | null
 }
 
 // Flexible Skills type for dynamic categorization
@@ -104,4 +162,18 @@ export interface WordPressQueryParams {
   author?: number[]
   exclude?: number[]
   include?: number[]
+}
+
+// Extended query parameters for media projects
+export interface MediaProjectQueryParams extends WordPressQueryParams {
+  project_type?: 'Music' | 'Audio_Post_Production' | ''
+}
+
+// Type guards for media project types
+export function isMusicProject(project: MediaProject): project is MusicProject {
+  return project.project_type === 'Music'
+}
+
+export function isAudioPostProject(project: MediaProject): project is AudioPostProject {
+  return project.project_type === 'Audio_Post_Production'
 }

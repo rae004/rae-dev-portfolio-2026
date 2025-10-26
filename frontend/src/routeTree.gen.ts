@@ -17,6 +17,7 @@ import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AccessibilityRouteImport } from './routes/accessibility'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ResumeResumeIdRouteImport } from './routes/resume/$resumeId'
+import { Route as MediaMediaIdRouteImport } from './routes/media/$mediaId'
 
 const ResumeRoute = ResumeRouteImport.update({
   id: '/resume',
@@ -58,15 +59,21 @@ const ResumeResumeIdRoute = ResumeResumeIdRouteImport.update({
   path: '/$resumeId',
   getParentRoute: () => ResumeRoute,
 } as any)
+const MediaMediaIdRoute = MediaMediaIdRouteImport.update({
+  id: '/$mediaId',
+  path: '/$mediaId',
+  getParentRoute: () => MediaRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/accessibility': typeof AccessibilityRoute
   '/blog': typeof BlogRoute
   '/contact': typeof ContactRoute
-  '/media': typeof MediaRoute
+  '/media': typeof MediaRouteWithChildren
   '/projects': typeof ProjectsRoute
   '/resume': typeof ResumeRouteWithChildren
+  '/media/$mediaId': typeof MediaMediaIdRoute
   '/resume/$resumeId': typeof ResumeResumeIdRoute
 }
 export interface FileRoutesByTo {
@@ -74,9 +81,10 @@ export interface FileRoutesByTo {
   '/accessibility': typeof AccessibilityRoute
   '/blog': typeof BlogRoute
   '/contact': typeof ContactRoute
-  '/media': typeof MediaRoute
+  '/media': typeof MediaRouteWithChildren
   '/projects': typeof ProjectsRoute
   '/resume': typeof ResumeRouteWithChildren
+  '/media/$mediaId': typeof MediaMediaIdRoute
   '/resume/$resumeId': typeof ResumeResumeIdRoute
 }
 export interface FileRoutesById {
@@ -85,9 +93,10 @@ export interface FileRoutesById {
   '/accessibility': typeof AccessibilityRoute
   '/blog': typeof BlogRoute
   '/contact': typeof ContactRoute
-  '/media': typeof MediaRoute
+  '/media': typeof MediaRouteWithChildren
   '/projects': typeof ProjectsRoute
   '/resume': typeof ResumeRouteWithChildren
+  '/media/$mediaId': typeof MediaMediaIdRoute
   '/resume/$resumeId': typeof ResumeResumeIdRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/media'
     | '/projects'
     | '/resume'
+    | '/media/$mediaId'
     | '/resume/$resumeId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/media'
     | '/projects'
     | '/resume'
+    | '/media/$mediaId'
     | '/resume/$resumeId'
   id:
     | '__root__'
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
     | '/media'
     | '/projects'
     | '/resume'
+    | '/media/$mediaId'
     | '/resume/$resumeId'
   fileRoutesById: FileRoutesById
 }
@@ -128,7 +140,7 @@ export interface RootRouteChildren {
   AccessibilityRoute: typeof AccessibilityRoute
   BlogRoute: typeof BlogRoute
   ContactRoute: typeof ContactRoute
-  MediaRoute: typeof MediaRoute
+  MediaRoute: typeof MediaRouteWithChildren
   ProjectsRoute: typeof ProjectsRoute
   ResumeRoute: typeof ResumeRouteWithChildren
 }
@@ -191,8 +203,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResumeResumeIdRouteImport
       parentRoute: typeof ResumeRoute
     }
+    '/media/$mediaId': {
+      id: '/media/$mediaId'
+      path: '/$mediaId'
+      fullPath: '/media/$mediaId'
+      preLoaderRoute: typeof MediaMediaIdRouteImport
+      parentRoute: typeof MediaRoute
+    }
   }
 }
+
+interface MediaRouteChildren {
+  MediaMediaIdRoute: typeof MediaMediaIdRoute
+}
+
+const MediaRouteChildren: MediaRouteChildren = {
+  MediaMediaIdRoute: MediaMediaIdRoute,
+}
+
+const MediaRouteWithChildren = MediaRoute._addFileChildren(MediaRouteChildren)
 
 interface ResumeRouteChildren {
   ResumeResumeIdRoute: typeof ResumeResumeIdRoute
@@ -210,7 +239,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccessibilityRoute: AccessibilityRoute,
   BlogRoute: BlogRoute,
   ContactRoute: ContactRoute,
-  MediaRoute: MediaRoute,
+  MediaRoute: MediaRouteWithChildren,
   ProjectsRoute: ProjectsRoute,
   ResumeRoute: ResumeRouteWithChildren,
 }

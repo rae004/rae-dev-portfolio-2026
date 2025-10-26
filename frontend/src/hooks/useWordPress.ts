@@ -1,13 +1,23 @@
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import { wordpressApi, WordPressAPIError } from '../services/wordpress'
 import type {
   ResumeItem,
   SoftwareProject,
   MediaProject,
+  MediaProjectQueryParams,
+  MusicProject,
+  AudioPostProject,
   SkillItem,
   WordPressPost,
   WordPressQueryParams,
 } from '../types/wordpress'
+import {
+  separateProjectsByType,
+  getMusicProjectFilters,
+  getAudioPostProjectFilters,
+  getProjectCounts,
+} from '../utils/mediaProjectUtils'
 
 // Query keys for consistent caching
 export const queryKeys = {
@@ -29,7 +39,8 @@ export const queryKeys = {
   mediaProjects: {
     all: ['media-projects'] as const,
     lists: () => [...queryKeys.mediaProjects.all, 'list'] as const,
-    list: (params?: WordPressQueryParams) => [...queryKeys.mediaProjects.lists(), params] as const,
+    list: (params?: MediaProjectQueryParams) =>
+      [...queryKeys.mediaProjects.lists(), params] as const,
     details: () => [...queryKeys.mediaProjects.all, 'detail'] as const,
     detail: (id: number) => [...queryKeys.mediaProjects.details(), id] as const,
   },
@@ -100,7 +111,7 @@ export function useSoftwareProject(
 
 // Media projects hooks
 export function useMediaProjects(
-  params?: WordPressQueryParams,
+  params?: MediaProjectQueryParams,
   options?: Omit<UseQueryOptions<MediaProject[], WordPressAPIError>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
@@ -185,4 +196,84 @@ export function useWordPressHealth(
     gcTime: 15 * 60 * 1000, // 15 minutes
     ...options,
   })
+}
+
+// Enhanced media project hooks with filtering and project type separation
+export interface UseMediaProjectsWithSeparationResult {
+  data?: {
+    all: MediaProject[]
+    musicProjects: MusicProject[]
+    audioPostProjects: AudioPostProject[]
+    uncategorizedProjects: MediaProject[]
+    counts: {
+      total: number
+      music: number
+      audioPost: number
+      uncategorized: number
+    }
+  }
+  isLoading: boolean
+  error: WordPressAPIError | null
+}
+
+export function useMediaProjectsWithSeparation(
+  params?: MediaProjectQueryParams,
+  options?: Omit<UseQueryOptions<MediaProject[], WordPressAPIError>, 'queryKey' | 'queryFn'>
+): UseMediaProjectsWithSeparationResult {
+  const query = useMediaProjects(params, options)
+
+  const processedData = useMemo(() => {
+    if (!query.data) return undefined
+
+    const separated = separateProjectsByType(query.data)
+    const counts = getProjectCounts(query.data)
+
+    return {
+      all: query.data,
+      ...separated,
+      counts,
+    }
+  }, [query.data])
+
+  return {
+    data: processedData,
+    isLoading: query.isLoading,
+    error: query.error,
+  }
+}
+
+export interface UseMediaProjectFiltersResult {
+  musicFilters: {
+    artists: string[]
+    genres: string[]
+    recordLabels: string[]
+  }
+  audioPostFilters: {
+    directors: string[]
+    studios: string[]
+    genres: string[]
+  }
+}
+
+export function useMediaProjectFilters(
+  params?: MediaProjectQueryParams,
+  options?: Omit<UseQueryOptions<MediaProject[], WordPressAPIError>, 'queryKey' | 'queryFn'>
+): UseMediaProjectFiltersResult {
+  const { data } = useMediaProjectsWithSeparation(params, options)
+
+  const filters = useMemo(() => {
+    if (!data) {
+      return {
+        musicFilters: { artists: [], genres: [], recordLabels: [] },
+        audioPostFilters: { directors: [], studios: [], genres: [] },
+      }
+    }
+
+    return {
+      musicFilters: getMusicProjectFilters(data.musicProjects),
+      audioPostFilters: getAudioPostProjectFilters(data.audioPostProjects),
+    }
+  }, [data])
+
+  return filters
 }

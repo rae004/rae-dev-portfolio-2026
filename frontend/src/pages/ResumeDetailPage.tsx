@@ -7,7 +7,7 @@ import {
   sortSkillsInCategories,
 } from '../utils/skillMatching'
 import SkillsGroup from '../components/SkillsGroup'
-import ResumeItemPagination from '../components/ResumeItemPagination.tsx'
+import ProjectPagination from '../components/ProjectPagination'
 
 const ResumeDetailPage: React.FC = () => {
   const { resumeId } = useParams({ from: '/resume/$resumeId' })
@@ -61,11 +61,6 @@ const ResumeDetailPage: React.FC = () => {
   const previousResume = currentIndex > 0 ? sortedResumes[currentIndex - 1] : null
   const nextResume =
     currentIndex < sortedResumes.length - 1 ? sortedResumes[currentIndex + 1] : null
-  const paginationProps = {
-    nextResume,
-    previousResume,
-    paginationWrapperClasses: ['flex justify-center items-center gap-24'],
-  }
 
   return (
     <div className='container mx-auto px-4 py-8'>
@@ -111,7 +106,14 @@ const ResumeDetailPage: React.FC = () => {
       </div>
 
       {/* Navigation */}
-      <ResumeItemPagination {...paginationProps} />
+      <ProjectPagination
+        previousItem={previousResume}
+        nextItem={nextResume}
+        backToPath='/resume'
+        backToLabel='Back to Resume'
+        itemTypePath='resume'
+        paginationWrapperClasses={['flex justify-center items-center gap-24']}
+      />
     </div>
   )
 }

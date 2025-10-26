@@ -2,7 +2,7 @@ import React from 'react'
 import { useMediaProjects } from '../hooks/useWordPress'
 import type { MediaProject } from '../types/wordpress'
 
-const MediaPage: React.FC = () => {
+const LegacyMediaPage: React.FC = () => {
   const {
     data: wpMediaProjects,
     isLoading,
@@ -158,4 +158,4 @@ const MediaPage: React.FC = () => {
   )
 }
 
-export default MediaPage
+export default LegacyMediaPage

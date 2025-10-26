@@ -1,4 +1,4 @@
-import type { SkillItem, ResumeItem } from '../types/wordpress'
+import type { SkillItem, ResumeItem, MediaProject } from '../types/wordpress'
 
 // Helper function to group skills by category (skills_type)
 export function groupSkillsByCategory(skills: SkillItem[]): Record<string, SkillItem[]> {
@@ -73,6 +73,18 @@ export function getResumeSkills(resumeItem: ResumeItem, allSkills: SkillItem[]):
 
   // Fallback to content-based matching for backward compatibility
   const fullContent = `${resumeItem.title.rendered} ${resumeItem.content.rendered} ${resumeItem.excerpt.rendered}`
+  return findSkillsInContent(fullContent, allSkills)
+}
+
+// Get skills for a media project (preferring explicit relationships, falling back to content matching)
+export function getMediaProjectSkills(mediaProject: MediaProject, allSkills: SkillItem[]): SkillItem[] {
+  // Primary: Use explicit skill relationships
+  if (mediaProject.related_skills && mediaProject.related_skills.length > 0) {
+    return mediaProject.related_skills
+  }
+
+  // Fallback: Content-based skill matching for backward compatibility
+  const fullContent = `${mediaProject.title.rendered} ${mediaProject.content.rendered} ${mediaProject.excerpt.rendered}`
   return findSkillsInContent(fullContent, allSkills)
 }
 

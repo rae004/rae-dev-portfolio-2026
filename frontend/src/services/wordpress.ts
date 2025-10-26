@@ -1,5 +1,6 @@
 import type {
   MediaProject,
+  MediaProjectQueryParams,
   ResumeItem,
   SkillItem,
   SoftwareProject,
@@ -125,7 +126,7 @@ export const wordpressApi = {
   },
 
   // Media projects
-  async getMediaProjects(params?: WordPressQueryParams): Promise<MediaProject[]> {
+  async getMediaProjects(params?: MediaProjectQueryParams): Promise<MediaProject[]> {
     return apiRequest<MediaProject[]>('/media-projects', params)
   },
 

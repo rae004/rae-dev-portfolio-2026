@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
-import MediaPage from '../pages/MediaPage'
+import EnhancedMediaPage from '../pages/EnhancedMediaPage'
 
 export const Route = createFileRoute('/media')({
-  component: MediaPage,
+  component: EnhancedMediaPage,
 })
