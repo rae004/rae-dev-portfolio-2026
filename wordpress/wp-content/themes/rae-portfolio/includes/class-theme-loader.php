@@ -145,8 +145,8 @@ class RAE_Theme_Loader {
             new RAE_Skills_Meta_Box();
         }
         
-        if (class_exists('RAE_Media_Project_Details_Meta_Box')) {
-            new RAE_Media_Project_Details_Meta_Box();
+        if (class_exists('Rae_Media_Project_Details')) {
+            new Rae_Media_Project_Details();
         }
     }
 }
