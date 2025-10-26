@@ -77,7 +77,10 @@ export function getResumeSkills(resumeItem: ResumeItem, allSkills: SkillItem[]):
 }
 
 // Get skills for a media project (preferring explicit relationships, falling back to content matching)
-export function getMediaProjectSkills(mediaProject: MediaProject, allSkills: SkillItem[]): SkillItem[] {
+export function getMediaProjectSkills(
+  mediaProject: MediaProject,
+  allSkills: SkillItem[]
+): SkillItem[] {
   // Primary: Use explicit skill relationships
   if (mediaProject.related_skills && mediaProject.related_skills.length > 0) {
     return mediaProject.related_skills

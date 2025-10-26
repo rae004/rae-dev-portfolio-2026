@@ -95,7 +95,7 @@ const MediaFilterBar: React.FC<MediaFilterBarProps> = ({
               </div>
             )}
           </div>
-          
+
           <div className='flex items-center gap-2'>
             {hasActiveFilters && (
               <button onClick={clearAllFilters} className='btn btn-sm btn-ghost'>
@@ -127,9 +127,11 @@ const MediaFilterBar: React.FC<MediaFilterBarProps> = ({
         </div>
 
         {/* Collapsible Filter Content */}
-        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
-          isExpanded ? 'max-h-96 opacity-100 mt-4' : 'max-h-0 opacity-0'
-        }`}>
+        <div
+          className={`overflow-hidden transition-all duration-300 ease-in-out ${
+            isExpanded ? 'max-h-96 opacity-100 mt-4' : 'max-h-0 opacity-0'
+          }`}
+        >
           <div className='space-y-4'>
             {/* Search */}
             <div className='form-control'>

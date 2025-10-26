@@ -2,7 +2,11 @@ import React from 'react'
 import { Link } from '@tanstack/react-router'
 import type { MediaProject, MusicProject, AudioPostProject, SkillItem } from '../types/wordpress'
 import { isMusicProject, isAudioPostProject } from '../types/wordpress'
-import { getMediaProjectSkills, getSkillPreview, getRemainingSkillsCount } from '../utils/skillMatching'
+import {
+  getMediaProjectSkills,
+  getSkillPreview,
+  getRemainingSkillsCount,
+} from '../utils/skillMatching'
 import SkillPill from './SkillPill'
 
 interface MediaProjectCardProps {

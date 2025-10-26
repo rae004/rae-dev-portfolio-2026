@@ -1,5 +1,9 @@
 import React, { useState, useMemo } from 'react'
-import { useMediaProjectsWithSeparation, useMediaProjectFilters, useSkills } from '../hooks/useWordPress'
+import {
+  useMediaProjectsWithSeparation,
+  useMediaProjectFilters,
+  useSkills,
+} from '../hooks/useWordPress'
 import {
   filterMusicProjects,
   filterAudioPostProjects,
@@ -7,7 +11,11 @@ import {
   type MusicProjectFilters,
   type AudioPostProjectFilters,
 } from '../utils/mediaProjectUtils'
-import { getMediaProjectSkills, groupSkillsByCategory, sortSkillsInCategories } from '../utils/skillMatching'
+import {
+  getMediaProjectSkills,
+  groupSkillsByCategory,
+  sortSkillsInCategories,
+} from '../utils/skillMatching'
 import MediaFilterBar, { type MediaFilterState } from '../components/MediaFilterBar'
 import MediaProjectTabs from '../components/MediaProjectTabs'
 import SkillsGroup from '../components/SkillsGroup'
