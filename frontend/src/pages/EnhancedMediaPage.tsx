@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import {
   useMediaProjectsWithSeparation,
   useMediaProjectFilters,
@@ -21,6 +21,7 @@ import {
 import MediaFilterBar, { type MediaFilterState } from '../components/MediaFilterBar'
 import MediaProjectTabs from '../components/MediaProjectTabs'
 import SkillsGroup from '../components/SkillsGroup'
+import LoadingSpinner from '../components/ui/LoadingSpinner'
 import type { MusicProject, AudioPostProject, SkillItem } from '../types/wordpress'
 
 const EnhancedMediaPage: React.FC = () => {
@@ -103,7 +104,7 @@ const EnhancedMediaPage: React.FC = () => {
   }, [projectsData, filters])
 
   // Handle filter changes
-  const handleFiltersChange = (newFilters: MediaFilterState) => {
+  const handleFiltersChange = useCallback((newFilters: MediaFilterState) => {
     setFilters(newFilters)
 
     // Update active tab based on project type filter
@@ -114,21 +115,24 @@ const EnhancedMediaPage: React.FC = () => {
     } else if (newFilters.projectType === 'all') {
       setActiveTab('all')
     }
-  }
+  }, [])
 
   // Handle tab changes
-  const handleTabChange = (tab: 'all' | 'music' | 'audioPost') => {
-    setActiveTab(tab)
+  const handleTabChange = useCallback(
+    (tab: 'all' | 'music' | 'audioPost') => {
+      setActiveTab(tab)
 
-    // Update project type filter to match tab
-    if (tab === 'music') {
-      handleFiltersChange({ ...filters, projectType: 'Music' })
-    } else if (tab === 'audioPost') {
-      handleFiltersChange({ ...filters, projectType: 'Audio_Post_Production' })
-    } else {
-      handleFiltersChange({ ...filters, projectType: 'all' })
-    }
-  }
+      // Update project type filter to match tab
+      if (tab === 'music') {
+        handleFiltersChange({ ...filters, projectType: 'Music' })
+      } else if (tab === 'audioPost') {
+        handleFiltersChange({ ...filters, projectType: 'Audio_Post_Production' })
+      } else {
+        handleFiltersChange({ ...filters, projectType: 'all' })
+      }
+    },
+    [filters, handleFiltersChange]
+  )
 
   // Calculate project counts for display
   const projectCounts = projectsData?.counts || {
@@ -180,12 +184,7 @@ const EnhancedMediaPage: React.FC = () => {
         </div>
 
         {/* Loading State */}
-        {isLoading && (
-          <div className='flex justify-center items-center py-12'>
-            <span className='loading loading-spinner loading-lg'></span>
-            <span className='ml-3'>Loading media projects...</span>
-          </div>
-        )}
+        {isLoading && <LoadingSpinner size='lg' message='Loading media projects...' />}
 
         {/* Error State */}
         {error && (

@@ -1,4 +1,3 @@
-import React from 'react'
 import type { MediaProject, MusicProject, AudioPostProject } from '../types/wordpress'
 import { isMusicProject, isAudioPostProject } from '../types/wordpress'
 import StreamingLinks from './StreamingLinks'
@@ -8,7 +7,7 @@ interface MediaProjectMetadataProps {
   layout?: 'detailed' | 'compact'
 }
 
-const MediaProjectMetadata: React.FC<MediaProjectMetadataProps> = ({ project }) => {
+const MediaProjectMetadata = ({ project }: MediaProjectMetadataProps) => {
   const renderMusicMetadata = (musicProject: MusicProject) => (
     <div className='space-y-4'>
       <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>

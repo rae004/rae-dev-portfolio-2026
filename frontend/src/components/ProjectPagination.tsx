@@ -1,4 +1,3 @@
-import React from 'react'
 import { Link } from '@tanstack/react-router'
 import type { ResumeItem, MediaProject } from '../types/wordpress'
 
@@ -13,14 +12,14 @@ interface ProjectPaginationProps {
   paginationWrapperClasses?: string[]
 }
 
-const ProjectPagination: React.FC<ProjectPaginationProps> = ({
+const ProjectPagination = ({
   previousItem,
   nextItem,
   backToPath,
   backToLabel,
   itemTypePath,
   paginationWrapperClasses,
-}) => {
+}: ProjectPaginationProps) => {
   const defaultClasses = 'flex justify-between items-center'
   const propClassNames = paginationWrapperClasses?.join(' ')
   const paginationClasses = propClassNames ? propClassNames : defaultClasses

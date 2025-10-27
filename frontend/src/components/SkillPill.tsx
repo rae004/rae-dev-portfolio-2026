@@ -1,4 +1,4 @@
-import React from 'react'
+import { memo } from 'react'
 
 interface SkillPillProps {
   skillName: string
@@ -35,13 +35,13 @@ function getCategoryBadgeClass(category: string): string {
   return colors[Math.abs(hash) % colors.length]
 }
 
-const SkillPill: React.FC<SkillPillProps> = ({
+const SkillPill = ({
   skillName,
   category,
   size = 'md',
   className = '',
   infoUrl,
-}) => {
+}: SkillPillProps) => {
   const badgeColorClass = getCategoryBadgeClass(category || '')
 
   const sizeClass = {
@@ -80,4 +80,4 @@ const SkillPill: React.FC<SkillPillProps> = ({
   )
 }
 
-export default SkillPill
+export default memo(SkillPill)
