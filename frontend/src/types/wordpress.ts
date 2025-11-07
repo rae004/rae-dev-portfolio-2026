@@ -68,6 +68,12 @@ export interface ResumeItem extends WordPressPost {
 
 export interface SoftwareProject extends WordPressPost {
   type: 'software-project'
+  project_release_date?: string | null
+  project_demo_link?: string | null
+  project_repo_link?: string | null
+  project_state?: 'Ongoing' | 'Future' | 'Completed' | null
+  tech_categories?: string[]
+  related_skills: SkillItem[] // New field for explicit skill relationships
 }
 
 // Streaming link interface for music projects

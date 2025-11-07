@@ -17,6 +17,7 @@ import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AccessibilityRouteImport } from './routes/accessibility'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ResumeResumeIdRouteImport } from './routes/resume/$resumeId'
+import { Route as ProjectsProjectIdRouteImport } from './routes/projects/$projectId'
 import { Route as MediaMediaIdRouteImport } from './routes/media/$mediaId'
 
 const ResumeRoute = ResumeRouteImport.update({
@@ -59,6 +60,11 @@ const ResumeResumeIdRoute = ResumeResumeIdRouteImport.update({
   path: '/$resumeId',
   getParentRoute: () => ResumeRoute,
 } as any)
+const ProjectsProjectIdRoute = ProjectsProjectIdRouteImport.update({
+  id: '/$projectId',
+  path: '/$projectId',
+  getParentRoute: () => ProjectsRoute,
+} as any)
 const MediaMediaIdRoute = MediaMediaIdRouteImport.update({
   id: '/$mediaId',
   path: '/$mediaId',
@@ -71,9 +77,10 @@ export interface FileRoutesByFullPath {
   '/blog': typeof BlogRoute
   '/contact': typeof ContactRoute
   '/media': typeof MediaRouteWithChildren
-  '/projects': typeof ProjectsRoute
+  '/projects': typeof ProjectsRouteWithChildren
   '/resume': typeof ResumeRouteWithChildren
   '/media/$mediaId': typeof MediaMediaIdRoute
+  '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/resume/$resumeId': typeof ResumeResumeIdRoute
 }
 export interface FileRoutesByTo {
@@ -82,9 +89,10 @@ export interface FileRoutesByTo {
   '/blog': typeof BlogRoute
   '/contact': typeof ContactRoute
   '/media': typeof MediaRouteWithChildren
-  '/projects': typeof ProjectsRoute
+  '/projects': typeof ProjectsRouteWithChildren
   '/resume': typeof ResumeRouteWithChildren
   '/media/$mediaId': typeof MediaMediaIdRoute
+  '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/resume/$resumeId': typeof ResumeResumeIdRoute
 }
 export interface FileRoutesById {
@@ -94,9 +102,10 @@ export interface FileRoutesById {
   '/blog': typeof BlogRoute
   '/contact': typeof ContactRoute
   '/media': typeof MediaRouteWithChildren
-  '/projects': typeof ProjectsRoute
+  '/projects': typeof ProjectsRouteWithChildren
   '/resume': typeof ResumeRouteWithChildren
   '/media/$mediaId': typeof MediaMediaIdRoute
+  '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/resume/$resumeId': typeof ResumeResumeIdRoute
 }
 export interface FileRouteTypes {
@@ -110,6 +119,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/resume'
     | '/media/$mediaId'
+    | '/projects/$projectId'
     | '/resume/$resumeId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/resume'
     | '/media/$mediaId'
+    | '/projects/$projectId'
     | '/resume/$resumeId'
   id:
     | '__root__'
@@ -132,6 +143,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/resume'
     | '/media/$mediaId'
+    | '/projects/$projectId'
     | '/resume/$resumeId'
   fileRoutesById: FileRoutesById
 }
@@ -141,7 +153,7 @@ export interface RootRouteChildren {
   BlogRoute: typeof BlogRoute
   ContactRoute: typeof ContactRoute
   MediaRoute: typeof MediaRouteWithChildren
-  ProjectsRoute: typeof ProjectsRoute
+  ProjectsRoute: typeof ProjectsRouteWithChildren
   ResumeRoute: typeof ResumeRouteWithChildren
 }
 
@@ -203,6 +215,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResumeResumeIdRouteImport
       parentRoute: typeof ResumeRoute
     }
+    '/projects/$projectId': {
+      id: '/projects/$projectId'
+      path: '/$projectId'
+      fullPath: '/projects/$projectId'
+      preLoaderRoute: typeof ProjectsProjectIdRouteImport
+      parentRoute: typeof ProjectsRoute
+    }
     '/media/$mediaId': {
       id: '/media/$mediaId'
       path: '/$mediaId'
@@ -223,6 +242,18 @@ const MediaRouteChildren: MediaRouteChildren = {
 
 const MediaRouteWithChildren = MediaRoute._addFileChildren(MediaRouteChildren)
 
+interface ProjectsRouteChildren {
+  ProjectsProjectIdRoute: typeof ProjectsProjectIdRoute
+}
+
+const ProjectsRouteChildren: ProjectsRouteChildren = {
+  ProjectsProjectIdRoute: ProjectsProjectIdRoute,
+}
+
+const ProjectsRouteWithChildren = ProjectsRoute._addFileChildren(
+  ProjectsRouteChildren,
+)
+
 interface ResumeRouteChildren {
   ResumeResumeIdRoute: typeof ResumeResumeIdRoute
 }
@@ -240,7 +271,7 @@ const rootRouteChildren: RootRouteChildren = {
   BlogRoute: BlogRoute,
   ContactRoute: ContactRoute,
   MediaRoute: MediaRouteWithChildren,
-  ProjectsRoute: ProjectsRoute,
+  ProjectsRoute: ProjectsRouteWithChildren,
   ResumeRoute: ResumeRouteWithChildren,
 }
 export const routeTree = rootRouteImport
