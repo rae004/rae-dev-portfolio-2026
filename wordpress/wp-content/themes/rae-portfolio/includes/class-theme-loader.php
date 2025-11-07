@@ -59,12 +59,15 @@ class RAE_Theme_Loader {
         $this->load_file($includes_path . 'api/class-resume-api.php');
         $this->load_file($includes_path . 'api/class-skills-api.php');
         $this->load_file($includes_path . 'api/class-media-projects-api.php');
+        $this->load_file($includes_path . 'api/class-software-projects-api.php');
         
         // Load admin functionality
         $this->load_file($includes_path . 'admin/class-meta-boxes.php');
         $this->load_file($includes_path . 'admin/meta-boxes/class-employment-dates.php');
         $this->load_file($includes_path . 'admin/meta-boxes/class-resume-skills.php');
         $this->load_file($includes_path . 'admin/meta-boxes/class-media-skills.php');
+        $this->load_file($includes_path . 'admin/meta-boxes/class-software-details.php');
+        $this->load_file($includes_path . 'admin/meta-boxes/class-software-skills.php');
         $this->load_file($includes_path . 'admin/meta-boxes/class-skills-meta.php');
         $this->load_file($includes_path . 'admin/meta-boxes/class-media-project-details.php');
         
@@ -124,6 +127,10 @@ class RAE_Theme_Loader {
             new RAE_Media_Projects_API();
         }
         
+        if (class_exists('RAE_Software_Projects_API')) {
+            new RAE_Software_Projects_API();
+        }
+        
         // Admin functionality
         if (class_exists('RAE_Meta_Boxes')) {
             new RAE_Meta_Boxes();
@@ -139,6 +146,14 @@ class RAE_Theme_Loader {
         
         if (class_exists('RAE_Media_Skills_Meta_Box')) {
             new RAE_Media_Skills_Meta_Box();
+        }
+        
+        if (class_exists('RAE_Software_Details_Meta_Box')) {
+            new RAE_Software_Details_Meta_Box();
+        }
+        
+        if (class_exists('RAE_Software_Skills_Meta_Box')) {
+            new RAE_Software_Skills_Meta_Box();
         }
         
         if (class_exists('RAE_Skills_Meta_Box')) {

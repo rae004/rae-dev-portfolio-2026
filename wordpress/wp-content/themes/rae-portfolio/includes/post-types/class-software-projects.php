@@ -36,7 +36,7 @@ class RAE_Software_Projects_Post_Type {
                 'not_found_in_trash' => 'No software projects found in trash'
             ),
             'public' => true,
-            'show_in_rest' => true,
+            'show_in_rest' => false, // Disable Block Editor to prevent auto-save 404 errors
             'rest_base' => 'software-projects',
             'supports' => array('title', 'editor', 'excerpt', 'custom-fields', 'thumbnail'),
             'menu_icon' => 'dashicons-laptop',
