@@ -9,6 +9,8 @@ import type {
   MusicProject,
   AudioPostProject,
   SkillItem,
+  SocialLinksQueryParams,
+  SocialLinksResponse,
   WordPressPost,
   WordPressQueryParams,
 } from '../types/wordpress'
@@ -50,6 +52,10 @@ export const queryKeys = {
     list: (params?: WordPressQueryParams) => [...queryKeys.skills.lists(), params] as const,
     details: () => [...queryKeys.skills.all, 'detail'] as const,
     detail: (id: number) => [...queryKeys.skills.details(), id] as const,
+  },
+  socialLinks: {
+    all: ['social-links'] as const,
+    list: (params?: SocialLinksQueryParams) => [...queryKeys.socialLinks.all, params] as const,
   },
   blog: {
     all: ['blog'] as const,
@@ -153,6 +159,24 @@ export function useSkill(
     queryKey: queryKeys.skills.detail(id),
     queryFn: () => wordpressApi.getSkill(id),
     enabled: !!id,
+    ...options,
+  })
+}
+
+// Social links hooks
+export function useSocialLinks(
+  params?: SocialLinksQueryParams,
+  options?: Omit<UseQueryOptions<SocialLinksResponse, WordPressAPIError>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery({
+    queryKey: queryKeys.socialLinks.list(params),
+    queryFn: () => wordpressApi.getSocialLinks(params),
+    // Cache social links for 5 minutes since they change infrequently
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    // Retry on failure since these are important for the contact page
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
     ...options,
   })
 }

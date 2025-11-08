@@ -3,6 +3,8 @@ import type {
   MediaProjectQueryParams,
   ResumeItem,
   SkillItem,
+  SocialLinksQueryParams,
+  SocialLinksResponse,
   SoftwareProject,
   WordPressError,
   WordPressPost,
@@ -150,6 +152,21 @@ export const wordpressApi = {
 
   async getBlogPost(id: number): Promise<WordPressPost> {
     return apiRequest<WordPressPost>(`/posts/${id}`)
+  },
+
+  // Social links
+  async getSocialLinks(params?: SocialLinksQueryParams): Promise<SocialLinksResponse> {
+    const queryParams: WordPressQueryParams = {}
+
+    if (params?.enabled_only !== undefined) {
+      queryParams.enabled_only = params.enabled_only ? '1' : '0'
+    }
+
+    if (params?.limit !== undefined) {
+      queryParams.limit = params.limit.toString()
+    }
+
+    return apiRequest<SocialLinksResponse>('/social-links', queryParams)
   },
 
   // Health check

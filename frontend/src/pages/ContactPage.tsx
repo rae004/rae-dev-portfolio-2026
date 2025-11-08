@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useForm } from '@tanstack/react-form'
+import SocialLinks from '../components/SocialLinks'
 
 interface ContactFormData {
   name: string
@@ -23,6 +24,7 @@ function FieldInfo({ field }: { field: any }) {
 
 const ContactPage: React.FC = () => {
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [showSocialLinks, setShowSocialLinks] = useState(true)
 
   const form = useForm({
     defaultValues: {
@@ -258,29 +260,20 @@ const ContactPage: React.FC = () => {
           </div>
 
           <div className='space-y-6'>
-            <div className='card bg-base-100 shadow-xl'>
-              <div className='card-body'>
-                <h3 className='card-title'>Connect With Me</h3>
-                <div className='space-y-4'>
-                  <div className='flex items-center space-x-3'>
-                    <span className='text-2xl'>💼</span>
-                    <a href='#' className='link link-primary'>
-                      LinkedIn Profile
-                    </a>
-                  </div>
-                  <div className='flex items-center space-x-3'>
-                    <span className='text-2xl'>🐙</span>
-                    <a href='#' className='link link-primary'>
-                      GitHub Profile
-                    </a>
-                  </div>
-                  <div className='flex items-center space-x-3'>
-                    <span className='text-2xl'>📧</span>
-                    <span>contact@rae-dev.com</span>
-                  </div>
+            {showSocialLinks && (
+              <div className='card bg-base-100 shadow-xl'>
+                <div className='card-body'>
+                  <h3 className='card-title'>Connect With Me</h3>
+                  <SocialLinks
+                    className='space-y-4'
+                    showLabels={true}
+                    maxDisplay={6}
+                    enabledOnly={true}
+                    onEmpty={isEmpty => setShowSocialLinks(!isEmpty)}
+                  />
                 </div>
               </div>
-            </div>
+            )}
 
             <div className='card bg-base-100 shadow-xl'>
               <div className='card-body'>

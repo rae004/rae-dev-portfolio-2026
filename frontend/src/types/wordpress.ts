@@ -183,3 +183,38 @@ export function isMusicProject(project: MediaProject): project is MusicProject {
 export function isAudioPostProject(project: MediaProject): project is AudioPostProject {
   return project.project_type === 'Audio_Post_Production'
 }
+
+// Social Links types
+export interface SocialLink {
+  id: string
+  label: string
+  url: string
+  platform: string
+  order: number
+  enabled: boolean
+}
+
+export interface SocialLinksResponse {
+  social_links: SocialLink[]
+  total: number
+  max_allowed: number
+  enabled_only: boolean
+  limit_applied: number
+}
+
+// Social link platform types
+export type SocialPlatform =
+  | 'linkedin'
+  | 'github'
+  | 'twitter'
+  | 'facebook'
+  | 'instagram'
+  | 'youtube'
+  | 'email'
+  | 'generic'
+
+// Query parameters for social links API
+export interface SocialLinksQueryParams {
+  enabled_only?: boolean
+  limit?: number
+}
