@@ -8,7 +8,11 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
-    "cdk": "cdk"
+    "cdk": "cdk --profile rae_dev",
+    "cdk:synth": "pnpm cdk synth",
+    "cdk:diff": "pnpm cdk diff",
+    "cdk:deploy": "pnpm cdk deploy",
+    "cdk:destroy": "pnpm cdk destroy"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",
