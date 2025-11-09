@@ -5,33 +5,33 @@
  */
 
 // Prevent direct access
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
-$rest_api_available = (bool)rest_url('wp/v2/');
+$rest_api_available = (bool) rest_url( 'wp/v2/' );
 $api_available_span = '<span style="color: #ff2222">DOWN!</span>';
-if ($rest_api_available) {
-    $api_available_span = '<span style="color: #00ba37">UP</span>';
+if ( $rest_api_available ) {
+	$api_available_span = '<span style="color: #00ba37">UP</span>';
 }
 
-$theme_name_with_version = wp_get_theme() . ' v' . wp_get_theme()->get('Version');
+$theme_name_with_version = wp_get_theme() . ' v' . wp_get_theme()->get( 'Version' );
 
 get_header(); ?>
 
 <div style="max-width: 800px; margin: 40px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-    <h1 style="color: #333; border-bottom: 3px solid #00a0d2; padding-bottom: 10px;">
-        🚀 Rae Portfolio - Headless WordPress CMS
-    </h1>
+	<h1 style="color: #333; border-bottom: 3px solid #00a0d2; padding-bottom: 10px;">
+		🚀 Rae Portfolio - Headless WordPress CMS
+	</h1>
 
-    <div style="background: #f0f8ff; padding: 15px; border-radius: 4px; margin: 20px 0;">
-        <h2 style="margin-top: 0; color: #0073aa;">System Status</h2>
-        <p><strong>WordPress:</strong> <?php echo get_bloginfo('version'); ?></p>
-        <p><strong>PHP:</strong> <?php echo PHP_VERSION; ?></p>
-        <p><strong>Name:</strong> <?php echo get_bloginfo('name'); ?></p>
-        <p><strong>Theme:</strong> <?php echo $theme_name_with_version ?></p>
-        <p><strong>REST API:</strong> <?php echo $api_available_span ?></p>
-    </div>
+	<div style="background: #f0f8ff; padding: 15px; border-radius: 4px; margin: 20px 0;">
+		<h2 style="margin-top: 0; color: #0073aa;">System Status</h2>
+		<p><strong>WordPress:</strong> <?php echo get_bloginfo( 'version' ); ?></p>
+		<p><strong>PHP:</strong> <?php echo PHP_VERSION; ?></p>
+		<p><strong>Name:</strong> <?php echo get_bloginfo( 'name' ); ?></p>
+		<p><strong>Theme:</strong> <?php echo $theme_name_with_version; ?></p>
+		<p><strong>REST API:</strong> <?php echo $api_available_span; ?></p>
+	</div>
 </div>
 
 <?php get_footer(); ?>

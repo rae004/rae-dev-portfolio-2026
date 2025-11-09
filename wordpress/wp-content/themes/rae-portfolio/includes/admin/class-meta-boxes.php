@@ -5,43 +5,43 @@
  */
 
 // Prevent direct access
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 class RAE_Meta_Boxes {
-    
-    /**
-     * Constructor
-     */
-    public function __construct() {
-        // Employment dates meta box is handled by its own class
-        // Skills meta boxes are handled by their own classes
-        // Media project details will be handled by its own class
-        
-        // Add any global meta box hooks here if needed
-        add_action('admin_enqueue_scripts', array($this, 'enqueue_meta_box_scripts'));
-    }
-    
-    /**
-     * Enqueue scripts and styles for meta boxes
-     */
-    public function enqueue_meta_box_scripts($hook): void {
-        // Only load on post edit pages
-        if ('post.php' === $hook || 'post-new.php' === $hook) {
-            // Common meta box styles
-            wp_add_inline_style('wp-admin', $this->get_meta_box_styles());
-            
-            // Common meta box scripts
-            wp_add_inline_script('jquery', $this->get_meta_box_scripts());
-        }
-    }
-    
-    /**
-     * Get common meta box styles
-     */
-    private function get_meta_box_styles(): string {
-        return '
+
+	/**
+	 * Constructor
+	 */
+	public function __construct() {
+		// Employment dates meta box is handled by its own class
+		// Skills meta boxes are handled by their own classes
+		// Media project details will be handled by its own class
+
+		// Add any global meta box hooks here if needed
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_meta_box_scripts' ) );
+	}
+
+	/**
+	 * Enqueue scripts and styles for meta boxes
+	 */
+	public function enqueue_meta_box_scripts( $hook ): void {
+		// Only load on post edit pages
+		if ( 'post.php' === $hook || 'post-new.php' === $hook ) {
+			// Common meta box styles
+			wp_add_inline_style( 'wp-admin', $this->get_meta_box_styles() );
+
+			// Common meta box scripts
+			wp_add_inline_script( 'jquery', $this->get_meta_box_scripts() );
+		}
+	}
+
+	/**
+	 * Get common meta box styles
+	 */
+	private function get_meta_box_styles(): string {
+		return '
             .rae-meta-box .form-table th {
                 width: 150px;
                 vertical-align: top;
@@ -134,13 +134,13 @@ class RAE_Meta_Boxes {
                 background: #005177;
             }
         ';
-    }
-    
-    /**
-     * Get common meta box scripts
-     */
-    private function get_meta_box_scripts(): string {
-        return '
+	}
+
+	/**
+	 * Get common meta box scripts
+	 */
+	private function get_meta_box_scripts(): string {
+		return '
             // Common meta box utilities
             window.RAE_MetaBox = {
                 // Utility function to toggle field visibility
@@ -181,5 +181,5 @@ class RAE_Meta_Boxes {
                 }
             };
         ';
-    }
+	}
 }

@@ -5,443 +5,445 @@
  */
 
 // Prevent direct access
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 class RAE_ReCaptcha_Options {
 
-    /**
-     * Option name for storing reCAPTCHA settings
-     */
-    const string OPTION_NAME = 'rae_recaptcha_settings';
+	/**
+	 * Option name for storing reCAPTCHA settings
+	 */
+	const string OPTION_NAME = 'rae_recaptcha_settings';
 
-    /**
-     * Default score threshold for reCAPTCHA v3
-     */
-    const float DEFAULT_THRESHOLD = 0.5;
+	/**
+	 * Default score threshold for reCAPTCHA v3
+	 */
+	const float DEFAULT_THRESHOLD = 0.5;
 
-    /**
-     * Constructor
-     */
-    public function __construct() {
-        add_action('admin_menu', array($this, 'add_options_page'));
-        add_action('admin_init', array($this, 'init_settings'));
-        add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
-        add_action('wp_ajax_test_recaptcha_connection', array($this, 'test_connection_ajax'));
-    }
+	/**
+	 * Constructor
+	 */
+	public function __construct() {
+		add_action( 'admin_menu', array( $this, 'add_options_page' ) );
+		add_action( 'admin_init', array( $this, 'init_settings' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
+		add_action( 'wp_ajax_test_recaptcha_connection', array( $this, 'test_connection_ajax' ) );
+	}
 
-    /**
-     * Add reCAPTCHA options page to WordPress admin
-     */
-    public function add_options_page(): void {
-        add_options_page(
-            'Google reCAPTCHA v3 options',    // Page title
-            'Google reCAPTCHA v3 options',    // Menu title
-            'manage_options',                 // Capability
-            'rae-recaptcha-options',         // Menu slug
-            array($this, 'options_page_callback') // Callback
-        );
-    }
+	/**
+	 * Add reCAPTCHA options page to WordPress admin
+	 */
+	public function add_options_page(): void {
+		add_options_page(
+			'Google reCAPTCHA v3 options',    // Page title
+			'Google reCAPTCHA v3 options',    // Menu title
+			'manage_options',                 // Capability
+			'rae-recaptcha-options',         // Menu slug
+			array( $this, 'options_page_callback' ) // Callback
+		);
+	}
 
-    /**
-     * Initialize settings using WordPress Settings API
-     */
-    public function init_settings(): void {
-        // Register setting
-        register_setting(
-            'rae_recaptcha_group',
-            self::OPTION_NAME,
-            array($this, 'validate_options')
-        );
+	/**
+	 * Initialize settings using WordPress Settings API
+	 */
+	public function init_settings(): void {
+		// Register setting
+		register_setting(
+			'rae_recaptcha_group',
+			self::OPTION_NAME,
+			array( $this, 'validate_options' )
+		);
 
-        // Main settings section
-        add_settings_section(
-            'rae_recaptcha_main',
-            'Google reCAPTCHA Configuration',
-            array($this, 'settings_section_callback'),
-            'rae-recaptcha-options'
-        );
+		// Main settings section
+		add_settings_section(
+			'rae_recaptcha_main',
+			'Google reCAPTCHA Configuration',
+			array( $this, 'settings_section_callback' ),
+			'rae-recaptcha-options'
+		);
 
-        // Enable/disable field
-        add_settings_field(
-            'enabled',
-            'Enable reCAPTCHA Protection',
-            array($this, 'enabled_callback'),
-            'rae-recaptcha-options',
-            'rae_recaptcha_main'
-        );
+		// Enable/disable field
+		add_settings_field(
+			'enabled',
+			'Enable reCAPTCHA Protection',
+			array( $this, 'enabled_callback' ),
+			'rae-recaptcha-options',
+			'rae_recaptcha_main'
+		);
 
-        // reCAPTCHA v3 settings section
-        add_settings_section(
-            'rae_recaptcha_v3',
-            'reCAPTCHA v3 Settings (Invisible Protection)',
-            array($this, 'v3_settings_section_callback'),
-            'rae-recaptcha-options'
-        );
+		// reCAPTCHA v3 settings section
+		add_settings_section(
+			'rae_recaptcha_v3',
+			'reCAPTCHA v3 Settings (Invisible Protection)',
+			array( $this, 'v3_settings_section_callback' ),
+			'rae-recaptcha-options'
+		);
 
-        // v3 Site Key field
-        add_settings_field(
-            'v3_site_key',
-            'Site Key (v3)',
-            array($this, 'v3_site_key_callback'),
-            'rae-recaptcha-options',
-            'rae_recaptcha_v3'
-        );
+		// v3 Site Key field
+		add_settings_field(
+			'v3_site_key',
+			'Site Key (v3)',
+			array( $this, 'v3_site_key_callback' ),
+			'rae-recaptcha-options',
+			'rae_recaptcha_v3'
+		);
 
-        // v3 Secret Key field
-        add_settings_field(
-            'v3_secret_key',
-            'Secret Key (v3)',
-            array($this, 'v3_secret_key_callback'),
-            'rae-recaptcha-options',
-            'rae_recaptcha_v3'
-        );
+		// v3 Secret Key field
+		add_settings_field(
+			'v3_secret_key',
+			'Secret Key (v3)',
+			array( $this, 'v3_secret_key_callback' ),
+			'rae-recaptcha-options',
+			'rae_recaptcha_v3'
+		);
 
-        // Score threshold field
-        add_settings_field(
-            'threshold',
-            'Score Threshold',
-            array($this, 'threshold_callback'),
-            'rae-recaptcha-options',
-            'rae_recaptcha_v3'
-        );
+		// Score threshold field
+		add_settings_field(
+			'threshold',
+			'Score Threshold',
+			array( $this, 'threshold_callback' ),
+			'rae-recaptcha-options',
+			'rae_recaptcha_v3'
+		);
 
+		// Display settings section
+		add_settings_section(
+			'rae_recaptcha_display',
+			'Display Settings',
+			array( $this, 'display_settings_section_callback' ),
+			'rae-recaptcha-options'
+		);
 
-        // Display settings section
-        add_settings_section(
-            'rae_recaptcha_display',
-            'Display Settings',
-            array($this, 'display_settings_section_callback'),
-            'rae-recaptcha-options'
-        );
+		// Badge position field
+		add_settings_field(
+			'badge_position',
+			'Badge Position',
+			array( $this, 'badge_position_callback' ),
+			'rae-recaptcha-options',
+			'rae_recaptcha_display'
+		);
+	}
 
-        // Badge position field
-        add_settings_field(
-            'badge_position',
-            'Badge Position',
-            array($this, 'badge_position_callback'),
-            'rae-recaptcha-options',
-            'rae_recaptcha_display'
-        );
-    }
+	/**
+	 * Enqueue admin scripts and styles
+	 */
+	public function enqueue_admin_scripts( $hook ): void {
+		if ( $hook !== 'settings_page_rae-recaptcha-options' ) {
+			return;
+		}
 
-    /**
-     * Enqueue admin scripts and styles
-     */
-    public function enqueue_admin_scripts($hook): void {
-        if ($hook !== 'settings_page_rae-recaptcha-options') {
-            return;
-        }
+		// Add custom admin styles
+		wp_add_inline_style( 'wp-admin', $this->get_admin_styles() );
 
-        // Add custom admin styles
-        wp_add_inline_style('wp-admin', $this->get_admin_styles());
+		// Add custom admin JavaScript
+		wp_add_inline_script( 'jquery', $this->get_admin_javascript() );
 
-        // Add custom admin JavaScript
-        wp_add_inline_script('jquery', $this->get_admin_javascript());
+		// Add AJAX URL for connection testing
+		wp_localize_script(
+			'jquery',
+			'raeRecaptchaAjax',
+			array(
+				'ajaxurl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( 'rae_recaptcha_test' ),
+			)
+		);
+	}
 
-        // Add AJAX URL for connection testing
-        wp_localize_script('jquery', 'raeRecaptchaAjax', array(
-            'ajaxurl' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('rae_recaptcha_test')
-        ));
-    }
+	/**
+	 * Options page callback
+	 */
+	public function options_page_callback(): void {
+		// Check user permissions
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		?>
+		<div class="wrap">
+			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 
-    /**
-     * Options page callback
-     */
-    public function options_page_callback(): void {
-        // Check user permissions
-        if (!current_user_can('manage_options')) {
-            return;
-        }
-        ?>
-        <div class="wrap">
-            <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
+			<div class="notice notice-info">
+				<p>
+					<strong>Google reCAPTCHA v3 Protection:</strong> Protects your contact forms from spam and bot submissions 
+					using invisible scoring. Submissions with scores below the threshold are blocked.
+				</p>
+			</div>
 
-            <div class="notice notice-info">
-                <p>
-                    <strong>Google reCAPTCHA v3 Protection:</strong> Protects your contact forms from spam and bot submissions 
-                    using invisible scoring. Submissions with scores below the threshold are blocked.
-                </p>
-            </div>
+			<form action="options.php" method="post">
+				<?php
+				settings_fields( 'rae_recaptcha_group' );
+				do_settings_sections( 'rae-recaptcha-options' );
+				submit_button( 'Save reCAPTCHA Settings' );
+				?>
+			</form>
 
-            <form action="options.php" method="post">
-                <?php
-                settings_fields('rae_recaptcha_group');
-                do_settings_sections('rae-recaptcha-options');
-                submit_button('Save reCAPTCHA Settings');
-                ?>
-            </form>
+			<div class="postbox" style="margin-top: 20px;">
+				<div class="postbox-header">
+					<h2 class="hndle">How It Works</h2>
+				</div>
+				<div class="inside">
+					<ol>
+						<li><strong>reCAPTCHA v3:</strong> Runs invisibly on form submission, scoring user behavior (0.0 = bot, 1.0 = human)</li>
+						<li><strong>Score Evaluation:</strong> Scores below threshold block form submission</li>
+						<li><strong>Protection:</strong> Only submissions with acceptable scores are processed</li>
+					</ol>
+					<p>
+						<strong>Setup:</strong> Get your keys from <a href="https://www.google.com/recaptcha/admin/" target="_blank">Google reCAPTCHA Admin Console</a><br>
+						<strong>v3 Keys:</strong> Select "reCAPTCHA v3" and add your domain
+					</p>
+				</div>
+			</div>
+		</div>
+		<?php
+	}
 
-            <div class="postbox" style="margin-top: 20px;">
-                <div class="postbox-header">
-                    <h2 class="hndle">How It Works</h2>
-                </div>
-                <div class="inside">
-                    <ol>
-                        <li><strong>reCAPTCHA v3:</strong> Runs invisibly on form submission, scoring user behavior (0.0 = bot, 1.0 = human)</li>
-                        <li><strong>Score Evaluation:</strong> Scores below threshold block form submission</li>
-                        <li><strong>Protection:</strong> Only submissions with acceptable scores are processed</li>
-                    </ol>
-                    <p>
-                        <strong>Setup:</strong> Get your keys from <a href="https://www.google.com/recaptcha/admin/" target="_blank">Google reCAPTCHA Admin Console</a><br>
-                        <strong>v3 Keys:</strong> Select "reCAPTCHA v3" and add your domain
-                    </p>
-                </div>
-            </div>
-        </div>
-        <?php
-    }
+	/**
+	 * Settings section callbacks
+	 */
+	public function settings_section_callback(): void {
+		echo '<p>Configure Google reCAPTCHA v3 protection for your contact forms. Only v3 keys are required for protection.</p>';
+	}
 
-    /**
-     * Settings section callbacks
-     */
-    public function settings_section_callback(): void {
-        echo '<p>Configure Google reCAPTCHA v3 protection for your contact forms. Only v3 keys are required for protection.</p>';
-    }
-
-    public function v3_settings_section_callback(): void {
-        echo '<p>reCAPTCHA v3 provides invisible protection by analyzing user behavior. Configure your v3 site and secret keys below.</p>';
-    }
-
-
-    public function display_settings_section_callback(): void {
-        echo '<p>Customize how the reCAPTCHA badge appears on your site.</p>';
-    }
-
-    /**
-     * Field callbacks
-     */
-    public function enabled_callback(): void {
-        $options = get_option(self::OPTION_NAME, $this->get_default_options());
-        $enabled = $options['enabled'] ?? false;
-        ?>
-        <label>
-            <input type="checkbox" 
-                   name="<?php echo self::OPTION_NAME; ?>[enabled]" 
-                   value="1" 
-                   <?php checked($enabled); ?> />
-            Enable reCAPTCHA protection on contact forms
-        </label>
-        <p class="description">
-            When enabled, all form submissions will be protected by reCAPTCHA verification.
-        </p>
-        <?php
-    }
-
-    public function v3_site_key_callback(): void {
-        $options = get_option(self::OPTION_NAME, $this->get_default_options());
-        $site_key = $options['v3_site_key'] ?? '';
-        ?>
-        <label>
-            <input type="text"
-                   name="<?php echo self::OPTION_NAME; ?>[v3_site_key]"
-                   value="<?php echo esc_attr($site_key); ?>"
-                   class="regular-text"
-                   placeholder="6LcXXXXXXXXXXXXXXXXXXXXXXXX" />
-            <button type="button" class="button test-connection" data-version="v3" data-key-type="site">
-                Test v3 Connection
-            </button>
-        </label>
-        <p class="description">
-            Your reCAPTCHA v3 Site Key (public key) from Google reCAPTCHA Admin Console.
-        </p>
-        <div class="test-result" id="v3-test-result" style="display: none;"></div>
-        <?php
-    }
-
-    public function v3_secret_key_callback(): void {
-        $options = get_option(self::OPTION_NAME, $this->get_default_options());
-        $secret_key = $options['v3_secret_key'] ?? '';
-        ?>
-        <label>
-            <input type="password"
-                   name="<?php echo self::OPTION_NAME; ?>[v3_secret_key]"
-                   value="<?php echo esc_attr($secret_key); ?>"
-                   class="regular-text"
-                   placeholder="6LcXXXXXXXXXXXXXXXXXXXXXXXX"
-                   autocomplete="off" />
-        </label>
-        <p class="description">
-            Your reCAPTCHA v3 Secret Key (private key). This is stored securely and never exposed to the frontend.
-        </p>
-        <?php
-    }
-
-    public function threshold_callback(): void {
-        $options = get_option(self::OPTION_NAME, $this->get_default_options());
-        $threshold = isset($options['threshold']) ? floatval($options['threshold']) : self::DEFAULT_THRESHOLD;
-        ?>
-        <label for="threshold-slider">
-            <input type="range"
-                name="<?php echo self::OPTION_NAME; ?>[threshold]"
-                value="<?php echo esc_attr($threshold); ?>"
-                min="0.1"
-                max="0.9"
-                step="0.1"
-                id="threshold-slider" />
-        </label>
-        <span id="threshold-value"><?php echo $threshold; ?></span>
-        <p class="description">
-            Scores below this threshold will block form submission. 
-            <br><strong>0.1-0.3:</strong> Very permissive (fewer blocks)
-            <br><strong>0.4-0.6:</strong> Balanced (recommended)
-            <br><strong>0.7-0.9:</strong> Strict (more blocks)
-        </p>
-        <?php
-    }
+	public function v3_settings_section_callback(): void {
+		echo '<p>reCAPTCHA v3 provides invisible protection by analyzing user behavior. Configure your v3 site and secret keys below.</p>';
+	}
 
 
-    public function badge_position_callback(): void {
-        $options = get_option(self::OPTION_NAME, $this->get_default_options());
-        $position = $options['badge_position'] ?? 'bottomright';
-        
-        $positions = array(
-            'bottomright' => 'Bottom Right',
-            'bottomleft' => 'Bottom Left',
-            'inline' => 'Inline with Form'
-        );
-        ?>
-        <label>
-            <select name="<?php echo self::OPTION_NAME; ?>[badge_position]">
-                <?php foreach ($positions as $value => $label): ?>
-                    <option value="<?php echo esc_attr($value); ?>" <?php selected($position, $value); ?>>
-                        <?php echo esc_html($label); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </label>
-        <p class="description">
-            Choose where the reCAPTCHA badge appears on your site.
-        </p>
-        <?php
-    }
+	public function display_settings_section_callback(): void {
+		echo '<p>Customize how the reCAPTCHA badge appears on your site.</p>';
+	}
 
-    /**
-     * Validate and sanitize options
-     */
-    public function validate_options($input): array {
-        $sanitized = array();
+	/**
+	 * Field callbacks
+	 */
+	public function enabled_callback(): void {
+		$options = get_option( self::OPTION_NAME, $this->get_default_options() );
+		$enabled = $options['enabled'] ?? false;
+		?>
+		<label>
+			<input type="checkbox" 
+					name="<?php echo self::OPTION_NAME; ?>[enabled]" 
+					value="1" 
+					<?php checked( $enabled ); ?> />
+			Enable reCAPTCHA protection on contact forms
+		</label>
+		<p class="description">
+			When enabled, all form submissions will be protected by reCAPTCHA verification.
+		</p>
+		<?php
+	}
 
-        // Validate enabled status
-        $sanitized['enabled'] = isset( $input['enabled'] ) && $input['enabled'];
+	public function v3_site_key_callback(): void {
+		$options  = get_option( self::OPTION_NAME, $this->get_default_options() );
+		$site_key = $options['v3_site_key'] ?? '';
+		?>
+		<label>
+			<input type="text"
+					name="<?php echo self::OPTION_NAME; ?>[v3_site_key]"
+					value="<?php echo esc_attr( $site_key ); ?>"
+					class="regular-text"
+					placeholder="6LcXXXXXXXXXXXXXXXXXXXXXXXX" />
+			<button type="button" class="button test-connection" data-version="v3" data-key-type="site">
+				Test v3 Connection
+			</button>
+		</label>
+		<p class="description">
+			Your reCAPTCHA v3 Site Key (public key) from Google reCAPTCHA Admin Console.
+		</p>
+		<div class="test-result" id="v3-test-result" style="display: none;"></div>
+		<?php
+	}
 
-        // Validate and sanitize keys
-        $sanitized['v3_site_key'] = isset($input['v3_site_key']) ? sanitize_text_field(trim($input['v3_site_key'])) : '';
-        $sanitized['v3_secret_key'] = isset($input['v3_secret_key']) ? sanitize_text_field(trim($input['v3_secret_key'])) : '';
+	public function v3_secret_key_callback(): void {
+		$options    = get_option( self::OPTION_NAME, $this->get_default_options() );
+		$secret_key = $options['v3_secret_key'] ?? '';
+		?>
+		<label>
+			<input type="password"
+					name="<?php echo self::OPTION_NAME; ?>[v3_secret_key]"
+					value="<?php echo esc_attr( $secret_key ); ?>"
+					class="regular-text"
+					placeholder="6LcXXXXXXXXXXXXXXXXXXXXXXXX"
+					autocomplete="off" />
+		</label>
+		<p class="description">
+			Your reCAPTCHA v3 Secret Key (private key). This is stored securely and never exposed to the frontend.
+		</p>
+		<?php
+	}
 
-        // Validate threshold
-        $threshold = isset($input['threshold']) ? floatval($input['threshold']) : self::DEFAULT_THRESHOLD;
-        if ($threshold < 0.1 || $threshold > 0.9) {
-            $threshold = self::DEFAULT_THRESHOLD;
-            add_settings_error(
-                self::OPTION_NAME,
-                'invalid_threshold',
-                'Threshold must be between 0.1 and 0.9. Reset to default value.',
-                'warning'
-            );
-        }
-        $sanitized['threshold'] = $threshold;
-
-        // Validate badge position
-        $valid_positions = array('bottomright', 'bottomleft', 'inline');
-        $badge_position = isset($input['badge_position']) ? sanitize_text_field($input['badge_position']) : 'bottomright';
-        if (!in_array($badge_position, $valid_positions)) {
-            $badge_position = 'bottomright';
-        }
-        $sanitized['badge_position'] = $badge_position;
-
-        // Validate key format (basic check)
-        if (!empty($sanitized['v3_site_key']) && !preg_match('/^6L[a-zA-Z0-9_-]{38}$/', $sanitized['v3_site_key'])) {
-            add_settings_error(
-                self::OPTION_NAME,
-                'invalid_v3_site_key',
-                'Invalid reCAPTCHA v3 Site Key format.'
-            );
-        }
+	public function threshold_callback(): void {
+		$options   = get_option( self::OPTION_NAME, $this->get_default_options() );
+		$threshold = isset( $options['threshold'] ) ? floatval( $options['threshold'] ) : self::DEFAULT_THRESHOLD;
+		?>
+		<label for="threshold-slider">
+			<input type="range"
+				name="<?php echo self::OPTION_NAME; ?>[threshold]"
+				value="<?php echo esc_attr( $threshold ); ?>"
+				min="0.1"
+				max="0.9"
+				step="0.1"
+				id="threshold-slider" />
+		</label>
+		<span id="threshold-value"><?php echo $threshold; ?></span>
+		<p class="description">
+			Scores below this threshold will block form submission. 
+			<br><strong>0.1-0.3:</strong> Very permissive (fewer blocks)
+			<br><strong>0.4-0.6:</strong> Balanced (recommended)
+			<br><strong>0.7-0.9:</strong> Strict (more blocks)
+		</p>
+		<?php
+	}
 
 
-        // Add success message if enabled and keys are provided
-        if ($sanitized['enabled'] && !empty($sanitized['v3_site_key']) && !empty($sanitized['v3_secret_key'])) {
-            add_settings_error(
-                self::OPTION_NAME,
-                'settings_updated',
-                'reCAPTCHA settings updated successfully. Protection is now active.',
-                'success'
-            );
-        }
+	public function badge_position_callback(): void {
+		$options  = get_option( self::OPTION_NAME, $this->get_default_options() );
+		$position = $options['badge_position'] ?? 'bottomright';
 
-        return $sanitized;
-    }
+		$positions = array(
+			'bottomright' => 'Bottom Right',
+			'bottomleft'  => 'Bottom Left',
+			'inline'      => 'Inline with Form',
+		);
+		?>
+		<label>
+			<select name="<?php echo self::OPTION_NAME; ?>[badge_position]">
+				<?php foreach ( $positions as $value => $label ) : ?>
+					<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $position, $value ); ?>>
+						<?php echo esc_html( $label ); ?>
+					</option>
+				<?php endforeach; ?>
+			</select>
+		</label>
+		<p class="description">
+			Choose where the reCAPTCHA badge appears on your site.
+		</p>
+		<?php
+	}
 
-    /**
-     * AJAX handler for connection testing
-     */
-    public function test_connection_ajax(): void {
-        // Verify nonce
-        if (!wp_verify_nonce($_POST['nonce'], 'rae_recaptcha_test')) {
-            wp_die('Security check failed');
-        }
+	/**
+	 * Validate and sanitize options
+	 */
+	public function validate_options( $input ): array {
+		$sanitized = array();
 
-        // Check permissions
-        if (!current_user_can('manage_options')) {
-            wp_die('Insufficient permissions');
-        }
+		// Validate enabled status
+		$sanitized['enabled'] = isset( $input['enabled'] ) && $input['enabled'];
 
-        $key_type = sanitize_text_field($_POST['key_type']);
+		// Validate and sanitize keys
+		$sanitized['v3_site_key']   = isset( $input['v3_site_key'] ) ? sanitize_text_field( trim( $input['v3_site_key'] ) ) : '';
+		$sanitized['v3_secret_key'] = isset( $input['v3_secret_key'] ) ? sanitize_text_field( trim( $input['v3_secret_key'] ) ) : '';
 
-        // Get current options
-        $options = get_option(self::OPTION_NAME, $this->get_default_options());
+		// Validate threshold
+		$threshold = isset( $input['threshold'] ) ? floatval( $input['threshold'] ) : self::DEFAULT_THRESHOLD;
+		if ( $threshold < 0.1 || $threshold > 0.9 ) {
+			$threshold = self::DEFAULT_THRESHOLD;
+			add_settings_error(
+				self::OPTION_NAME,
+				'invalid_threshold',
+				'Threshold must be between 0.1 and 0.9. Reset to default value.',
+				'warning'
+			);
+		}
+		$sanitized['threshold'] = $threshold;
 
-        // For site key testing, we just validate format
-        if ($key_type === 'site') {
-            $site_key = $options['v3_site_key'];
-            
-            if (empty($site_key)) {
-                wp_send_json_error('Site key is empty');
-            }
+		// Validate badge position
+		$valid_positions = array( 'bottomright', 'bottomleft', 'inline' );
+		$badge_position  = isset( $input['badge_position'] ) ? sanitize_text_field( $input['badge_position'] ) : 'bottomright';
+		if ( ! in_array( $badge_position, $valid_positions ) ) {
+			$badge_position = 'bottomright';
+		}
+		$sanitized['badge_position'] = $badge_position;
 
-            if (!preg_match('/^6L[a-zA-Z0-9_-]{38}$/', $site_key)) {
-                wp_send_json_error('Invalid site key format');
-            }
+		// Validate key format (basic check)
+		if ( ! empty( $sanitized['v3_site_key'] ) && ! preg_match( '/^6L[a-zA-Z0-9_-]{38}$/', $sanitized['v3_site_key'] ) ) {
+			add_settings_error(
+				self::OPTION_NAME,
+				'invalid_v3_site_key',
+				'Invalid reCAPTCHA v3 Site Key format.'
+			);
+		}
 
-            wp_send_json_success('Site key format is valid');
-        }
+		// Add success message if enabled and keys are provided
+		if ( $sanitized['enabled'] && ! empty( $sanitized['v3_site_key'] ) && ! empty( $sanitized['v3_secret_key'] ) ) {
+			add_settings_error(
+				self::OPTION_NAME,
+				'settings_updated',
+				'reCAPTCHA settings updated successfully. Protection is now active.',
+				'success'
+			);
+		}
 
-        // For secret key testing, we can't test without a valid token
-        // So we'll just validate format and provide guidance
-        $secret_key = $options['v3_secret_key'];
-        
-        if (empty($secret_key)) {
-            wp_send_json_error('Secret key is empty');
-        }
+		return $sanitized;
+	}
 
-        if (!preg_match('/^6L[a-zA-Z0-9_-]{38}$/', $secret_key)) {
-            wp_send_json_error('Invalid secret key format');
-        }
+	/**
+	 * AJAX handler for connection testing
+	 */
+	public function test_connection_ajax(): void {
+		// Verify nonce
+		if ( ! wp_verify_nonce( $_POST['nonce'], 'rae_recaptcha_test' ) ) {
+			wp_die( 'Security check failed' );
+		}
 
-        wp_send_json_success('Configuration appears valid. Test with actual form submission to verify functionality.');
-    }
+		// Check permissions
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( 'Insufficient permissions' );
+		}
 
-    /**
-     * Get default options
-     */
-    private function get_default_options(): array {
-        return array(
-            'enabled' => false,
-            'v3_site_key' => '',
-            'v3_secret_key' => '',
-            'threshold' => self::DEFAULT_THRESHOLD,
-            'badge_position' => 'bottomright'
-        );
-    }
+		$key_type = sanitize_text_field( $_POST['key_type'] );
 
-    /**
-     * Get admin CSS styles
-     */
-    private function get_admin_styles(): string {
-        return '
+		// Get current options
+		$options = get_option( self::OPTION_NAME, $this->get_default_options() );
+
+		// For site key testing, we just validate format
+		if ( $key_type === 'site' ) {
+			$site_key = $options['v3_site_key'];
+
+			if ( empty( $site_key ) ) {
+				wp_send_json_error( 'Site key is empty' );
+			}
+
+			if ( ! preg_match( '/^6L[a-zA-Z0-9_-]{38}$/', $site_key ) ) {
+				wp_send_json_error( 'Invalid site key format' );
+			}
+
+			wp_send_json_success( 'Site key format is valid' );
+		}
+
+		// For secret key testing, we can't test without a valid token
+		// So we'll just validate format and provide guidance
+		$secret_key = $options['v3_secret_key'];
+
+		if ( empty( $secret_key ) ) {
+			wp_send_json_error( 'Secret key is empty' );
+		}
+
+		if ( ! preg_match( '/^6L[a-zA-Z0-9_-]{38}$/', $secret_key ) ) {
+			wp_send_json_error( 'Invalid secret key format' );
+		}
+
+		wp_send_json_success( 'Configuration appears valid. Test with actual form submission to verify functionality.' );
+	}
+
+	/**
+	 * Get default options
+	 */
+	private function get_default_options(): array {
+		return array(
+			'enabled'        => false,
+			'v3_site_key'    => '',
+			'v3_secret_key'  => '',
+			'threshold'      => self::DEFAULT_THRESHOLD,
+			'badge_position' => 'bottomright',
+		);
+	}
+
+	/**
+	 * Get admin CSS styles
+	 */
+	private function get_admin_styles(): string {
+		return '
             .test-connection {
                 margin-left: 10px;
             }
@@ -514,13 +516,13 @@ class RAE_ReCaptcha_Options {
                 padding-right: 30px;
             }
         ';
-    }
+	}
 
-    /**
-     * Get admin JavaScript
-     */
-    private function get_admin_javascript(): string {
-        return '
+	/**
+	 * Get admin JavaScript
+	 */
+	private function get_admin_javascript(): string {
+		return '
             jQuery(document).ready(function($) {
                 // Connection testing
                 $(".test-connection").on("click", function() {
@@ -588,37 +590,40 @@ class RAE_ReCaptcha_Options {
                 });
             });
         ';
-    }
+	}
 
-    /**
-     * Get current settings for external use
-     */
-    public static function get_settings() {
-        return get_option(self::OPTION_NAME, array(
-            'enabled' => false,
-            'v3_site_key' => '',
-            'v3_secret_key' => '',
-            'threshold' => self::DEFAULT_THRESHOLD,
-            'badge_position' => 'bottomright'
-        ));
-    }
+	/**
+	 * Get current settings for external use
+	 */
+	public static function get_settings() {
+		return get_option(
+			self::OPTION_NAME,
+			array(
+				'enabled'        => false,
+				'v3_site_key'    => '',
+				'v3_secret_key'  => '',
+				'threshold'      => self::DEFAULT_THRESHOLD,
+				'badge_position' => 'bottomright',
+			)
+		);
+	}
 
-    /**
-     * Check if reCAPTCHA is enabled and properly configured
-     */
-    public static function is_enabled(): bool {
-        $settings = self::get_settings();
-        return $settings['enabled'] && 
-               !empty($settings['v3_site_key']) && 
-               !empty($settings['v3_secret_key']);
-    }
+	/**
+	 * Check if reCAPTCHA is enabled and properly configured
+	 */
+	public static function is_enabled(): bool {
+		$settings = self::get_settings();
+		return $settings['enabled'] &&
+				! empty( $settings['v3_site_key'] ) &&
+				! empty( $settings['v3_secret_key'] );
+	}
 
 
-    /**
-     * Get threshold for external use
-     */
-    public static function get_threshold(): float {
-        $settings = self::get_settings();
-        return floatval($settings['threshold']);
-    }
+	/**
+	 * Get threshold for external use
+	 */
+	public static function get_threshold(): float {
+		$settings = self::get_settings();
+		return floatval( $settings['threshold'] );
+	}
 }

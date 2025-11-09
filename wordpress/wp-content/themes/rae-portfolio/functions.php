@@ -1,23 +1,23 @@
 <?php
 /**
  * Rae Portfolio Theme Functions
- * 
+ *
  * This file has been refactored into modular components for better maintainability.
  * All functionality is now organized in the /includes directory structure.
- * 
+ *
  * For the original monolithic version, see functions-backup.php
  */
 
 // Prevent direct access
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 /**
  * Define theme constants
  */
-define('RAE_THEME_PATH', get_template_directory());
-define('RAE_THEME_URL', get_template_directory_uri());
+define( 'RAE_THEME_PATH', get_template_directory() );
+define( 'RAE_THEME_URL', get_template_directory_uri() );
 const RAE_INCLUDES_PATH = RAE_THEME_PATH . '/includes/';
 
 /**
@@ -29,16 +29,16 @@ require_once RAE_INCLUDES_PATH . 'class-theme-loader.php';
  * Theme activation hook
  */
 function rae_theme_activation(): void {
-    // Flush rewrite rules to ensure custom post types work
-    flush_rewrite_rules();
+	// Flush rewrite rules to ensure custom post types work
+	flush_rewrite_rules();
 }
-register_activation_hook(__FILE__, 'rae_theme_activation');
+register_activation_hook( __FILE__, 'rae_theme_activation' );
 
 /**
  * Theme deactivation hook
  */
 function rae_theme_deactivation(): void {
-    // Flush rewrite rules on deactivation
-    flush_rewrite_rules();
+	// Flush rewrite rules on deactivation
+	flush_rewrite_rules();
 }
-register_deactivation_hook(__FILE__, 'rae_theme_deactivation');
+register_deactivation_hook( __FILE__, 'rae_theme_deactivation' );

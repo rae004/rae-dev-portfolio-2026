@@ -14,5 +14,11 @@
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
+    },
+    "scripts": {
+        "phpcs": "vendor/bin/phpcs --standard=./ruleset.xml --extensions=php --ignore=./assests,./styles,.vendor/,./node_modules -ps .",
+        "phpcs:fix": "vendor/bin/phpcbf --standard=./ruleset.xml --extensions=php --ignore=./assests,./styles,.vendor/,./node_modules -ps .",
+        "phpcs:standards": "vendor/bin/phpcs -i",
+        "phpcs:wordpress:rules": "vendor/bin/phpcs -e --standard=WordPress"
     }
 }
