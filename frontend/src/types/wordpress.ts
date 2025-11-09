@@ -168,6 +168,8 @@ export interface WordPressQueryParams {
   author?: number[]
   exclude?: number[]
   include?: number[]
+  enabled_only?: string
+  limit?: string
 }
 
 // Extended query parameters for media projects

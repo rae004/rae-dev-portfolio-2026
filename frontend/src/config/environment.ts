@@ -13,6 +13,13 @@ export interface EnvironmentConfig {
   isDevelopment: boolean
   isProduction: boolean
   isLocal: boolean
+  recaptcha: {
+    enabled: boolean
+    siteKeyV3?: string
+    siteKeyV2?: string
+    threshold: number
+    badgePosition: 'bottomright' | 'bottomleft' | 'inline'
+  }
 }
 
 /**
@@ -25,14 +32,29 @@ const ENVIRONMENT_CONFIGS: Record<
   local: {
     name: 'local',
     wpApiBase: 'http://localhost:8080',
+    recaptcha: {
+      enabled: true, // Enabled for local testing
+      threshold: 0.5,
+      badgePosition: 'bottomright',
+    },
   },
   development: {
     name: 'development',
     wpApiBase: 'https://api-dev.rae-dev.com',
+    recaptcha: {
+      enabled: true, // Will be dynamically loaded from WordPress
+      threshold: 0.5, // Default, will be overridden by WordPress settings
+      badgePosition: 'bottomright',
+    },
   },
   production: {
     name: 'production',
     wpApiBase: 'https://api.rae-dev.com',
+    recaptcha: {
+      enabled: true, // Will be dynamically loaded from WordPress
+      threshold: 0.5, // Default, will be overridden by WordPress settings
+      badgePosition: 'bottomright',
+    },
   },
 }
 
@@ -97,13 +119,34 @@ export const devLog = (...args: unknown[]) => {
 }
 
 /**
+ * Get reCAPTCHA configuration for current environment
+ */
+export const getReCaptchaConfig = () => config.recaptcha
+
+/**
+ * Check if reCAPTCHA is enabled in current environment
+ */
+export const isReCaptchaEnabled = () => config.recaptcha.enabled
+
+/**
+ * Get reCAPTCHA threshold for current environment
+ */
+export const getReCaptchaThreshold = () => config.recaptcha.threshold
+
+/**
+ * Get reCAPTCHA badge position for current environment
+ */
+export const getReCaptchaBadgePosition = () => config.recaptcha.badgePosition
+
+/**
  * Validate environment configuration at startup
  */
 export const validateEnvironment = () => {
-  const { name, wpApiBase } = config
+  const { name, wpApiBase, recaptcha } = config
 
   devLog('Environment detected:', name)
   devLog('WordPress API Base:', wpApiBase)
+  devLog('reCAPTCHA enabled:', recaptcha.enabled)
 
   // Validate API URL format
   try {
@@ -116,6 +159,11 @@ export const validateEnvironment = () => {
   // Warn about localhost in non-local environments
   if (!config.isLocal && wpApiBase.includes('localhost')) {
     console.warn('⚠️  Using localhost API URL in non-local environment!')
+  }
+
+  // reCAPTCHA configuration validation
+  if (recaptcha.enabled && !config.isLocal) {
+    devLog('reCAPTCHA configuration will be loaded from WordPress API')
   }
 
   return config

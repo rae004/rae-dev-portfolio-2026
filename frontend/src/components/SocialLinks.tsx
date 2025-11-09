@@ -37,11 +37,11 @@ const SocialLinks: React.FC<SocialLinksProps> = ({
   }, [data?.social_links?.length, isLoading, onEmpty])
 
   // Platform icon mapping using SVG for better scalability and customization
-  const getPlatformIcon = (platform: SocialPlatform): JSX.Element => {
+  const getPlatformIcon = (platform: SocialPlatform): React.ReactElement => {
     const iconProps = {
       className: 'w-5 h-5',
       fill: 'currentColor',
-      'aria-hidden': 'true',
+      'aria-hidden': true as const,
     }
 
     switch (platform) {
