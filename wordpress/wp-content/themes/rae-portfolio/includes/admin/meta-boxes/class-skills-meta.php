@@ -22,7 +22,7 @@ class RAE_Skills_Meta_Box {
     /**
      * Add skills meta box
      */
-    public function add_meta_box() {
+    public function add_meta_box(): void {
         add_meta_box(
             'rae_skills_details',
             'Skill Details',
@@ -36,7 +36,7 @@ class RAE_Skills_Meta_Box {
     /**
      * Skills meta box callback
      */
-    public function meta_box_callback($post) {
+    public function meta_box_callback($post): void {
         // Add nonce for security
         wp_nonce_field('rae_skills_nonce', 'rae_skills_nonce_field');
         
@@ -168,7 +168,7 @@ class RAE_Skills_Meta_Box {
     /**
      * Save skills meta data
      */
-    public function save_meta_data($post_id) {
+    public function save_meta_data($post_id): void {
         // Check if nonce is valid
         if (!isset($_POST['rae_skills_nonce_field']) || 
             !wp_verify_nonce($_POST['rae_skills_nonce_field'], 'rae_skills_nonce')) {

@@ -23,7 +23,7 @@ class RAE_Media_Skills_Meta_Box {
     /**
      * Add media project skills meta box
      */
-    public function add_meta_box() {
+    public function add_meta_box(): void {
         add_meta_box(
             'rae_media_project_skills',
             'Related Skills',
@@ -37,7 +37,7 @@ class RAE_Media_Skills_Meta_Box {
     /**
      * Media project skills meta box callback
      */
-    public function meta_box_callback($post) {
+    public function meta_box_callback($post): void {
         // Add nonce for security
         wp_nonce_field('rae_media_project_skills_nonce', 'rae_media_project_skills_nonce_field');
         
@@ -83,7 +83,7 @@ class RAE_Media_Skills_Meta_Box {
         
         // Sort categories and skills within categories by weight
         ksort($skills_by_category);
-        foreach ($skills_by_category as $category => &$skills) {
+        foreach ($skills_by_category as &$skills) {
             usort($skills, function($a, $b) {
                 $weight_diff = $b['weight'] - $a['weight'];
                 return $weight_diff !== 0 ? $weight_diff : strcmp($a['value'], $b['value']);

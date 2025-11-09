@@ -22,7 +22,7 @@ class RAE_Software_Details_Meta_Box {
     /**
      * Add software project details meta box
      */
-    public function add_meta_box() {
+    public function add_meta_box(): void {
         add_meta_box(
             'rae_software_project_details',
             'Project Details',
@@ -36,7 +36,7 @@ class RAE_Software_Details_Meta_Box {
     /**
      * Software project details meta box callback
      */
-    public function meta_box_callback($post) {
+    public function meta_box_callback($post): void {
         // Add nonce for security
         wp_nonce_field('rae_software_project_details_nonce', 'rae_software_project_details_nonce_field');
         
@@ -60,7 +60,7 @@ class RAE_Software_Details_Meta_Box {
     /**
      * Get all available skill categories
      */
-    private function get_skill_categories() {
+    private function get_skill_categories(): array {
         $categories = array();
         
         $args = array(
@@ -95,7 +95,7 @@ class RAE_Software_Details_Meta_Box {
     /**
      * Render the project details interface
      */
-    private function render_details_interface($release_date, $demo_link, $repo_link, $project_state, $tech_categories, $skill_categories) {
+    private function render_details_interface($release_date, $demo_link, $repo_link, $project_state, $tech_categories, $skill_categories): void {
         ?>
         <div class="rae-software-details-fields">
             <table class="form-table">
@@ -247,7 +247,7 @@ class RAE_Software_Details_Meta_Box {
                     if (value && !isValidUrl(value)) {
                         $input.css('border-color', '#d63638');
                         if (!$input.next('.url-error-message').length) {
-                            $input.after('<p class="url-error-message" style="color: #d63638; margin-top: 5px;">Please enter a valid URL starting with http:// or https://</p>');
+                            $input.after('<p class="url-error-message" style="color: #d63638; margin-top: 5px;">Please enter a valid URL starting with https://</p>');
                         }
                     } else {
                         $input.css('border-color', '');
@@ -306,9 +306,9 @@ class RAE_Software_Details_Meta_Box {
     }
     
     /**
-     * Save software project details meta data
+     * Save software project details metadata
      */
-    public function save_meta_data($post_id) {
+    public function save_meta_data($post_id): void {
         // Check if user has permission to edit the post
         if (!current_user_can('edit_post', $post_id)) {
             return;

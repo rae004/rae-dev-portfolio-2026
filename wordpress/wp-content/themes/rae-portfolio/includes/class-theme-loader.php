@@ -45,7 +45,6 @@ class RAE_Theme_Loader {
 
         // Load utilities
         $this->load_file($includes_path . 'utilities/class-date-formatter.php');
-        $this->load_file($includes_path . 'utilities/class-skill-utilities.php');
         $this->load_file($includes_path . 'utilities/class-meta-utilities.php');
 
         // Load post types

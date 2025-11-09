@@ -23,7 +23,7 @@ class RAE_Software_Skills_Meta_Box {
     /**
      * Add software project skills meta box
      */
-    public function add_meta_box() {
+    public function add_meta_box(): void {
         add_meta_box(
             'rae_software_project_skills',
             'Related Skills',
@@ -37,7 +37,7 @@ class RAE_Software_Skills_Meta_Box {
     /**
      * Software project skills meta box callback
      */
-    public function meta_box_callback($post) {
+    public function meta_box_callback($post): void {
         // Add nonce for security
         wp_nonce_field('rae_software_project_skills_nonce', 'rae_software_project_skills_nonce_field');
         
@@ -83,7 +83,7 @@ class RAE_Software_Skills_Meta_Box {
         
         // Sort categories and skills within categories by weight
         ksort($skills_by_category);
-        foreach ($skills_by_category as $category => &$skills) {
+        foreach ($skills_by_category as &$skills) {
             usort($skills, function($a, $b) {
                 $weight_diff = $b['weight'] - $a['weight'];
                 return $weight_diff !== 0 ? $weight_diff : strcmp($a['value'], $b['value']);
@@ -96,14 +96,15 @@ class RAE_Software_Skills_Meta_Box {
     /**
      * Render the skills selection interface
      */
-    private function render_skills_interface($skills_by_category, $selected_skills) {
+    private function render_skills_interface($skills_by_category, $selected_skills): void {
         ?>
         <div class="rae-software-skills-selector">
             <div class="skills-search-container" style="margin-bottom: 20px;">
-                <input type="text" 
-                       id="software-skills-search" 
-                       placeholder="Search skills..." 
-                       style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 3px;" />
+                <label><input type="text"
+                    id="software-skills-search"
+                    placeholder="Search skills..."
+                    style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 3px;" />
+                </label>
                 <p class="description">Search and select skills related to this software project. Selected skills will appear highlighted.</p>
             </div>
             
@@ -118,7 +119,6 @@ class RAE_Software_Skills_Meta_Box {
                             $skill_post = get_post($skill_id);
                             if ($skill_post):
                                 $skill_value = get_post_meta($skill_id, '_skill_value', true) ?: $skill_post->post_title;
-                                $skill_type = get_post_meta($skill_id, '_skill_type', true) ?: 'Other';
                             ?>
                                 <span class="selected-skill-pill" data-skill-id="<?php echo $skill_id; ?>" 
                                       style="display: inline-block; margin: 2px 5px 2px 0; padding: 4px 8px; background: #0073aa; color: white; border-radius: 3px; font-size: 12px;">
@@ -224,7 +224,6 @@ class RAE_Software_Skills_Meta_Box {
                 
                 // Select all in category
                 $('.rae-software-skills-selector .category-select-all').on('click', function() {
-                    const category = $(this).data('category');
                     const $categoryGroup = $(this).closest('.category-group');
                     const $checkboxes = $categoryGroup.find('input[type="checkbox"]');
                     const allChecked = $checkboxes.filter(':checked').length === $checkboxes.length;
@@ -316,7 +315,7 @@ class RAE_Software_Skills_Meta_Box {
     /**
      * Save software project skills meta data
      */
-    public function save_meta_data($post_id) {
+    public function save_meta_data($post_id): void {
         // Check if user has permission to edit the post
         if (!current_user_can('edit_post', $post_id)) {
             return;

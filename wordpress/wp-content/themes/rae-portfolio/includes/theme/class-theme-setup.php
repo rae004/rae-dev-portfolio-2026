@@ -22,7 +22,7 @@ class RAE_Theme_Setup {
     /**
      * Theme setup
      */
-    public function setup_theme() {
+    public function setup_theme(): void {
         // Add theme support for featured images
         add_theme_support('post-thumbnails');
         
@@ -69,7 +69,7 @@ class RAE_Theme_Setup {
     /**
      * Enqueue admin scripts and styles
      */
-    public function admin_enqueue_scripts($hook) {
+    public function admin_enqueue_scripts($hook): void {
         // Only load on post edit pages
         if ('post.php' === $hook || 'post-new.php' === $hook) {
             // Enqueue WordPress date picker

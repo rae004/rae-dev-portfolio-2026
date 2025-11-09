@@ -571,5 +571,3 @@ export const initializeReCaptcha = async (): Promise<boolean> => {
   const service = getReCaptchaService()
   return await service.initialize()
 }
-
-export default ReCaptchaService

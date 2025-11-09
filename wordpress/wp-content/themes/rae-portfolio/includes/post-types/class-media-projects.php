@@ -21,7 +21,7 @@ class RAE_Media_Projects_Post_Type {
     /**
      * Register the media projects post type
      */
-    public function register_post_type() {
+    public function register_post_type(): void {
         register_post_type('media-project', array(
             'labels' => array(
                 'name' => 'Media Projects',

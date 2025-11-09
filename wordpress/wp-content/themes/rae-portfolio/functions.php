@@ -18,7 +18,6 @@ if (!defined('ABSPATH')) {
  */
 define('RAE_THEME_PATH', get_template_directory());
 define('RAE_THEME_URL', get_template_directory_uri());
-const RAE_THEME_VERSION = '1.0.0';
 const RAE_INCLUDES_PATH = RAE_THEME_PATH . '/includes/';
 
 /**

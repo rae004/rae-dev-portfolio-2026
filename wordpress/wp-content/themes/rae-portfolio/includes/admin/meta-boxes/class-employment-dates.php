@@ -22,7 +22,7 @@ class RAE_Employment_Dates_Meta_Box {
     /**
      * Add employment dates meta box
      */
-    public function add_meta_box() {
+    public function add_meta_box(): void {
         add_meta_box(
             'rae_employment_dates',
             'Employment Dates',
@@ -36,12 +36,11 @@ class RAE_Employment_Dates_Meta_Box {
     /**
      * Employment dates meta box callback
      */
-    public function meta_box_callback($post) {
+    public function meta_box_callback($post): void {
         // Add nonce for security
         wp_nonce_field('rae_employment_dates_nonce', 'rae_employment_dates_nonce_field');
         
         // Get current values
-        $start_date = get_post_meta($post->ID, '_resume_start_date', true);
         $end_date = get_post_meta($post->ID, '_resume_end_date', true);
         $currently_employed = get_post_meta($post->ID, '_resume_currently_employed', true);
         
@@ -98,9 +97,10 @@ class RAE_Employment_Dates_Meta_Box {
         
         <script type="text/javascript">
             jQuery(document).ready(function($) {
+                const resumeCurrentlyEmployed = $('#resume_currently_employed');
                 // Function to toggle end date field
                 function toggleEndDateField() {
-                    const isCurrentlyEmployed = $('#resume_currently_employed').is(':checked');
+                    const isCurrentlyEmployed = resumeCurrentlyEmployed.is(':checked');
                     if (isCurrentlyEmployed) {
                         $('#end_date_row').hide();
                         $('#resume_end_date').val('');
@@ -113,7 +113,7 @@ class RAE_Employment_Dates_Meta_Box {
                 toggleEndDateField();
                 
                 // On checkbox change
-                $('#resume_currently_employed').change(function() {
+                resumeCurrentlyEmployed.change(function() {
                     toggleEndDateField();
                 });
             });
@@ -142,7 +142,7 @@ class RAE_Employment_Dates_Meta_Box {
     /**
      * Save employment dates meta data
      */
-    public function save_meta_data($post_id) {
+    public function save_meta_data($post_id): void {
         // Check if nonce is valid
         if (!isset($_POST['rae_employment_dates_nonce_field']) || 
             !wp_verify_nonce($_POST['rae_employment_dates_nonce_field'], 'rae_employment_dates_nonce')) {
@@ -165,7 +165,7 @@ class RAE_Employment_Dates_Meta_Box {
         }
         
         // Save start date
-        if (isset($_POST['resume_start_date']) && !empty($_POST['resume_start_date'])) {
+        if ( !empty($_POST['resume_start_date']) ) {
             $start_date = sanitize_text_field($_POST['resume_start_date']);
             // Convert to readable format and store
             $start_date_formatted = date('F Y', strtotime($start_date));
@@ -181,7 +181,7 @@ class RAE_Employment_Dates_Meta_Box {
         update_post_meta($post_id, '_resume_currently_employed', $currently_employed);
         
         // Save end date (only if not currently employed)
-        if ($currently_employed === '0' && isset($_POST['resume_end_date']) && !empty($_POST['resume_end_date'])) {
+        if ( $currently_employed === '0' && !empty($_POST['resume_end_date'])) {
             $end_date = sanitize_text_field($_POST['resume_end_date']);
             // Convert to readable format and store
             $end_date_formatted = date('F Y', strtotime($end_date));
@@ -191,11 +191,10 @@ class RAE_Employment_Dates_Meta_Box {
             // If currently employed, clear end date and set to "Present"
             if ($currently_employed === '1') {
                 update_post_meta($post_id, '_resume_end_date', 'Present');
-                delete_post_meta($post_id, '_resume_end_date_raw');
             } else {
                 delete_post_meta($post_id, '_resume_end_date');
-                delete_post_meta($post_id, '_resume_end_date_raw');
             }
+	        delete_post_meta($post_id, '_resume_end_date_raw');
         }
     }
 }

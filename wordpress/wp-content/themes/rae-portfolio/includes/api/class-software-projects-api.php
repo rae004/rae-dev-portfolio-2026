@@ -21,7 +21,7 @@ class RAE_Software_Projects_API extends RAE_API_Base {
     /**
      * Register REST API endpoints
      */
-    public function register_endpoints() {
+    public function register_endpoints(): void {
         // Software projects collection endpoint
         register_rest_route('wp/v2', '/software-projects', array(
             'methods' => WP_REST_Server::READABLE,
@@ -54,7 +54,7 @@ class RAE_Software_Projects_API extends RAE_API_Base {
             'permission_callback' => array($this, 'public_permission_callback'),
             'args' => array(
                 'id' => array(
-                    'validate_callback' => function($param, $request, $key) {
+                    'validate_callback' => function($param) {
                         return is_numeric($param);
                     }
                 ),
@@ -65,7 +65,7 @@ class RAE_Software_Projects_API extends RAE_API_Base {
     /**
      * Get software projects collection
      */
-    public function get_items($request) {
+    public function get_items($request): WP_Error|WP_REST_Response {
         try {
             $per_page = $request->get_param('per_page');
             $page = $request->get_param('page');
@@ -108,7 +108,7 @@ class RAE_Software_Projects_API extends RAE_API_Base {
     /**
      * Get individual software project
      */
-    public function get_item($request) {
+    public function get_item($request): WP_Error|WP_REST_Response {
         try {
             $id = (int) $request['id'];
             $post = get_post($id);
@@ -128,7 +128,7 @@ class RAE_Software_Projects_API extends RAE_API_Base {
     /**
      * Prepare software project for API response
      */
-    private function prepare_software_project_for_response($post) {
+    private function prepare_software_project_for_response($post): array {
         // Get basic post data
         $data = array(
             'id' => $post->ID,
@@ -183,7 +183,7 @@ class RAE_Software_Projects_API extends RAE_API_Base {
     /**
      * Get related skills for a software project with full skill data
      */
-    private function get_software_project_skills($project_id) {
+    private function get_software_project_skills($project_id): array {
         $skill_ids = get_post_meta($project_id, '_software_project_related_skills', true);
         
         if (empty($skill_ids) || !is_array($skill_ids)) {

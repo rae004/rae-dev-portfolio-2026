@@ -21,7 +21,7 @@ class RAE_Media_Projects_API extends RAE_API_Base {
     /**
      * Register REST API endpoints
      */
-    public function register_endpoints() {
+    public function register_endpoints(): void {
         // Media projects collection endpoint
         register_rest_route('wp/v2', '/media-projects', array(
             'methods' => WP_REST_Server::READABLE,
@@ -65,7 +65,7 @@ class RAE_Media_Projects_API extends RAE_API_Base {
     /**
      * Get media projects
      */
-    public function get_items($request) {
+    public function get_items($request): WP_Error|WP_REST_Response|WP_HTTP_Response {
         $params = $this->get_sanitized_params($request, array('per_page' => 100));
         $args = $this->format_query_args('media-project', $params);
         
@@ -82,7 +82,7 @@ class RAE_Media_Projects_API extends RAE_API_Base {
     /**
      * Get single media project
      */
-    public function get_item($request) {
+    public function get_item($request): WP_Error|WP_REST_Response|WP_HTTP_Response {
         $id = $request->get_param('id');
         $post = get_post($id);
         
@@ -97,7 +97,7 @@ class RAE_Media_Projects_API extends RAE_API_Base {
     /**
      * Prepare media project item data for REST API response
      */
-    public function prepare_item($post) {
+    public function prepare_item($post): array {
         // Get featured image
         $featured_image_id = get_post_thumbnail_id($post->ID);
         $featured_image_url = $featured_image_id ? wp_get_attachment_image_url($featured_image_id, 'full') : null;
@@ -168,7 +168,7 @@ class RAE_Media_Projects_API extends RAE_API_Base {
     /**
      * Get music project specific data
      */
-    private function get_music_project_data($post_id) {
+    private function get_music_project_data($post_id): array {
         return array(
             'music_artist_name' => get_post_meta($post_id, '_music_artist_name', true) ?: null,
             'music_genre' => get_post_meta($post_id, '_music_genre', true) ?: null,
@@ -186,7 +186,7 @@ class RAE_Media_Projects_API extends RAE_API_Base {
     /**
      * Get audio post production project specific data
      */
-    private function get_audio_post_project_data($post_id) {
+    private function get_audio_post_project_data($post_id): array {
         return array(
             'audio_director' => get_post_meta($post_id, '_audio_director', true) ?: null,
             'audio_genre' => get_post_meta($post_id, '_audio_genre', true) ?: null,
@@ -203,7 +203,7 @@ class RAE_Media_Projects_API extends RAE_API_Base {
     /**
      * Get related skills for the media project
      */
-    private function get_related_skills($post_id) {
+    private function get_related_skills($post_id): array {
         $related_skill_ids = get_post_meta($post_id, '_media_project_related_skills', true);
         $related_skills = array();
         

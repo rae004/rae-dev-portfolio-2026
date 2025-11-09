@@ -21,7 +21,7 @@ class RAE_Resume_API extends RAE_API_Base {
     /**
      * Register REST API endpoints
      */
-    public function register_endpoints() {
+    public function register_endpoints(): void {
         // Resume collection endpoint
         register_rest_route('wp/v2', '/resume', array(
             'methods' => WP_REST_Server::READABLE,
@@ -65,7 +65,7 @@ class RAE_Resume_API extends RAE_API_Base {
     /**
      * Get resume items
      */
-    public function get_items($request) {
+    public function get_items($request): WP_Error|WP_REST_Response|WP_HTTP_Response {
         $params = $this->get_sanitized_params($request);
         $args = $this->format_query_args('resume', $params);
         
@@ -82,7 +82,7 @@ class RAE_Resume_API extends RAE_API_Base {
     /**
      * Get single resume item
      */
-    public function get_item($request) {
+    public function get_item($request): WP_Error|WP_REST_Response|WP_HTTP_Response {
         $id = $request->get_param('id');
         $post = get_post($id);
         
@@ -97,7 +97,7 @@ class RAE_Resume_API extends RAE_API_Base {
     /**
      * Prepare resume item data for REST API response
      */
-    public function prepare_item($post) {
+    public function prepare_item($post): array {
         // Get employment date meta
         $start_date = get_post_meta($post->ID, '_resume_start_date', true);
         $end_date = get_post_meta($post->ID, '_resume_end_date', true);

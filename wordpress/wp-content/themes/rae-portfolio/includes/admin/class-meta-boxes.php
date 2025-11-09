@@ -26,7 +26,7 @@ class RAE_Meta_Boxes {
     /**
      * Enqueue scripts and styles for meta boxes
      */
-    public function enqueue_meta_box_scripts($hook) {
+    public function enqueue_meta_box_scripts($hook): void {
         // Only load on post edit pages
         if ('post.php' === $hook || 'post-new.php' === $hook) {
             // Common meta box styles
@@ -40,7 +40,7 @@ class RAE_Meta_Boxes {
     /**
      * Get common meta box styles
      */
-    private function get_meta_box_styles() {
+    private function get_meta_box_styles(): string {
         return '
             .rae-meta-box .form-table th {
                 width: 150px;
@@ -139,7 +139,7 @@ class RAE_Meta_Boxes {
     /**
      * Get common meta box scripts
      */
-    private function get_meta_box_scripts() {
+    private function get_meta_box_scripts(): string {
         return '
             // Common meta box utilities
             window.RAE_MetaBox = {

@@ -29,7 +29,7 @@ class Rae_Media_Project_Details {
     /**
      * Add media project meta boxes
      */
-    public function add_meta_boxes() {
+    public function add_meta_boxes(): void {
         add_meta_box(
             'rae_media_project_type',
             'Project Type',
@@ -61,7 +61,7 @@ class Rae_Media_Project_Details {
     /**
      * Project type selection meta box callback
      */
-    public function project_type_meta_box_callback($post) {
+    public function project_type_meta_box_callback($post): void {
         wp_nonce_field('rae_media_project_nonce', 'rae_media_project_nonce_field');
         
         $project_type = get_post_meta($post->ID, '_media_project_type', true);
@@ -84,8 +84,9 @@ class Rae_Media_Project_Details {
         
         <script type="text/javascript">
             jQuery(document).ready(function($) {
+                const projectTypeElement = $('#media_project_type');
                 function toggleProjectFields() {
-                    const projectType = $('#media_project_type').val();
+                    const projectType = projectTypeElement.val();
                     
                     if (projectType === 'Music') {
                         $('#rae_music_project_details').show();
@@ -103,7 +104,7 @@ class Rae_Media_Project_Details {
                 toggleProjectFields();
                 
                 // On change
-                $('#media_project_type').change(function() {
+                projectTypeElement.change(function() {
                     toggleProjectFields();
                 });
             });
@@ -114,7 +115,7 @@ class Rae_Media_Project_Details {
     /**
      * Music project details meta box callback
      */
-    public function music_project_details_meta_box_callback($post) {
+    public function music_project_details_meta_box_callback($post): void {
         // Get current values
         $artist_name = get_post_meta($post->ID, '_music_artist_name', true);
         $album_names = get_post_meta($post->ID, '_music_album_names', true);
@@ -219,7 +220,7 @@ class Rae_Media_Project_Details {
     /**
      * Audio post production details meta box callback
      */
-    public function audio_post_project_details_meta_box_callback($post) {
+    public function audio_post_project_details_meta_box_callback($post): void {
         // Get current values
         $project_name = get_post_meta($post->ID, '_audio_project_name', true);
         $director = get_post_meta($post->ID, '_audio_director', true);
@@ -355,7 +356,7 @@ class Rae_Media_Project_Details {
     /**
      * Save media project meta data
      */
-    public function save_meta_data($post_id) {
+    public function save_meta_data($post_id): void {
         // Check if nonce is valid
         if (!isset($_POST['rae_media_project_nonce_field']) || 
             !wp_verify_nonce($_POST['rae_media_project_nonce_field'], 'rae_media_project_nonce')) {

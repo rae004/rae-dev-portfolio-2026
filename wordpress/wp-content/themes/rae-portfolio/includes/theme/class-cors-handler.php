@@ -21,7 +21,7 @@ class RAE_CORS_Handler {
     /**
      * Add CORS headers to REST API responses
      */
-    public function add_cors_headers() {
+    public function add_cors_headers(): void {
         // Development domains
         $allowed_origins = array(
             'http://localhost:5173',  // Vite dev server
@@ -31,7 +31,7 @@ class RAE_CORS_Handler {
         );
         
         // Get the origin of the request
-        $origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
+        $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
         
         // Check if the origin is in our allowed list
         if (in_array($origin, $allowed_origins)) {

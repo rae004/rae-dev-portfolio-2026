@@ -21,7 +21,7 @@ class RAE_Skills_Post_Type {
     /**
      * Register the skills post type
      */
-    public function register_post_type() {
+    public function register_post_type(): void {
         register_post_type('skill', array(
             'labels' => array(
                 'name' => 'Skills',

@@ -21,7 +21,7 @@ class RAE_Resume_Post_Type {
     /**
      * Register the resume post type
      */
-    public function register_post_type() {
+    public function register_post_type(): void {
         register_post_type('resume', array(
             'labels' => array(
                 'name' => 'Resume Items',

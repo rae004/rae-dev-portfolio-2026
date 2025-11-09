@@ -14,12 +14,12 @@ class RAE_Social_Links_Options {
     /**
      * Option name for storing social links
      */
-    const OPTION_NAME = 'rae_social_links';
+    const string OPTION_NAME = 'rae_social_links';
 
     /**
      * Maximum allowed social links
      */
-    const MAX_LINKS = 9;
+    const int MAX_LINKS = 9;
 
     /**
      * Constructor
@@ -33,7 +33,7 @@ class RAE_Social_Links_Options {
     /**
      * Add social links options page to WordPress admin
      */
-    public function add_options_page() {
+    public function add_options_page(): void {
         add_options_page(
             'Social Links',           // Page title
             'Social Links',           // Menu title
@@ -46,7 +46,7 @@ class RAE_Social_Links_Options {
     /**
      * Initialize settings using WordPress Settings API
      */
-    public function init_settings() {
+    public function init_settings(): void {
         // Register setting
         register_setting(
             'rae_social_links_group',
@@ -75,7 +75,7 @@ class RAE_Social_Links_Options {
     /**
      * Enqueue admin scripts and styles
      */
-    public function enqueue_admin_scripts($hook) {
+    public function enqueue_admin_scripts($hook): void {
         if ($hook !== 'settings_page_rae-social-links') {
             return;
         }
@@ -93,14 +93,11 @@ class RAE_Social_Links_Options {
     /**
      * Options page callback
      */
-    public function options_page_callback() {
+    public function options_page_callback(): void {
         // Check user permissions
         if (!current_user_can('manage_options')) {
             return;
         }
-
-        // Get current options
-        $options = get_option(self::OPTION_NAME, $this->get_default_options());
 
         ?>
         <div class="wrap">
@@ -109,7 +106,7 @@ class RAE_Social_Links_Options {
             <div class="notice notice-info">
                 <p>
                     <strong>How to use:</strong> Add up to <?php echo self::MAX_LINKS; ?> social links that will appear in the "Connect With Me" section of your contact page.
-                    Drag and drop to reorder. Links must be valid URLs starting with https:// or http://.
+                    Drag and drop to reorder. Links must be valid URLs starting with https://.
                 </p>
             </div>
 
@@ -146,14 +143,14 @@ class RAE_Social_Links_Options {
     /**
      * Settings section callback
      */
-    public function settings_section_callback() {
+    public function settings_section_callback(): void {
         echo '<p>Configure the social links that appear on your contact page. You can add up to ' . self::MAX_LINKS . ' links.</p>';
     }
 
     /**
      * Social links callback
      */
-    public function social_links_callback() {
+    public function social_links_callback(): void {
         $options = get_option(self::OPTION_NAME, $this->get_default_options());
         $social_links = $options['social_links'] ?? array();
 
@@ -182,16 +179,16 @@ class RAE_Social_Links_Options {
                 <?php
                 // Display existing social links
                 $index = 0;
-                foreach ($social_links as $link_id => $link_data) {
+                foreach ($social_links as $link_data) {
                     if (!empty($link_data['label']) || !empty($link_data['url'])) {
-                        $this->render_social_link_row($link_id, $link_data, $index, true);
+                        $this->render_social_link_row($link_data, $index);
                         $index++;
                     }
                 }
 
                 // Add empty rows up to show_count
                 while ($index < $show_count) {
-                    $this->render_social_link_row('', array(), $index, true);
+                    $this->render_social_link_row(array(), $index);
                     $index++;
                 }
                 ?>
@@ -207,7 +204,7 @@ class RAE_Social_Links_Options {
 
         <!-- Hidden template row for adding new links -->
         <div id="social-link-template" style="display: none;">
-            <?php $this->render_social_link_row('', array(), 999, false); ?>
+            <?php $this->render_social_link_row(array(), 999, false); ?>
         </div>
         <?php
     }
@@ -215,7 +212,7 @@ class RAE_Social_Links_Options {
     /**
      * Render individual social link row
      */
-    private function render_social_link_row($link_id, $link_data, $index, $show_remove = true) {
+    private function render_social_link_row($link_data, $index, $show_remove = true): void {
         $label = isset($link_data['label']) ? esc_attr($link_data['label']) : '';
         $url = isset($link_data['url']) ? esc_attr($link_data['url']) : '';
         $enabled = $link_data['enabled'] ?? true;
@@ -259,7 +256,7 @@ class RAE_Social_Links_Options {
                         <input type="checkbox"
                                name="<?php echo self::OPTION_NAME; ?>[social_links][link_<?php echo $index; ?>][enabled]"
                                value="1"
-                               <?php checked($enabled, true); ?> />
+                               <?php checked($enabled); ?> />
                         Enabled
                     </label>
                 </div>
@@ -313,14 +310,13 @@ class RAE_Social_Links_Options {
                     add_settings_error(
                         self::OPTION_NAME,
                         'invalid_url',
-                        sprintf('Invalid URL provided: %s', esc_html($url)),
-                        'error'
+                        sprintf('Invalid URL provided: %s', esc_html($url))
                     );
                     continue;
                 }
 
                 // Sanitize enabled status
-                $enabled = isset($link_data['enabled']) ? (bool) $link_data['enabled'] : false;
+                $enabled = isset( $link_data['enabled'] ) && $link_data['enabled'];
 
                 // Set order
                 $order = isset($link_data['order']) ? intval($link_data['order']) : $valid_links;
@@ -355,7 +351,7 @@ class RAE_Social_Links_Options {
     /**
      * Detect platform from URL
      */
-    private function detect_platform($url) {
+    private function detect_platform($url): string {
         if (empty($url)) {
             return 'generic';
         }
@@ -364,7 +360,7 @@ class RAE_Social_Links_Options {
         $url_lower = strtolower($url);
 
         // Email detection
-        if (strpos($url_lower, 'mailto:') === 0) {
+        if ( str_starts_with( $url_lower, 'mailto:' ) ) {
             return 'email';
         }
 
@@ -389,13 +385,13 @@ class RAE_Social_Links_Options {
             'youtu.be' => 'youtube'
         );
 
-        return isset($platforms[$domain]) ? $platforms[$domain] : 'generic';
+        return $platforms[ $domain ] ?? 'generic';
     }
 
     /**
      * Get platform icon HTML
      */
-    private function get_platform_icon($platform) {
+    private function get_platform_icon($platform): string {
         $icons = array(
             'linkedin' => '<span class="dashicons dashicons-linkedin"></span>',
             'github' => '<span class="dashicons dashicons-github-alt"></span>',
@@ -407,13 +403,13 @@ class RAE_Social_Links_Options {
             'generic' => '<span class="dashicons dashicons-external"></span>'
         );
 
-        return isset($icons[$platform]) ? $icons[$platform] : $icons['generic'];
+        return $icons[ $platform ] ?? $icons['generic'];
     }
 
     /**
      * Get default options
      */
-    private function get_default_options() {
+    private function get_default_options(): array {
         return array(
             'social_links' => array()
         );
@@ -422,7 +418,7 @@ class RAE_Social_Links_Options {
     /**
      * Get admin CSS styles
      */
-    private function get_admin_styles() {
+    private function get_admin_styles(): string {
         return '
             #rae-social-links-container {
                 max-width: 900px;
@@ -595,7 +591,7 @@ class RAE_Social_Links_Options {
     /**
      * Get admin JavaScript
      */
-    private function get_admin_javascript() {
+    private function get_admin_javascript(): string {
         return '
             jQuery(document).ready(function($) {
                 const maxLinks = ' . self::MAX_LINKS . ';

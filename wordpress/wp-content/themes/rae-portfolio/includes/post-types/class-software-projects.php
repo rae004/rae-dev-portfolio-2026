@@ -21,7 +21,7 @@ class RAE_Software_Projects_Post_Type {
     /**
      * Register the software projects post type
      */
-    public function register_post_type() {
+    public function register_post_type(): void {
         register_post_type('software-project', array(
             'labels' => array(
                 'name' => 'Software Projects',

@@ -14,7 +14,7 @@ class RAE_API_Base {
     /**
      * Get sanitized parameters from request
      */
-    protected function get_sanitized_params($request, $defaults = array()) {
+    protected function get_sanitized_params($request, $defaults = array()): array {
         $params = array();
         
         // Common parameters
@@ -29,7 +29,7 @@ class RAE_API_Base {
     /**
      * Format WP_Query arguments
      */
-    protected function format_query_args($post_type, $params) {
+    protected function format_query_args($post_type, $params): array {
         return array(
             'post_type' => $post_type,
             'post_status' => 'publish',
@@ -39,51 +39,11 @@ class RAE_API_Base {
             'order' => strtoupper($params['order'])
         );
     }
-    
-    /**
-     * Get formatted response with pagination
-     */
-    protected function get_formatted_response($query, $prepare_callback = null) {
-        $posts = $query->posts;
-        $items = array();
-        
-        foreach ($posts as $post) {
-            if ($prepare_callback && is_callable($prepare_callback)) {
-                $items[] = call_user_func($prepare_callback, $post);
-            } else {
-                $items[] = $this->prepare_basic_item($post);
-            }
-        }
-        
-        return array(
-            'items' => $items,
-            'total' => $query->found_posts,
-            'pages' => $query->max_num_pages,
-            'current_page' => max(1, absint($query->get('paged')))
-        );
-    }
-    
-    /**
-     * Basic item preparation
-     */
-    protected function prepare_basic_item($post) {
-        return array(
-            'id' => $post->ID,
-            'title' => array('rendered' => get_the_title($post)),
-            'content' => array('rendered' => apply_filters('the_content', $post->post_content)),
-            'excerpt' => array('rendered' => get_the_excerpt($post)),
-            'date' => $post->post_date,
-            'modified' => $post->post_modified,
-            'slug' => $post->post_name,
-            'status' => $post->post_status,
-            'type' => $post->post_type,
-        );
-    }
-    
+
     /**
      * Standard permission callback for public endpoints
      */
-    public function public_permission_callback() {
+    public function public_permission_callback(): true {
         return true;
     }
 }
