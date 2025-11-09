@@ -3,7 +3,7 @@
 ## Project Overview
 Modern portfolio website for Robert Engel showcasing career journey from music industry to cloud engineering. Headless WordPress backend with React frontend, deployed on AWS infrastructure.
 
-## Current Status: ✅ ALL FEATURES COMPLETE + 🛡️ reCAPTCHA v3 PROTECTION + 🚀 PRODUCTION READY
+## Current Status: ✅ ALL FEATURES COMPLETE + 🛡️ reCAPTCHA v3 PROTECTION + 🎨 DYNAMIC THEMING + 🚀 PRODUCTION READY
 - **Frontend**: React + TypeScript + Vite + TanStack Router + DaisyUI ✅
 - **Backend**: WordPress CMS with custom post types + REST API ✅  
 - **Infrastructure**: AWS CDK + CloudFront + ACM SSL + LightSail ✅
@@ -12,7 +12,8 @@ Modern portfolio website for Robert Engel showcasing career journey from music i
 - **Resume Detail Pages**: Complete with skill relationships ✅
 - **🛡️ Security**: Google reCAPTCHA v3 + v2 challenge system ✅ 
 - **🎨 Social Links**: Configurable social media integration ✅
-- **🧹 Code Quality**: Clean, simplified implementation with light theme only ✅
+- **🌟 Dynamic Theming**: reCAPTCHA badges adapt to DaisyUI theme changes in real-time ✅
+- **🧹 Code Quality**: Modern ES6+ standards with comprehensive TypeScript integration ✅
 
 ## Architecture
 - **Frontend**: `https://dev.rae-dev.com` → CloudFront → S3
@@ -90,9 +91,10 @@ Modern portfolio website for Robert Engel showcasing career journey from music i
 5. **CORS**: Two-layer protection (WordPress + CloudFront response headers)
 6. **CloudFront Origins**: Uses nip.io for IP-to-domain resolution
 7. **No ACF**: Native WordPress features only (ACF caused 500 errors)
-8. **🛡️ reCAPTCHA v3**: Simplified v3-only system with direct blocking for low scores ✅
+8. **🛡️ reCAPTCHA v3**: Explicit rendering with aggressive DOM cleanup for theme switching ✅
 9. **🔗 Social Links**: WordPress admin configurable with platform auto-detection ✅
 10. **🎨 JavaScript Standard**: ES6+ only (const/let, no var keyword usage) ✅
+11. **🌟 Dynamic Theming**: MutationObserver + container recreation for real-time badge theming ✅
 
 ## Key Configurations
 
@@ -202,8 +204,17 @@ curl -s "http://localhost:8080/?rest_route=/wp/v2/recaptcha/status" | jq
 - **REST API**: `/wp/v2/recaptcha/status`, `/wp/v2/recaptcha/verify`, `/wp/v2/recaptcha/challenge`
 - **Frontend**: Complete React integration with TanStack Query and challenge modal
 - **Security**: Rate limiting, audit logging, graceful degradation, secret key protection
-- **Light Theme**: Simplified to use Google's standard light theme for consistency and maintainability
+- **🌟 Dynamic Theming**: Real-time badge theme switching with aggressive DOM cleanup and container recreation
 - **Contact Form**: Enhanced with invisible protection and challenge flow
+
+### 🌟 Dynamic reCAPTCHA Theming ✅ Complete
+- **MutationObserver**: Monitors `data-theme` attribute changes on HTML element for instant detection
+- **Explicit Rendering**: Uses `render=explicit` with `grecaptcha.render()` for full theme control
+- **Aggressive Cleanup**: Complete DOM cleanup of badges and iframes to force fresh rendering
+- **Container Recreation**: Destroys and recreates container elements to eliminate cached styling
+- **Theme Mapping**: Maps 13 DaisyUI dark themes to Google's dark theme, others to light
+- **Performance**: Seamless theme switching without page reloads or visual glitches
+- **Robust Error Handling**: Graceful fallbacks and comprehensive logging for debugging
 
 ### Environment Management ✅ Complete
 - **Three Environments**: Local (localhost:8080), Development (api-dev.rae-dev.com), Production (api.rae-dev.com)
@@ -222,7 +233,7 @@ curl -s "http://localhost:8080/?rest_route=/wp/v2/recaptcha/status" | jq
 - **CloudFront**: Uses nip.io DNS resolution for IP-based origins
 - **🎨 JavaScript Standard**: ALWAYS use const/let, NEVER use var keyword (linting enforced)
 - **🔗 Social Links**: Maximum 9 links, auto-detects platform icons, drag-and-drop reordering
-- **🛡️ reCAPTCHA**: v3 scoring threshold configurable 0.1-0.9 (default 0.5), v2 challenge for low scores, simplified to light theme only
+- **🛡️ reCAPTCHA**: v3 scoring threshold configurable 0.1-0.9 (default 0.5), v2 challenge for low scores, dynamic light/dark theming
 - **🧹 Code Quality**: Simplified implementation, removed ~100 lines of theme switching complexity
 
 ## Working Features
@@ -244,7 +255,7 @@ curl -s "http://localhost:8080/?rest_route=/wp/v2/recaptcha/status" | jq
 - ✅ 🛡️ **reCAPTCHA v3 Protection**: Invisible scoring with WordPress admin configuration
 - ✅ 🛡️ **reCAPTCHA Challenge System**: v2 fallback modal for suspicious activity
 - ✅ 🛡️ **Contact Form Security**: Complete reCAPTCHA integration with error handling
-- ✅ 🎨 **reCAPTCHA Theming**: Simplified to Google's standard light theme
+- ✅ 🌟 **Dynamic reCAPTCHA Theming**: Real-time badge theme switching with DaisyUI themes
 - ✅ 🧪 **Code Quality**: ESLint + TypeScript + Modern ES6+ standards enforced
 
 ## Current Phase: 🚀 Production Ready
@@ -254,7 +265,7 @@ curl -s "http://localhost:8080/?rest_route=/wp/v2/recaptcha/status" | jq
 ### ✅ Testing Completed
 - **✅ reCAPTCHA Testing**: Working with actual Google API keys for v3/v2
 - **✅ Social Links**: All platform icons and links functional
-- **✅ Badge Display**: Google's standard light theme badge working perfectly
+- **✅ Dynamic Badge Theming**: Real-time light/dark theme switching working perfectly
 - **✅ Mobile Support**: Responsive design confirmed
 - **✅ Form Flow**: End-to-end contact form submission with reCAPTCHA working
 - **✅ Error Handling**: Network failures and API error scenarios tested
@@ -272,7 +283,8 @@ curl -s "http://localhost:8080/?rest_route=/wp/v2/recaptcha/status" | jq
 
 ## Recent Implementation Summary (Nov 2025)
 - **🔗 Social Links**: Complete WordPress admin + frontend integration with platform detection
-- **🛡️ reCAPTCHA v3**: Full dual v3/v2 system with challenge modal, simplified to light theme
+- **🛡️ reCAPTCHA v3**: Full dual v3/v2 system with challenge modal and explicit rendering
+- **🌟 Dynamic Theming**: Revolutionary real-time reCAPTCHA badge theme switching with aggressive DOM cleanup
 - **🎨 Code Standards**: ES6+ modernization, ESLint compliance, TypeScript safety
-- **🧹 Code Cleanup**: Removed theme switching complexity, simplified implementation
-- **📚 Documentation**: Comprehensive plans and implementation guides
+- **🧹 Code Quality**: Enhanced error handling, performance optimization, robust theme detection
+- **📚 Documentation**: Comprehensive plans and implementation guides with lessons learned
