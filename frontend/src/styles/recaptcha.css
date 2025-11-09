@@ -45,7 +45,7 @@
 }
 
 /* High contrast mode support for container */
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   #recaptcha-badge-container {
     filter: contrast(1.2);
   }

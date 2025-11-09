@@ -1,7 +1,7 @@
 <?php
 /**
  * reCAPTCHA REST API
- * Provides REST endpoints for reCAPTCHA v3 and v2 verification
+ * Provides REST endpoints for reCAPTCHA v3 verification
  */
 
 // Prevent direct access
@@ -19,18 +19,18 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
     /**
      * API namespace
      */
-    const API_NAMESPACE = 'wp/v2';
+    const string API_NAMESPACE = 'wp/v2';
 
     /**
      * Google reCAPTCHA verify URL
      */
-    const GOOGLE_VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify';
+    const string GOOGLE_VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify';
 
     /**
      * Rate limiting settings
      */
-    const RATE_LIMIT_ATTEMPTS = 10;
-    const RATE_LIMIT_WINDOW = 300; // 5 minutes
+    const int RATE_LIMIT_ATTEMPTS = 10;
+    const int RATE_LIMIT_WINDOW = 300; // 5 minutes
 
     /**
      * Constructor
@@ -86,7 +86,7 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
     /**
      * Get reCAPTCHA configuration status
      */
-    public function get_status(WP_REST_Request $request): WP_REST_Response {
+    public function get_status(): WP_REST_Response {
         try {
             $settings = RAE_ReCaptcha_Options::get_settings();
             
@@ -108,7 +108,7 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
 
             return $response;
 
-        } catch (Exception $e) {
+        } catch (Exception) {
             return new WP_REST_Response(
                 array(
                     'error' => true,
@@ -157,12 +157,11 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
             // Verify token with Google
             $verification_result = $this->call_google_verify_api(
                 $token,
-                $settings['v3_secret_key'],
-                'v3'
+                $settings['v3_secret_key']
             );
 
             if (!$verification_result['success']) {
-                $this->log_verification_attempt($token, 0, false, $action, 'v3');
+                $this->log_verification_attempt($token, 0, false, $action);
                 
                 return new WP_REST_Response(
                     array(
@@ -182,11 +181,11 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
             $score_passed = $this->evaluate_v3_score($score, $threshold);
             
             // Log verification attempt
-            $this->log_verification_attempt($token, $score, $score_passed, $action, 'v3');
+            $this->log_verification_attempt($token, $score, $score_passed, $action);
 
             // If score is below threshold, return failure instead of suggesting challenge
             if (!$score_passed) {
-                $this->log_verification_attempt($token, $score, false, $action, 'v3');
+                $this->log_verification_attempt($token, $score, false, $action);
                 
                 return new WP_REST_Response(
                     array(
@@ -204,7 +203,7 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
                 'success' => true,
                 'score' => $score,
                 'threshold' => $threshold,
-                'score_passed' => $score_passed,
+                'score_passed' => true,
                 'action' => $verification_result['action'],
                 'hostname' => $verification_result['hostname'] ?? null,
                 'timestamp' => current_time('mysql'),
@@ -230,7 +229,7 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
     /**
      * Call Google reCAPTCHA verify API
      */
-    private function call_google_verify_api(string $token, string $secret_key, string $version): array {
+    private function call_google_verify_api(string $token, string $secret_key): array {
         $user_ip = $this->get_user_ip();
         
         $body = array(
@@ -258,7 +257,7 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
         $response_body = wp_remote_retrieve_body($response);
 
         if ($response_code !== 200) {
-            error_log("reCAPTCHA API HTTP Error: {$response_code}");
+            error_log("reCAPTCHA API HTTP Error: $response_code");
             throw new Exception('reCAPTCHA verification service returned an error');
         }
 
@@ -323,7 +322,7 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
                 $ip = $_SERVER[$header];
                 
                 // Handle comma-separated list (X-Forwarded-For can contain multiple IPs)
-                if (strpos($ip, ',') !== false) {
+                if ( str_contains( $ip, ',' ) ) {
                     $ip = trim(explode(',', $ip)[0]);
                 }
                 
@@ -341,7 +340,7 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
     /**
      * Log verification attempt
      */
-    private function log_verification_attempt(string $token, ?float $score, bool $success, string $action, string $version): void {
+    private function log_verification_attempt(string $token, ?float $score, bool $success, string $action, string $version = 'v3'): void {
         $log_entry = array(
             'timestamp' => current_time('mysql'),
             'ip' => $this->get_user_ip(),
@@ -388,125 +387,15 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
     /**
      * Validate token parameter
      */
-    public function validate_token($value, $request, $param): bool {
+    public function validate_token($value): bool {
         return !empty($value) && is_string($value) && strlen($value) > 10;
     }
 
     /**
      * Validate action parameter
      */
-    public function validate_action($value, $request, $param): bool {
+    public function validate_action($value): bool {
         $valid_actions = array('contact_form', 'newsletter_signup', 'login', 'comment');
         return !empty($value) && is_string($value) && in_array($value, $valid_actions);
     }
-
-    /**
-     * Get verification statistics for admin
-     */
-    public static function get_verification_stats(): array {
-        $log_option = 'rae_recaptcha_verification_log';
-        $log_entries = get_option($log_option, array());
-        
-        $stats = array(
-            'total_attempts' => count($log_entries),
-            'successful_attempts' => 0,
-            'failed_attempts' => 0,
-            'v3_attempts' => 0,
-            'average_score' => 0,
-            'score_distribution' => array(
-                '0.0-0.2' => 0,
-                '0.2-0.4' => 0,
-                '0.4-0.6' => 0,
-                '0.6-0.8' => 0,
-                '0.8-1.0' => 0,
-            ),
-            'recent_attempts' => array_slice($log_entries, 0, 20),
-        );
-
-        $total_score = 0;
-        $score_count = 0;
-
-        foreach ($log_entries as $entry) {
-            if ($entry['success']) {
-                $stats['successful_attempts']++;
-            } else {
-                $stats['failed_attempts']++;
-            }
-
-            if ($entry['version'] === 'v3') {
-                $stats['v3_attempts']++;
-                
-                if ($entry['score'] !== null) {
-                    $total_score += $entry['score'];
-                    $score_count++;
-                    
-                    // Score distribution
-                    $score = $entry['score'];
-                    if ($score >= 0.8) {
-                        $stats['score_distribution']['0.8-1.0']++;
-                    } elseif ($score >= 0.6) {
-                        $stats['score_distribution']['0.6-0.8']++;
-                    } elseif ($score >= 0.4) {
-                        $stats['score_distribution']['0.4-0.6']++;
-                    } elseif ($score >= 0.2) {
-                        $stats['score_distribution']['0.2-0.4']++;
-                    } else {
-                        $stats['score_distribution']['0.0-0.2']++;
-                    }
-                }
-            }
-        }
-
-        if ($score_count > 0) {
-            $stats['average_score'] = round($total_score / $score_count, 3);
-        }
-
-        return $stats;
-    }
-
-    /**
-     * Clear verification logs
-     */
-    public static function clear_verification_logs(): bool {
-        return delete_option('rae_recaptcha_verification_log');
-    }
-
-    /**
-     * Check if reCAPTCHA verification is required for given action
-     */
-    public static function is_verification_required(string $action = 'contact_form'): bool {
-        if (!RAE_ReCaptcha_Options::is_enabled()) {
-            return false;
-        }
-
-        // Add action-specific logic here if needed
-        $required_actions = array('contact_form', 'newsletter_signup');
-        
-        return in_array($action, $required_actions);
-    }
-
-    /**
-     * Get reCAPTCHA configuration for frontend
-     */
-    public static function get_frontend_config(): array {
-        if (!RAE_ReCaptcha_Options::is_enabled()) {
-            return array(
-                'enabled' => false,
-            );
-        }
-
-        $settings = RAE_ReCaptcha_Options::get_settings();
-        
-        return array(
-            'enabled' => true,
-            'v3_site_key' => $settings['v3_site_key'],
-            'threshold' => RAE_ReCaptcha_Options::get_threshold(),
-            'badge_position' => $settings['badge_position'],
-        );
-    }
-}
-
-// Initialize the API if the options class exists
-if (class_exists('RAE_ReCaptcha_Options')) {
-    // This will be initialized by the theme loader
 }

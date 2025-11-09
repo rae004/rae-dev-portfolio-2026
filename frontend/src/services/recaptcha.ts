@@ -5,6 +5,9 @@
 
 import { devLog } from '../config/environment'
 
+type BadgePosition = 'bottomright' | 'bottomleft' | 'inline'
+type ThemeType = 'light' | 'dark'
+
 // Global grecaptcha interface
 declare global {
   interface Window {
@@ -18,9 +21,9 @@ declare global {
           callback?: (token: string) => void
           'error-callback'?: () => void
           'expired-callback'?: () => void
-          theme?: 'light' | 'dark'
+          theme?: ThemeType
           size?: 'compact' | 'normal' | 'invisible'
-          badge?: 'bottomright' | 'bottomleft' | 'inline'
+          badge?: BadgePosition
         }
       ) => number
       reset: (widgetId?: number) => void
@@ -36,7 +39,7 @@ export interface ReCaptchaConfig {
     v3: string | null
   }
   threshold: number
-  badge_position: string
+  badge_position: BadgePosition
   v3_configured: boolean
 }
 
@@ -71,7 +74,7 @@ export class ReCaptchaService {
   private clientId: number | null = null
   private containerElement: HTMLElement | null = null
   private themeObserver: MutationObserver | null = null
-  private currentTheme: 'light' | 'dark' = 'light'
+  private currentTheme: ThemeType = 'light'
 
   /**
    * Get singleton instance
@@ -368,7 +371,7 @@ export class ReCaptchaService {
   /**
    * Detect current DaisyUI theme and map to Google's light/dark
    */
-  private detectTheme(): 'light' | 'dark' {
+  private detectTheme(): ThemeType {
     const htmlElement = document.documentElement
     const currentTheme = htmlElement.getAttribute('data-theme') || 'light'
 
@@ -398,9 +401,8 @@ export class ReCaptchaService {
   /**
    * Get badge position from configuration or default
    */
-  private getBadgePosition(): 'bottomright' | 'bottomleft' | 'inline' {
-    // Default to bottomright, could be extended to read from config
-    const position = 'bottomright'
+  private getBadgePosition(): BadgePosition {
+    const position = this.config?.badge_position || 'bottomright'
     devLog('Badge position:', position)
     return position
   }
@@ -438,7 +440,7 @@ export class ReCaptchaService {
   /**
    * Re-render reCAPTCHA badge with new theme
    */
-  private rerenderBadgeWithNewTheme(newTheme: 'light' | 'dark'): void {
+  private rerenderBadgeWithNewTheme(newTheme: ThemeType): void {
     if (!this.isAvailable() || this.clientId === null) {
       return
     }

@@ -3,15 +3,14 @@
  * React hook for integrating Google reCAPTCHA v3 with TanStack Query
  */
 
-import { useState, useEffect, useCallback } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useCallback, useEffect, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   getReCaptchaService,
   type ReCaptchaConfig,
   type ReCaptchaExecutionResult,
 } from '../services/recaptcha'
-import { isReCaptchaEnabled } from '../config/environment'
-import { devLog } from '../config/environment'
+import { devLog, isReCaptchaEnabled } from '../config/environment'
 
 export interface UseReCaptchaOptions {
   /**
@@ -155,8 +154,7 @@ export const useReCaptcha = (options: UseReCaptchaOptions = {}): UseReCaptchaRet
   // Memoized methods
   const executeV3 = useCallback(
     async (executionAction: string = action): Promise<string | null> => {
-      const result = await v3ExecutionMutation.mutateAsync(executionAction)
-      return result
+      return await v3ExecutionMutation.mutateAsync(executionAction)
     },
     [v3ExecutionMutation, action]
   )
@@ -170,8 +168,7 @@ export const useReCaptcha = (options: UseReCaptchaOptions = {}): UseReCaptchaRet
 
   const executeAndVerify = useCallback(
     async (executionAction: string = action): Promise<ReCaptchaExecutionResult> => {
-      const result = await executeAndVerifyMutation.mutateAsync(executionAction)
-      return result
+      return await executeAndVerifyMutation.mutateAsync(executionAction)
     },
     [executeAndVerifyMutation, action]
   )
@@ -269,5 +266,3 @@ export const useReCaptchaForm = (action: string = 'contact_form') => {
     executeForSubmission,
   }
 }
-
-export default useReCaptcha
