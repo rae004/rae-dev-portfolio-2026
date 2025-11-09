@@ -10,7 +10,7 @@ declare global {
   interface Window {
     grecaptcha: {
       ready: (callback: () => void) => void
-      execute: (siteKey: string, options: { action: string }) => Promise<string>
+      execute: (clientIdOrSiteKey: string | number, options: { action: string }) => Promise<string>
       render: (
         container: string | HTMLElement,
         parameters: {
@@ -19,12 +19,14 @@ declare global {
           'error-callback'?: () => void
           'expired-callback'?: () => void
           theme?: 'light' | 'dark'
-          size?: 'compact' | 'normal'
+          size?: 'compact' | 'normal' | 'invisible'
+          badge?: 'bottomright' | 'bottomleft' | 'inline'
         }
       ) => number
       reset: (widgetId?: number) => void
       getResponse: (widgetId?: number) => string
     }
+    initReCaptcha?: () => void
   }
 }
 
@@ -66,6 +68,10 @@ export class ReCaptchaService {
   private v3Ready = false
   private scriptsLoaded = false
   private scriptLoadPromise: Promise<void> | null = null
+  private clientId: number | null = null
+  private containerElement: HTMLElement | null = null
+  private themeObserver: MutationObserver | null = null
+  private currentTheme: 'light' | 'dark' = 'light'
 
   /**
    * Get singleton instance
@@ -112,7 +118,9 @@ export class ReCaptchaService {
    * Check if reCAPTCHA is available and ready
    */
   public isAvailable(): boolean {
-    return this.config?.enabled === true && this.scriptsLoaded && this.v3Ready
+    return (
+      this.config?.enabled === true && this.scriptsLoaded && this.v3Ready && this.clientId !== null
+    )
   }
 
   /**
@@ -165,20 +173,20 @@ export class ReCaptchaService {
   }
 
   /**
-   * Execute reCAPTCHA v3 (invisible)
+   * Execute reCAPTCHA v3 (invisible) using explicit rendering clientId
    */
   public async executeV3(action: string): Promise<string | null> {
     return new Promise(resolve => {
-      if (!this.isAvailable() || !this.config?.site_keys?.v3) {
+      if (!this.isAvailable() || this.clientId === null) {
         resolve(null)
         return
       }
 
       window.grecaptcha.ready(() => {
         window.grecaptcha
-          .execute(this.config!.site_keys.v3!, { action })
+          .execute(this.clientId!, { action })
           .then((token: string) => {
-            devLog('reCAPTCHA v3 token generated for action:', action)
+            devLog('reCAPTCHA v3 token generated for action:', action, 'clientId:', this.clientId)
             resolve(token)
           })
           .catch((error: unknown) => {
@@ -242,7 +250,7 @@ export class ReCaptchaService {
   }
 
   /**
-   * Load Google reCAPTCHA scripts
+   * Load Google reCAPTCHA scripts with explicit rendering
    */
   private async loadGoogleScripts(): Promise<void> {
     if (this.scriptLoadPromise) {
@@ -253,29 +261,30 @@ export class ReCaptchaService {
       try {
         // Check if already loaded
         if (window.grecaptcha) {
-          this.setupRecaptcha()
+          this.setupExplicitRendering()
           resolve()
           return
         }
 
-        // Create script element for v3 (primary)
-        const script = document.createElement('script')
-        script.src = `https://www.google.com/recaptcha/api.js?render=${this.config?.site_keys?.v3 || ''}`
-        script.async = true
-        script.defer = true
-
-        script.onload = () => {
-          devLog('Google reCAPTCHA scripts loaded successfully')
-          devLog('Script src:', script.src)
-          devLog('grecaptcha available:', !!window.grecaptcha)
-          this.setupRecaptcha()
+        // Set up global callback for explicit rendering
+        window.initReCaptcha = () => {
+          devLog('reCAPTCHA onload callback triggered')
+          this.setupExplicitRendering()
           resolve()
         }
+
+        // Create script element with explicit rendering
+        const script = document.createElement('script')
+        script.src = 'https://www.google.com/recaptcha/api.js?render=explicit&onload=initReCaptcha'
+        script.async = true
+        script.defer = true
 
         script.onerror = () => {
           reject(new Error('Failed to load Google reCAPTCHA scripts'))
         }
 
+        devLog('Loading reCAPTCHA scripts with explicit rendering')
+        devLog('Script src:', script.src)
         document.head.appendChild(script)
       } catch (error) {
         reject(error)
@@ -286,27 +295,263 @@ export class ReCaptchaService {
   }
 
   /**
-   * Setup reCAPTCHA after scripts are loaded
+   * Setup explicit reCAPTCHA rendering with theme and badge control
    */
-  private setupRecaptcha(): void {
-    if (!window.grecaptcha) {
+  private setupExplicitRendering(): void {
+    if (!window.grecaptcha || !this.config?.site_keys?.v3) {
       return
     }
 
     this.scriptsLoaded = true
 
     window.grecaptcha.ready(() => {
-      this.v3Ready = true
-      devLog('reCAPTCHA v3 ready')
+      try {
+        // Create container for badge if needed
+        this.createBadgeContainer()
 
-      // Check if badge exists in DOM
-      const badge = document.querySelector('.grecaptcha-badge')
-      devLog('reCAPTCHA badge found in DOM:', !!badge)
-      if (badge) {
-        devLog('Badge element:', badge)
-        devLog('Badge computed style:', window.getComputedStyle(badge))
+        // Detect current theme
+        const theme = this.detectTheme()
+        const badgePosition = this.getBadgePosition()
+
+        devLog('Setting up explicit reCAPTCHA rendering:', {
+          theme,
+          badgePosition,
+          siteKey: this.config!.site_keys.v3,
+        })
+
+        // Render reCAPTCHA with explicit parameters
+        this.clientId = window.grecaptcha.render(this.containerElement!, {
+          sitekey: this.config!.site_keys.v3!,
+          size: 'invisible',
+          badge: badgePosition,
+          theme: theme,
+        })
+
+        this.v3Ready = true
+        this.currentTheme = theme
+        devLog('reCAPTCHA v3 explicitly rendered with clientId:', this.clientId)
+
+        // Start monitoring theme changes
+        this.startThemeMonitoring()
+
+        // Check badge in DOM
+        setTimeout(() => {
+          const badge = document.querySelector('.grecaptcha-badge')
+          devLog('reCAPTCHA badge found in DOM:', !!badge)
+          if (badge) {
+            devLog('Badge theme applied:', theme)
+            devLog('Badge position applied:', badgePosition)
+          }
+        }, 100)
+      } catch (error) {
+        console.error('Failed to setup explicit reCAPTCHA rendering:', error)
       }
     })
+  }
+
+  /**
+   * Create container element for reCAPTCHA badge
+   */
+  private createBadgeContainer(): void {
+    if (this.containerElement) {
+      return // Already exists
+    }
+
+    this.containerElement = document.createElement('div')
+    this.containerElement.id = 'recaptcha-badge-container'
+    this.containerElement.style.cssText = 'position: fixed; bottom: 0; right: 0; z-index: 1000;'
+
+    devLog('Created reCAPTCHA badge container')
+    document.body.appendChild(this.containerElement)
+  }
+
+  /**
+   * Detect current DaisyUI theme and map to Google's light/dark
+   */
+  private detectTheme(): 'light' | 'dark' {
+    const htmlElement = document.documentElement
+    const currentTheme = htmlElement.getAttribute('data-theme') || 'light'
+
+    // Map DaisyUI dark themes to 'dark', everything else to 'light'
+    const darkThemes = [
+      'dark',
+      'night',
+      'forest',
+      'black',
+      'luxury',
+      'dracula',
+      'synthwave',
+      'halloween',
+      'coffee',
+      'dim',
+      'sunset',
+      'business',
+      'cyberpunk',
+    ]
+
+    const theme = darkThemes.includes(currentTheme) ? 'dark' : 'light'
+    devLog('Detected DaisyUI theme:', currentTheme, '→ reCAPTCHA theme:', theme)
+
+    return theme
+  }
+
+  /**
+   * Get badge position from configuration or default
+   */
+  private getBadgePosition(): 'bottomright' | 'bottomleft' | 'inline' {
+    // Default to bottomright, could be extended to read from config
+    const position = 'bottomright'
+    devLog('Badge position:', position)
+    return position
+  }
+
+  /**
+   * Start monitoring for theme changes
+   */
+  private startThemeMonitoring(): void {
+    if (this.themeObserver) {
+      return // Already monitoring
+    }
+
+    this.themeObserver = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
+          const newTheme = this.detectTheme()
+          if (newTheme !== this.currentTheme) {
+            devLog('Theme change detected:', this.currentTheme, '→', newTheme)
+            this.currentTheme = newTheme
+            this.rerenderBadgeWithNewTheme(newTheme)
+          }
+        }
+      })
+    })
+
+    // Start observing the html element for data-theme changes
+    this.themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme'],
+    })
+
+    devLog('Started monitoring theme changes')
+  }
+
+  /**
+   * Re-render reCAPTCHA badge with new theme
+   */
+  private rerenderBadgeWithNewTheme(newTheme: 'light' | 'dark'): void {
+    if (!this.isAvailable() || this.clientId === null) {
+      return
+    }
+
+    try {
+      // Reset the current widget
+      window.grecaptcha.reset(this.clientId)
+
+      // Remove existing badge elements to force fresh render
+      this.removeBadgeElements()
+
+      // Recreate container to ensure clean slate
+      this.recreateContainer()
+
+      // Re-render with new theme
+      const badgePosition = this.getBadgePosition()
+
+      devLog('Re-rendering reCAPTCHA badge with new theme:', newTheme)
+
+      this.clientId = window.grecaptcha.render(this.containerElement!, {
+        sitekey: this.config!.site_keys.v3!,
+        size: 'invisible',
+        badge: badgePosition,
+        theme: newTheme,
+      })
+
+      devLog('reCAPTCHA badge re-rendered with clientId:', this.clientId, 'theme:', newTheme)
+
+      // Verify the theme was applied
+      setTimeout(() => {
+        const badge = document.querySelector('.grecaptcha-badge')
+        if (badge) {
+          devLog('Badge theme verification - expected:', newTheme, 'badge found:', !!badge)
+        }
+      }, 200)
+    } catch (error) {
+      console.error('Failed to re-render reCAPTCHA badge with new theme:', error)
+    }
+  }
+
+  /**
+   * Remove all existing reCAPTCHA badge elements from DOM
+   */
+  private removeBadgeElements(): void {
+    // Remove all Google reCAPTCHA badge elements
+    const badges = document.querySelectorAll('.grecaptcha-badge')
+    badges.forEach(badge => {
+      if (badge.parentNode) {
+        badge.parentNode.removeChild(badge)
+      }
+    })
+
+    // Remove any iframe elements that might be lingering
+    const iframes = document.querySelectorAll('iframe[src*="recaptcha"]')
+    iframes.forEach(iframe => {
+      if (iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe)
+      }
+    })
+
+    devLog('Removed existing reCAPTCHA badge elements')
+  }
+
+  /**
+   * Recreate container element for fresh rendering
+   */
+  private recreateContainer(): void {
+    // Remove existing container
+    if (this.containerElement && this.containerElement.parentNode) {
+      this.containerElement.parentNode.removeChild(this.containerElement)
+    }
+
+    // Create new container
+    this.containerElement = document.createElement('div')
+    this.containerElement.id = 'recaptcha-badge-container'
+    this.containerElement.style.cssText = 'position: fixed; bottom: 0; right: 0; z-index: 1000;'
+
+    document.body.appendChild(this.containerElement)
+    devLog('Recreated reCAPTCHA badge container')
+  }
+
+  /**
+   * Stop monitoring theme changes
+   */
+  private stopThemeMonitoring(): void {
+    if (this.themeObserver) {
+      this.themeObserver.disconnect()
+      this.themeObserver = null
+      devLog('Stopped monitoring theme changes')
+    }
+  }
+
+  /**
+   * Clean up container and reset state
+   */
+  public cleanup(): void {
+    // Stop theme monitoring
+    this.stopThemeMonitoring()
+
+    if (this.containerElement && this.containerElement.parentNode) {
+      this.containerElement.parentNode.removeChild(this.containerElement)
+    }
+
+    this.containerElement = null
+    this.clientId = null
+    this.v3Ready = false
+
+    // Clean up global callback
+    if (window.initReCaptcha) {
+      delete window.initReCaptcha
+    }
+
+    devLog('reCAPTCHA service cleaned up')
   }
 }
 

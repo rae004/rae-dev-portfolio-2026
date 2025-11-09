@@ -1,342 +1,61 @@
 /**
- * reCAPTCHA Badge Styling for DaisyUI Themes
- * Compatible with all 29+ DaisyUI themes including dark mode support
+ * reCAPTCHA Container Styling
+ * Note: Badge content is controlled via explicit rendering with Google's native themes
  */
-
-/* Base reCAPTCHA badge styling */
-.grecaptcha-badge {
-  transition: all 0.3s ease !important;
-  border-radius: 0.5rem !important;
-  overflow: hidden !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-  backdrop-filter: blur(8px) !important;
+#recaptcha-badge-container > .grecaptcha-badge {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  border-radius: 0.5em !important;
 }
 
-/* Position classes for badge placement */
-.recaptcha-badge-bottomright {
-  position: fixed !important;
-  bottom: 14px !important;
-  right: 14px !important;
-  z-index: 1000 !important;
+/* Container for reCAPTCHA badge (what we can actually style) */
+#recaptcha-badge-container {
+  /* Positioning is handled via JS, this is just for backup/fallback */
+  position: fixed;
+  bottom: 14px;
+  right: 14px;
+  z-index: 1000;
+  pointer-events: none; /* Allow clicks to pass through container */
 }
 
-.recaptcha-badge-bottomleft {
-  position: fixed !important;
-  bottom: 14px !important;
-  left: 14px !important;
-  z-index: 1000 !important;
+/* Ensure badge content gets pointer events */
+#recaptcha-badge-container * {
+  pointer-events: auto;
 }
 
-.recaptcha-badge-inline {
-  position: relative !important;
-  margin: 1rem 0 !important;
-  display: inline-block !important;
-}
-
-/* Compact badge variant */
-.grecaptcha-badge.compact {
-  transform: scale(0.8) !important;
-  transform-origin: bottom right !important;
-}
-
-/* Light theme compatibility (default) */
-[data-theme="light"] .grecaptcha-badge,
-[data-theme="cupcake"] .grecaptcha-badge,
-[data-theme="bumblebee"] .grecaptcha-badge,
-[data-theme="emerald"] .grecaptcha-badge,
-[data-theme="corporate"] .grecaptcha-badge,
-[data-theme="retro"] .grecaptcha-badge,
-[data-theme="cyberpunk"] .grecaptcha-badge,
-[data-theme="valentine"] .grecaptcha-badge,
-[data-theme="garden"] .grecaptcha-badge,
-[data-theme="lofi"] .grecaptcha-badge,
-[data-theme="pastel"] .grecaptcha-badge,
-[data-theme="fantasy"] .grecaptcha-badge,
-[data-theme="wireframe"] .grecaptcha-badge,
-[data-theme="cmyk"] .grecaptcha-badge,
-[data-theme="autumn"] .grecaptcha-badge,
-[data-theme="acid"] .grecaptcha-badge,
-[data-theme="lemonade"] .grecaptcha-badge,
-[data-theme="winter"] .grecaptcha-badge,
-[data-theme="nord"] .grecaptcha-badge {
-  background-color: hsl(var(--b1)) !important;
-  color: hsl(var(--bc)) !important;
-  border: 1px solid hsl(var(--b3)) !important;
-}
-
-/* Dark theme compatibility */
-[data-theme="dark"] .grecaptcha-badge,
-[data-theme="night"] .grecaptcha-badge,
-[data-theme="forest"] .grecaptcha-badge,
-[data-theme="black"] .grecaptcha-badge,
-[data-theme="luxury"] .grecaptcha-badge,
-[data-theme="dracula"] .grecaptcha-badge,
-[data-theme="synthwave"] .grecaptcha-badge,
-[data-theme="halloween"] .grecaptcha-badge,
-[data-theme="coffee"] .grecaptcha-badge,
-[data-theme="dim"] .grecaptcha-badge,
-[data-theme="sunset"] .grecaptcha-badge,
-[data-theme="business"] .grecaptcha-badge {
-  background-color: hsl(var(--b1)) !important;
-  color: hsl(var(--bc)) !important;
-  border: 1px solid hsl(var(--b3)) !important;
-  /* Additional dark theme enhancements */
-  filter: brightness(0.9) contrast(1.1) !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2) !important;
-}
-
-/* Specific theme overrides for better contrast */
-[data-theme="synthwave"] .grecaptcha-badge,
-[data-theme="cyberpunk"] .grecaptcha-badge,
-[data-theme="halloween"] .grecaptcha-badge {
-  background-color: rgba(0, 0, 0, 0.8) !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-}
-
-[data-theme="valentine"] .grecaptcha-badge,
-[data-theme="pastel"] .grecaptcha-badge,
-[data-theme="fantasy"] .grecaptcha-badge {
-  background-color: rgba(255, 255, 255, 0.95) !important;
-  color: #2a2a2a !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
-}
-
-/* High contrast themes */
-[data-theme="wireframe"] .grecaptcha-badge {
-  background-color: #ffffff !important;
-  color: #000000 !important;
-  border: 2px solid #000000 !important;
-  filter: none !important;
-}
-
-[data-theme="black"] .grecaptcha-badge {
-  background-color: #000000 !important;
-  color: #ffffff !important;
-  border: 1px solid #333333 !important;
-}
-
-/* Badge content styling */
-.grecaptcha-badge iframe {
-  border-radius: 0.375rem !important;
-  background: transparent !important;
-}
-
-/* Badge text styling for all themes */
-.grecaptcha-badge .rc-anchor-light,
-.grecaptcha-badge .rc-anchor-dark {
-  background: inherit !important;
-  color: inherit !important;
-  border: none !important;
-}
-
-/* Badge hover effects */
-.grecaptcha-badge:hover {
-  transform: scale(1.02) !important;
-  box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-}
-
-[data-theme*="dark"] .grecaptcha-badge:hover,
-[data-theme="night"] .grecaptcha-badge:hover,
-[data-theme="forest"] .grecaptcha-badge:hover,
-[data-theme="black"] .grecaptcha-badge:hover {
-  box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3) !important;
-}
-
-/* Mobile responsiveness */
+/* Mobile responsiveness for container positioning */
 @media (max-width: 768px) {
-  .recaptcha-badge-bottomright {
-    bottom: 10px !important;
-    right: 10px !important;
-  }
-  
-  .recaptcha-badge-bottomleft {
-    bottom: 10px !important;
-    left: 10px !important;
-  }
-  
-  .grecaptcha-badge.compact {
-    transform: scale(0.7) !important;
+  #recaptcha-badge-container {
+    bottom: 10px;
+    right: 10px;
   }
 }
 
 @media (max-width: 480px) {
-  .grecaptcha-badge {
-    transform: scale(0.85) !important;
-  }
-  
-  .grecaptcha-badge.compact {
-    transform: scale(0.6) !important;
+  #recaptcha-badge-container {
+    bottom: 8px;
+    right: 8px;
   }
 }
 
-
-/* Form integration styling */
-.recaptcha-form-container {
-  position: relative;
-}
-
-.recaptcha-form-container .grecaptcha-badge {
-  position: absolute !important;
-  bottom: -10px !important;
-  right: 0 !important;
-  z-index: 10 !important;
-}
-
-/* Accessibility improvements */
-.grecaptcha-badge {
-  outline-offset: 2px !important;
-}
-
-.grecaptcha-badge:focus,
-.grecaptcha-badge:focus-visible {
-  outline: 2px solid hsl(var(--p)) !important;
-  outline-offset: 2px !important;
-}
-
-/* Print media - hide badge */
+/* Print media - hide container entirely */
 @media print {
-  .grecaptcha-badge {
+  #recaptcha-badge-container {
     display: none !important;
   }
 }
 
-/* Badge status indicators */
-.recaptcha-badge-status {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  border: 2px solid hsl(var(--b1));
-  z-index: 10;
-}
-
-.recaptcha-badge-status.success {
-  background-color: hsl(var(--su));
-}
-
-.recaptcha-badge-status.error {
-  background-color: hsl(var(--er));
-}
-
-.recaptcha-badge-status.loading {
-  background-color: hsl(var(--wa));
-  animation: pulse 2s infinite;
-}
-
-/* Pulse animation for loading state */
-@keyframes pulse {
-  0% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-
-/* Theme transition animations */
-.grecaptcha-badge * {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease !important;
-}
-
-/* Error state styling */
-.recaptcha-error .grecaptcha-badge {
-  border-color: hsl(var(--er)) !important;
-  box-shadow: 0 0 0 3px hsla(var(--er), 0.2) !important;
-}
-
-/* Success state styling */
-.recaptcha-success .grecaptcha-badge {
-  border-color: hsl(var(--su)) !important;
-  box-shadow: 0 0 0 3px hsla(var(--su), 0.2) !important;
-}
-
-/* Loading state styling */
-.recaptcha-loading .grecaptcha-badge {
-  border-color: hsl(var(--wa)) !important;
-  animation: pulse 2s infinite;
-}
-
-/* Compact form integration */
-.form-control .recaptcha-badge-container {
-  margin-top: 0.5rem;
-  text-align: right;
-}
-
-.form-control .recaptcha-badge-container .grecaptcha-badge {
-  position: relative !important;
-  display: inline-block !important;
-  margin: 0 !important;
-  transform: scale(0.8) !important;
-  transform-origin: right center !important;
-}
-
-/* High contrast mode support */
+/* High contrast mode support for container */
 @media (prefers-contrast: high) {
-  .grecaptcha-badge {
-    border-width: 2px !important;
-    filter: contrast(1.5) !important;
+  #recaptcha-badge-container {
+    filter: contrast(1.2);
   }
 }
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
-  .grecaptcha-badge,
-  .grecaptcha-badge *,
-  .recaptcha-badge-status {
+  #recaptcha-badge-container,
+  #recaptcha-badge-container * {
     transition: none !important;
     animation: none !important;
   }
-}
-
-/* Focus management for screen readers */
-.grecaptcha-badge[aria-hidden="true"] {
-  opacity: 0.7;
-  pointer-events: none;
-}
-
-/* Badge container for inline positioning */
-.recaptcha-badge-container {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  margin-top: 1rem;
-}
-
-.recaptcha-badge-container.center {
-  justify-content: center;
-}
-
-.recaptcha-badge-container.left {
-  justify-content: flex-start;
-}
-
-/* Custom badge text styling */
-.recaptcha-custom-badge {
-  font-size: 0.75rem;
-  color: hsl(var(--bc) / 0.6);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  background: hsl(var(--b2));
-  border-radius: 0.375rem;
-  border: 1px solid hsl(var(--b3));
-}
-
-/* Badge link styling */
-.recaptcha-badge-link {
-  color: hsl(var(--p));
-  text-decoration: none;
-  font-size: 0.75rem;
-}
-
-.recaptcha-badge-link:hover {
-  text-decoration: underline;
-  color: hsl(var(--pf));
 }
