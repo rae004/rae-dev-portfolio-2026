@@ -6,6 +6,8 @@
  * All functionality is now organized in the /includes directory structure.
  *
  * For the original monolithic version, see functions-backup.php
+ *
+ * @package RaeDevPortfolio
  */
 
 // Prevent direct access
@@ -23,7 +25,7 @@ const RAE_INCLUDES_PATH = RAE_THEME_PATH . '/includes/';
 /**
  * Load the theme loader which handles all modular components
  */
-require_once RAE_INCLUDES_PATH . 'class-theme-loader.php';
+require_once RAE_INCLUDES_PATH . 'class-rae-theme-loader.php';
 
 /**
  * Theme activation hook

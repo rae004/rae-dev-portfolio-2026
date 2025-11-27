@@ -2,6 +2,9 @@
 /**
  * Employment Dates Meta Box
  * Handles the employment dates meta box for resume items
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
  */
 
 // Prevent direct access
@@ -9,6 +12,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * RAE Resume Skills Meta Box
+ *
+ * Handles the related skills meta box for the resume post type.
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
+ */
 class RAE_Employment_Dates_Meta_Box {
 
 	/**
@@ -35,8 +46,10 @@ class RAE_Employment_Dates_Meta_Box {
 
 	/**
 	 * Employment dates meta box callback
+	 *
+	 * @param WP_Post $post The current post object
 	 */
-	public function meta_box_callback( $post ): void {
+	public function meta_box_callback( WP_Post $post ): void {
 		// Add nonce for security
 		wp_nonce_field( 'rae_employment_dates_nonce', 'rae_employment_dates_nonce_field' );
 
@@ -49,8 +62,8 @@ class RAE_Employment_Dates_Meta_Box {
 		$end_date_raw   = get_post_meta( $post->ID, '_resume_end_date_raw', true );
 
 		// Use raw dates for the form inputs
-		$start_date_formatted = $start_date_raw ?: '';
-		$end_date_formatted   = ( $end_date_raw && $end_date !== 'Present' ) ? $end_date_raw : '';
+		$start_date_formatted = $start_date_raw ? $start_date_raw : '';
+		$end_date_formatted   = ( $end_date_raw && 'Present' !== $end_date ) ? $end_date_raw : '';
 
 		?>
 		<table class="form-table">
@@ -141,11 +154,19 @@ class RAE_Employment_Dates_Meta_Box {
 
 	/**
 	 * Save employment dates meta data
+	 *
+	 * @param int $post_id The post ID to save metadata for
 	 */
-	public function save_meta_data( $post_id ): void {
+	public function save_meta_data( int $post_id ): void {
 		// Check if nonce is valid
 		if ( ! isset( $_POST['rae_employment_dates_nonce_field'] ) ||
-			! wp_verify_nonce( $_POST['rae_employment_dates_nonce_field'], 'rae_employment_dates_nonce' ) ) {
+			! wp_verify_nonce(
+				sanitize_text_field(
+					wp_unslash( $_POST['rae_employment_dates_nonce_field'] )
+				),
+				'rae_employment_dates_nonce'
+			)
+		) {
 			return;
 		}
 
@@ -160,15 +181,15 @@ class RAE_Employment_Dates_Meta_Box {
 		}
 
 		// Only save for resume post type
-		if ( get_post_type( $post_id ) !== 'resume' ) {
+		if ( 'resume' !== get_post_type( $post_id ) ) {
 			return;
 		}
 
 		// Save start date
 		if ( ! empty( $_POST['resume_start_date'] ) ) {
-			$start_date = sanitize_text_field( $_POST['resume_start_date'] );
+			$start_date = sanitize_text_field( wp_unslash( $_POST['resume_start_date'] ) );
 			// Convert to readable format and store
-			$start_date_formatted = date( 'F Y', strtotime( $start_date ) );
+			$start_date_formatted = gmdate( 'F Y', strtotime( $start_date ) );
 			update_post_meta( $post_id, '_resume_start_date', $start_date_formatted );
 			update_post_meta( $post_id, '_resume_start_date_raw', $start_date ); // Keep raw date for sorting
 		} else {
@@ -181,15 +202,15 @@ class RAE_Employment_Dates_Meta_Box {
 		update_post_meta( $post_id, '_resume_currently_employed', $currently_employed );
 
 		// Save end date (only if not currently employed)
-		if ( $currently_employed === '0' && ! empty( $_POST['resume_end_date'] ) ) {
-			$end_date = sanitize_text_field( $_POST['resume_end_date'] );
+		if ( '0' === $currently_employed && ! empty( $_POST['resume_end_date'] ) ) {
+			$end_date = sanitize_text_field( wp_unslash( $_POST['resume_end_date'] ) );
 			// Convert to readable format and store
-			$end_date_formatted = date( 'F Y', strtotime( $end_date ) );
+			$end_date_formatted = gmdate( 'F Y', strtotime( $end_date ) );
 			update_post_meta( $post_id, '_resume_end_date', $end_date_formatted );
 			update_post_meta( $post_id, '_resume_end_date_raw', $end_date ); // Keep raw date for sorting
 		} else {
 			// If currently employed, clear end date and set to "Present"
-			if ( $currently_employed === '1' ) {
+			if ( '1' === $currently_employed ) {
 				update_post_meta( $post_id, '_resume_end_date', 'Present' );
 			} else {
 				delete_post_meta( $post_id, '_resume_end_date' );

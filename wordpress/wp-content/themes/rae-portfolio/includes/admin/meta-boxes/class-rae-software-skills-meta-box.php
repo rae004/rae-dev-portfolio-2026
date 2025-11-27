@@ -3,6 +3,9 @@
  * Software Project Skills Meta Box
  * Handles the skills selection interface for software projects
  * This follows the exact pattern from media projects and resume items
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
  */
 
 // Prevent direct access
@@ -10,6 +13,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * RAE Software Skills Meta Box
+ *
+ * Provides a meta box for selecting related skills on software project posts.
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
+ */
 class RAE_Software_Skills_Meta_Box {
 
 	/**
@@ -36,8 +47,10 @@ class RAE_Software_Skills_Meta_Box {
 
 	/**
 	 * Software project skills meta box callback
+	 *
+	 * @param WP_Post $post The current post object
 	 */
-	public function meta_box_callback( $post ): void {
+	public function meta_box_callback( WP_Post $post ): void {
 		// Add nonce for security
 		wp_nonce_field( 'rae_software_project_skills_nonce', 'rae_software_project_skills_nonce_field' );
 
@@ -63,9 +76,15 @@ class RAE_Software_Skills_Meta_Box {
 			while ( $skills_query->have_posts() ) {
 				$skills_query->the_post();
 				$skill_id     = get_the_ID();
-				$skill_type   = get_post_meta( $skill_id, '_skill_type', true ) ?: 'Other';
-				$skill_value  = get_post_meta( $skill_id, '_skill_value', true ) ?: get_the_title();
-				$skill_weight = get_post_meta( $skill_id, '_skill_weight', true ) ?: 0;
+				$skill_type   = get_post_meta( $skill_id, '_skill_type', true )
+					? get_post_meta( $skill_id, '_skill_type', true )
+					: 'Other';
+				$skill_value  = get_post_meta( $skill_id, '_skill_value', true )
+					? get_post_meta( $skill_id, '_skill_value', true )
+					: get_the_title();
+				$skill_weight = get_post_meta( $skill_id, '_skill_weight', true )
+					? get_post_meta( $skill_id, '_skill_weight', true )
+					: 0;
 
 				if ( ! isset( $skills_by_category[ $skill_type ] ) ) {
 					$skills_by_category[ $skill_type ] = array();
@@ -88,7 +107,7 @@ class RAE_Software_Skills_Meta_Box {
 				$skills,
 				function ( $a, $b ) {
 					$weight_diff = $b['weight'] - $a['weight'];
-					return $weight_diff !== 0 ? $weight_diff : strcmp( $a['value'], $b['value'] );
+					return 0 !== $weight_diff ? $weight_diff : strcmp( $a['value'], $b['value'] );
 				}
 			);
 		}
@@ -98,8 +117,11 @@ class RAE_Software_Skills_Meta_Box {
 
 	/**
 	 * Render the skills selection interface
+	 *
+	 * @param array $skills_by_category Skills organized by category
+	 * @param array $selected_skills    Currently selected skill IDs
 	 */
-	private function render_skills_interface( $skills_by_category, $selected_skills ): void {
+	private function render_skills_interface( array $skills_by_category, array $selected_skills ): void {
 		?>
 		<div class="rae-software-skills-selector">
 			<div class="skills-search-container" style="margin-bottom: 20px;">
@@ -108,10 +130,20 @@ class RAE_Software_Skills_Meta_Box {
 					placeholder="Search skills..."
 					style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 3px;" />
 				</label>
-				<p class="description">Search and select skills related to this software project. Selected skills will appear highlighted.</p>
+				<p class="description">
+					Search and select skills related to this software project. Selected skills will appear highlighted.
+				</p>
 			</div>
 			
-			<div class="selected-skills-container" style="margin-bottom: 20px; min-height: 40px; padding: 10px; border: 1px solid #ddd; border-radius: 3px; background: #f9f9f9;">
+			<div class="selected-skills-container"
+				style="
+					margin-bottom: 20px;
+					min-height: 40px;
+					padding: 10px;
+					border: 1px solid #ddd;
+					border-radius: 3px;
+					background: #f9f9f9;"
+			>
 				<strong>Selected Skills:</strong>
 				<div id="software-selected-skills-display" style="margin-top: 10px;">
 					<?php if ( empty( $selected_skills ) ) : ?>
@@ -121,12 +153,29 @@ class RAE_Software_Skills_Meta_Box {
 							<?php
 							$skill_post = get_post( $skill_id );
 							if ( $skill_post ) :
-								$skill_value = get_post_meta( $skill_id, '_skill_value', true ) ?: $skill_post->post_title;
+								$skill_value = get_post_meta( $skill_id, '_skill_value', true )
+									? get_post_meta( $skill_id, '_skill_value', true )
+									: $skill_post->post_title;
 								?>
-								<span class="selected-skill-pill" data-skill-id="<?php echo $skill_id; ?>" 
-										style="display: inline-block; margin: 2px 5px 2px 0; padding: 4px 8px; background: #0073aa; color: white; border-radius: 3px; font-size: 12px;">
+								<span class="selected-skill-pill" data-skill-id="<?php echo esc_attr( $skill_id ); ?>" 
+										style="
+											display: inline-block;
+											margin: 2px 5px 2px 0;
+											padding: 4px 8px;
+											background: #0073aa;
+											color: white;
+											border-radius: 3px;
+											font-size: 12px;"
+								>
 									<?php echo esc_html( $skill_value ); ?> 
-									<span class="remove-skill" style="cursor: pointer; margin-left: 5px; font-weight: bold;">&times;</span>
+									<span class="remove-skill"
+											style="
+											cursor: pointer;
+											margin-left: 5px;
+											font-weight: bold;"
+									>
+										&times;
+									</span>
 								</span>
 							<?php endif; ?>
 						<?php endforeach; ?>
@@ -144,22 +193,42 @@ class RAE_Software_Skills_Meta_Box {
 								Select All
 							</span>
 						</h4>
-						<div class="skills-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 5px;">
+						<div class="skills-grid"
+							style="
+								display: grid;
+								grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+								gap: 5px;"
+						>
 							<?php foreach ( $skills as $skill ) : ?>
-								<label class="skill-checkbox-label" data-skill-id="<?php echo $skill['id']; ?>" 
+								<label class="skill-checkbox-label" data-skill-id="<?php echo esc_attr( $skill['id'] ); ?>" 
 										data-skill-value="<?php echo esc_attr( $skill['value'] ); ?>"
 										data-skill-category="<?php echo esc_attr( $category ); ?>"
-										style="display: flex; align-items: center; padding: 5px; border: 1px solid transparent; border-radius: 3px; cursor: pointer; font-size: 13px;
-												<?php echo in_array( $skill['id'], $selected_skills ) ? 'background: #e7f3ff; border-color: #0073aa;' : ''; ?>">
+										style="
+											display: flex;
+											align-items: center;
+											padding: 5px;
+											border: 1px solid transparent;
+											border-radius: 3px;
+											cursor: pointer;
+											font-size: 13px;
+											<?php
+											echo esc_attr(
+												in_array( $skill['id'], $selected_skills, true )
+												? 'background: #e7f3ff; border-color: #0073aa;'
+												: ''
+											);
+											?>
+												"
+									>
 									<input type="checkbox" 
 											name="software_project_related_skills[]" 
-											value="<?php echo $skill['id']; ?>"
-											<?php checked( in_array( $skill['id'], $selected_skills ) ); ?>
+											value="<?php echo esc_attr( $skill['id'] ); ?>"
+											<?php checked( in_array( $skill['id'], $selected_skills, true ) ); ?>
 											style="margin-right: 8px;" />
 									<span class="skill-name"><?php echo esc_html( $skill['value'] ); ?></span>
-									<?php if ( $skill['weight'] != 0 ) : ?>
+									<?php if ( 0 !== $skill['weight'] ) : ?>
 										<span class="skill-weight" style="margin-left: auto; font-size: 11px; color: #666;">
-											(<?php echo $skill['weight']; ?>)
+											(<?php echo esc_html( $skill['weight'] ); ?>)
 										</span>
 									<?php endif; ?>
 								</label>
@@ -171,7 +240,7 @@ class RAE_Software_Skills_Meta_Box {
 			
 			<?php if ( empty( $skills_by_category ) ) : ?>
 				<p style="text-align: center; color: #666; font-style: italic; padding: 20px;">
-					No skills found. <a href="<?php echo admin_url( 'post-new.php?post_type=skill' ); ?>">Create some skills</a> first.
+					No skills found.
 				</p>
 			<?php endif; ?>
 		</div>
@@ -246,13 +315,39 @@ class RAE_Software_Skills_Meta_Box {
 					});
 					
 					if (selectedSkills.length === 0) {
-						$selectedDisplay.html('<span class="no-skills-selected" style="color: #666; font-style: italic;">No skills selected</span>');
+						const noSkillsElm = document.createElement('span');
+						noSkillsElm.className = 'no-skills-selected';
+						noSkillsElm.setAttribute('style', 'color: #5d5c5c; font-style: italic;');
+						noSkillsElm.textContent = 'No skills selected';
+						$selectedDisplay.html(noSkillsElm.outerHTML);
 					} else {
 						let html = '';
 						selectedSkills.forEach(function(skill) {
-							html += '<span class="selected-skill-pill" data-skill-id="' + skill.id + '" ' +
-									'style="display: inline-block; margin: 2px 5px 2px 0; padding: 4px 8px; background: #0073aa; color: white; border-radius: 3px; font-size: 12px;">' +
-									skill.name + ' <span class="remove-skill" style="cursor: pointer; margin-left: 5px; font-weight: bold;">&times;</span></span>';
+							const selectedSkillStyles = [
+								'display: inline-block;',
+								'margin: 2px 5px 2px 0;',
+								'padding: 4px 8px;',
+								'background: #0073aa;',
+								'color: white;',
+								'border-radius: 3px;',
+								'font-size: 12px;'
+							];
+							const removeSpanStyles = [
+								'cursor: pointer;',
+								'margin-left: 5px;',
+								'font-weight: bold;'
+							];
+							const selectedSkillElm = document.createElement('span');
+							selectedSkillElm.className = 'selected-skill-pill';
+							selectedSkillElm.setAttribute('data-skill-id', skill.id);
+							selectedSkillElm.setAttribute('style', selectedSkillStyles.join(' '));
+							selectedSkillElm.textContent = skill.name + ' ';
+							const removeSpan = document.createElement('span');
+							removeSpan.className = 'remove-skill';
+							removeSpan.setAttribute('style', removeSpanStyles.join(' '));
+							removeSpan.innerHTML = '&times;';
+							selectedSkillElm.appendChild(removeSpan);
+							html += selectedSkillElm.outerHTML;
 						});
 						$selectedDisplay.html(html);
 					}
@@ -317,8 +412,10 @@ class RAE_Software_Skills_Meta_Box {
 
 	/**
 	 * Save software project skills meta data
+	 *
+	 * @param int $post_id The post ID to save metadata for
 	 */
-	public function save_meta_data( $post_id ): void {
+	public function save_meta_data( int $post_id ): void {
 		// Check if user has permission to edit the post
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
 			return;
@@ -326,7 +423,13 @@ class RAE_Software_Skills_Meta_Box {
 
 		// Verify nonce
 		if ( ! isset( $_POST['rae_software_project_skills_nonce_field'] ) ||
-			! wp_verify_nonce( $_POST['rae_software_project_skills_nonce_field'], 'rae_software_project_skills_nonce' ) ) {
+			! wp_verify_nonce(
+				sanitize_text_field(
+					wp_unslash( $_POST['rae_software_project_skills_nonce_field'] )
+				),
+				'rae_software_project_skills_nonce'
+			)
+		) {
 			return;
 		}
 
@@ -347,7 +450,7 @@ class RAE_Software_Skills_Meta_Box {
 			$validated_skills = array();
 			foreach ( $skill_ids as $skill_id ) {
 				$skill_post = get_post( $skill_id );
-				if ( $skill_post && $skill_post->post_type === 'skill' && $skill_post->post_status === 'publish' ) {
+				if ( $skill_post && 'skill' === $skill_post->post_type && 'publish' === $skill_post->post_status ) {
 					$validated_skills[] = $skill_id;
 				}
 			}

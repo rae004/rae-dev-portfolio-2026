@@ -2,6 +2,9 @@
 /**
  * Meta Boxes Manager
  * Central manager for all meta box functionality
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
  */
 
 // Prevent direct access
@@ -9,6 +12,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Meta Boxes Manager
+ *
+ * Central manager for all meta box functionality.
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
+ */
 class RAE_Meta_Boxes {
 
 	/**
@@ -25,6 +36,8 @@ class RAE_Meta_Boxes {
 
 	/**
 	 * Enqueue scripts and styles for meta boxes
+	 *
+	 * @param string $hook The current admin page hook
 	 */
 	public function enqueue_meta_box_scripts( $hook ): void {
 		// Only load on post edit pages

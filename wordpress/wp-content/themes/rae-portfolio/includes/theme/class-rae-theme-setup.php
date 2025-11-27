@@ -2,6 +2,9 @@
 /**
  * Theme Setup
  * Handles theme configuration and WordPress features
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
  */
 
 // Prevent direct access
@@ -9,6 +12,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * RAE Theme Setup
+ *
+ * Configures theme support for various WordPress features.
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
+ */
 class RAE_Theme_Setup {
 
 	/**
@@ -80,13 +91,20 @@ class RAE_Theme_Setup {
 
 	/**
 	 * Enqueue admin scripts and styles
+	 *
+	 * @param string $hook The current admin page hook
 	 */
-	public function admin_enqueue_scripts( $hook ): void {
+	public function admin_enqueue_scripts( string $hook ): void {
 		// Only load on post edit pages
 		if ( 'post.php' === $hook || 'post-new.php' === $hook ) {
 			// Enqueue WordPress date picker
 			wp_enqueue_script( 'jquery-ui-datepicker' );
-			wp_enqueue_style( 'jquery-ui-datepicker-style', 'https://code.jquery.com/ui/1.12.1/themes/ui-lightness/jquery-ui.css' );
+			wp_enqueue_style(
+				'jquery-ui-datepicker-style',
+				'https://code.jquery.com/ui/1.12.1/themes/ui-lightness/jquery-ui.css',
+				array(),
+				'1.12.1'
+			);
 		}
 	}
 }

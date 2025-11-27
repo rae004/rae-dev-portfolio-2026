@@ -2,6 +2,9 @@
 /**
  * Social Links Options
  * WordPress admin settings page for managing social links
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
  */
 
 // Prevent direct access
@@ -9,6 +12,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Social Links Options
+ *
+ * Handles social links configuration in WordPress admin.
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
+ */
 class RAE_Social_Links_Options {
 
 	/**
@@ -74,9 +85,11 @@ class RAE_Social_Links_Options {
 
 	/**
 	 * Enqueue admin scripts and styles
+	 *
+	 * @param string $hook The current admin page hook
 	 */
 	public function enqueue_admin_scripts( $hook ): void {
-		if ( $hook !== 'settings_page_rae-social-links' ) {
+		if ( 'settings_page_rae-social-links' !== $hook ) {
 			return;
 		}
 
@@ -105,7 +118,8 @@ class RAE_Social_Links_Options {
 
 			<div class="notice notice-info">
 				<p>
-					<strong>How to use:</strong> Add up to <?php echo self::MAX_LINKS; ?> social links that will appear in the "Connect With Me" section of your contact page.
+					<strong>How to use:</strong> Add up to <?php echo esc_html( self::MAX_LINKS ); ?> social links that will appear in the 
+					"Connect With Me" section of your contact page.
 					Drag and drop to reorder. Links must be valid URLs starting with https://.
 				</p>
 			</div>
@@ -144,7 +158,8 @@ class RAE_Social_Links_Options {
 	 * Settings section callback
 	 */
 	public function settings_section_callback(): void {
-		echo '<p>Configure the social links that appear on your contact page. You can add up to ' . self::MAX_LINKS . ' links.</p>';
+		echo '<p>Configure the social links that appear on your contact page. ' .
+			'You can add up to ' . esc_html( self::MAX_LINKS ) . ' links.</p>';
 	}
 
 	/**
@@ -152,7 +167,7 @@ class RAE_Social_Links_Options {
 	 */
 	public function social_links_callback(): void {
 		$options      = get_option( self::OPTION_NAME, $this->get_default_options() );
-		$social_links = $options['social_links'] ?? array();
+		$social_links = isset( $options['social_links'] ) ? $options['social_links'] : array();
 
 		// Filter out empty links and get count
 		$active_links = array_filter(
@@ -169,7 +184,8 @@ class RAE_Social_Links_Options {
 		<div id="rae-social-links-container">
 			<div class="social-links-header">
 				<div class="social-links-counter">
-					<span id="links-count"><?php echo $active_count; ?></span> of <?php echo self::MAX_LINKS; ?> social links
+					<span id="links-count"><?php echo esc_html( $active_count ); ?></span> of 
+					<?php echo esc_html( self::MAX_LINKS ); ?> social links
 				</div>
 				<div class="social-links-actions">
 					<button type="button" id="add-social-link" class="button button-secondary">
@@ -200,7 +216,8 @@ class RAE_Social_Links_Options {
 			<div class="social-links-tips">
 				<p class="description">
 					<strong>Tips:</strong> Drag rows to reorder. Click the "×" button to remove a link.
-					Platform icons are automatically detected from URLs. You can add up to <?php echo self::MAX_LINKS; ?> total links.
+					Platform icons are automatically detected from URLs. You can add up to 
+					<?php echo esc_html( self::MAX_LINKS ); ?> total links.
 				</p>
 			</div>
 		</div>
@@ -214,42 +231,47 @@ class RAE_Social_Links_Options {
 
 	/**
 	 * Render individual social link row
+	 *
+	 * @param array $link_data  The link data (label, url, enabled, etc.)
+	 * @param int   $index      The row index
+	 * @param bool  $show_remove Whether to show the remove button
 	 */
 	private function render_social_link_row( $link_data, $index, $show_remove = true ): void {
 		$label    = isset( $link_data['label'] ) ? esc_attr( $link_data['label'] ) : '';
 		$url      = isset( $link_data['url'] ) ? esc_attr( $link_data['url'] ) : '';
-		$enabled  = $link_data['enabled'] ?? true;
+		$enabled  = isset( $link_data['enabled'] ) ? $link_data['enabled'] : true;
 		$platform = $this->detect_platform( $url );
 
 		?>
-		<div class="social-link-row" data-index="<?php echo $index; ?>">
+		<div class="social-link-row" data-index="<?php echo esc_attr( $index ); ?>">
 			<div class="social-link-handle">
 				<span class="dashicons dashicons-menu"></span>
 			</div>
 
 			<div class="social-link-platform">
-				<span class="platform-icon platform-<?php echo esc_attr( $platform ); ?>" title="<?php echo esc_attr( ucfirst( $platform ) ); ?>">
-					<?php echo $this->get_platform_icon( $platform ); ?>
+				<span class="platform-icon platform-<?php echo esc_attr( $platform ); ?>"
+					title="<?php echo esc_attr( ucfirst( $platform ) ); ?>">
+					<?php echo wp_kses_post( $this->get_platform_icon( $platform ) ); ?>
 				</span>
 			</div>
 
 			<div class="social-link-fields">
 				<div class="field-group">
-					<label for="social_link_label_<?php echo $index; ?>">Label</label>
+					<label for="social_link_label_<?php echo esc_attr( $index ); ?>">Label</label>
 					<input type="text"
-							id="social_link_label_<?php echo $index; ?>"
-							name="<?php echo self::OPTION_NAME; ?>[social_links][link_<?php echo $index; ?>][label]"
-							value="<?php echo $label; ?>"
+							id="social_link_label_<?php echo esc_attr( $index ); ?>"
+							name="<?php echo esc_attr( self::OPTION_NAME ); ?>[social_links][link_<?php echo esc_attr( $index ); ?>][label]"
+							value="<?php echo esc_attr( $label ); ?>"
 							placeholder="e.g., LinkedIn Profile"
 							maxlength="50" />
 				</div>
 
 				<div class="field-group">
-					<label for="social_link_url_<?php echo $index; ?>">URL</label>
+					<label for="social_link_url_<?php echo esc_attr( $index ); ?>">URL</label>
 					<input type="url"
-							id="social_link_url_<?php echo $index; ?>"
-							name="<?php echo self::OPTION_NAME; ?>[social_links][link_<?php echo $index; ?>][url]"
-							value="<?php echo $url; ?>"
+							id="social_link_url_<?php echo esc_attr( $index ); ?>"
+							name="<?php echo esc_attr( self::OPTION_NAME ); ?>[social_links][link_<?php echo esc_attr( $index ); ?>][url]"
+							value="<?php echo esc_attr( $url ); ?>"
 							placeholder="https://linkedin.com/in/username"
 							class="social-url-input" />
 				</div>
@@ -257,7 +279,7 @@ class RAE_Social_Links_Options {
 				<div class="field-group">
 					<label>
 						<input type="checkbox"
-								name="<?php echo self::OPTION_NAME; ?>[social_links][link_<?php echo $index; ?>][enabled]"
+								name="<?php echo esc_attr( self::OPTION_NAME ); ?>[social_links][link_<?php echo esc_attr( $index ); ?>][enabled]"
 								value="1"
 								<?php checked( $enabled ); ?> />
 						Enabled
@@ -265,8 +287,8 @@ class RAE_Social_Links_Options {
 				</div>
 
 				<input type="hidden"
-						name="<?php echo self::OPTION_NAME; ?>[social_links][link_<?php echo $index; ?>][order]"
-						value="<?php echo $index; ?>"
+						name="<?php echo esc_attr( self::OPTION_NAME ); ?>[social_links][link_<?php echo esc_attr( $index ); ?>][order]"
+						value="<?php echo esc_attr( $index ); ?>"
 						class="order-input" />
 			</div>
 
@@ -283,6 +305,10 @@ class RAE_Social_Links_Options {
 
 	/**
 	 * Validate and sanitize options
+	 *
+	 * @param array $input The input data to validate and sanitize
+	 *
+	 * @return array Sanitized and validated options
 	 */
 	public function validate_options( $input ) {
 		$sanitized                 = array();
@@ -353,6 +379,10 @@ class RAE_Social_Links_Options {
 
 	/**
 	 * Detect platform from URL
+	 *
+	 * @param string $url The URL to analyze for platform detection
+	 *
+	 * @return string The detected platform identifier
 	 */
 	private function detect_platform( $url ): string {
 		if ( empty( $url ) ) {
@@ -368,7 +398,7 @@ class RAE_Social_Links_Options {
 		}
 
 		// Parse URL for domain matching
-		$domain = parse_url( $url_lower, PHP_URL_HOST );
+		$domain = wp_parse_url( $url_lower, PHP_URL_HOST );
 		if ( ! $domain ) {
 			return 'generic';
 		}
@@ -388,11 +418,15 @@ class RAE_Social_Links_Options {
 			'youtu.be'      => 'youtube',
 		);
 
-		return $platforms[ $domain ] ?? 'generic';
+		return isset( $platforms[ $domain ] ) ? $platforms[ $domain ] : 'generic';
 	}
 
 	/**
 	 * Get platform icon HTML
+	 *
+	 * @param string $platform The platform identifier
+	 *
+	 * @return string HTML for the platform icon
 	 */
 	private function get_platform_icon( $platform ): string {
 		$icons = array(
@@ -406,7 +440,7 @@ class RAE_Social_Links_Options {
 			'generic'   => '<span class="dashicons dashicons-external"></span>',
 		);
 
-		return $icons[ $platform ] ?? $icons['generic'];
+		return isset( $icons[ $platform ] ) ? $icons[ $platform ] : $icons['generic'];
 	}
 
 	/**
@@ -597,7 +631,7 @@ class RAE_Social_Links_Options {
 	private function get_admin_javascript(): string {
 		return '
             jQuery(document).ready(function($) {
-                const maxLinks = ' . self::MAX_LINKS . ';
+                const maxLinks = ' . esc_js( self::MAX_LINKS ) . ';
 
                 // Count active links initially
                 function updateLinkCount() {

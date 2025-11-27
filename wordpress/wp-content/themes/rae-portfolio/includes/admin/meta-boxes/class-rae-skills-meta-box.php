@@ -2,6 +2,9 @@
 /**
  * Skills Meta Box
  * Handles the skill details meta box for skill post type
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
  */
 
 // Prevent direct access
@@ -9,6 +12,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * RAE Skills Meta Box
+ *
+ * Handles the skill details meta box for the skill post type.
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
+ */
 class RAE_Skills_Meta_Box {
 
 	/**
@@ -35,8 +46,10 @@ class RAE_Skills_Meta_Box {
 
 	/**
 	 * Skills meta box callback
+	 *
+	 * @param WP_Post $post The current post object
 	 */
-	public function meta_box_callback( $post ): void {
+	public function meta_box_callback( WP_Post $post ): void {
 		// Add nonce for security
 		wp_nonce_field( 'rae_skills_nonce', 'rae_skills_nonce_field' );
 
@@ -114,7 +127,9 @@ class RAE_Skills_Meta_Box {
 								step="1"
 								placeholder="0"
 								style="width: 100px;" />
-						<p class="description">Weight for sorting (0-10). Higher numbers appear first. Use 0 for alphabetical sorting.</p>
+						<p class="description">
+							Weight for sorting (0-10). Higher numbers appear first. Use 0 for alphabetical sorting.
+						</p>
 					</td>
 				</tr>
 				<tr>
@@ -128,7 +143,9 @@ class RAE_Skills_Meta_Box {
 								value="<?php echo esc_attr( $skill_info_url ); ?>" 
 								placeholder="https://example.com/more-info"
 								style="width: 100%; max-width: 400px;" />
-						<p class="description">Optional URL for more information about this skill (official website, documentation, etc.).</p>
+						<p class="description">
+							Optional URL for more information about this skill (official website, documentation, etc.).
+						</p>
 					</td>
 				</tr>
 			</table>
@@ -167,11 +184,13 @@ class RAE_Skills_Meta_Box {
 
 	/**
 	 * Save skills meta data
+	 *
+	 * @param int $post_id The post ID to save metadata for
 	 */
-	public function save_meta_data( $post_id ): void {
+	public function save_meta_data( int $post_id ): void {
 		// Check if nonce is valid
 		if ( ! isset( $_POST['rae_skills_nonce_field'] ) ||
-			! wp_verify_nonce( $_POST['rae_skills_nonce_field'], 'rae_skills_nonce' ) ) {
+			! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['rae_skills_nonce_field'] ) ), 'rae_skills_nonce' ) ) {
 			return;
 		}
 
@@ -186,26 +205,26 @@ class RAE_Skills_Meta_Box {
 		}
 
 		// Only save for skill post type
-		if ( get_post_type( $post_id ) !== 'skill' ) {
+		if ( 'skill' !== get_post_type( $post_id ) ) {
 			return;
 		}
 
 		// Save skill type
 		if ( isset( $_POST['skill_type'] ) ) {
-			update_post_meta( $post_id, '_skill_type', sanitize_text_field( $_POST['skill_type'] ) );
+			update_post_meta( $post_id, '_skill_type', sanitize_text_field( wp_unslash( $_POST['skill_type'] ) ) );
 		} else {
 			delete_post_meta( $post_id, '_skill_type' );
 		}
 
 		// Save skill value
 		if ( isset( $_POST['skill_value'] ) ) {
-			update_post_meta( $post_id, '_skill_value', sanitize_text_field( $_POST['skill_value'] ) );
+			update_post_meta( $post_id, '_skill_value', sanitize_text_field( wp_unslash( $_POST['skill_value'] ) ) );
 		} else {
 			delete_post_meta( $post_id, '_skill_value' );
 		}
 
 		// Save skill weight
-		if ( isset( $_POST['skill_weight'] ) && $_POST['skill_weight'] !== '' ) {
+		if ( isset( $_POST['skill_weight'] ) && '' !== $_POST['skill_weight'] ) {
 			$weight = intval( $_POST['skill_weight'] );
 			update_post_meta( $post_id, '_skill_weight', max( 0, min( 10, $weight ) ) );
 		} else {
@@ -214,7 +233,7 @@ class RAE_Skills_Meta_Box {
 
 		// Save skill info URL
 		if ( isset( $_POST['skill_info_url'] ) ) {
-			$url = sanitize_url( $_POST['skill_info_url'] );
+			$url = sanitize_url( wp_unslash( $_POST['skill_info_url'] ) );
 			if ( filter_var( $url, FILTER_VALIDATE_URL ) ) {
 				update_post_meta( $post_id, '_skill_info_url', $url );
 			} else {

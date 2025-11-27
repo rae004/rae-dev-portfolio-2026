@@ -2,6 +2,9 @@
 /**
  * Software Projects Post Type
  * Handles registration and configuration of the software projects custom post type
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
  */
 
 // Prevent direct access
@@ -9,6 +12,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Software Projects Post Type
+ *
+ * Registers and manages software projects custom post type.
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
+ */
 class RAE_Software_Projects_Post_Type {
 
 	/**

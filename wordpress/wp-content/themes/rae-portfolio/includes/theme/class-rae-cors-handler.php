@@ -2,6 +2,9 @@
 /**
  * CORS Handler
  * Manages Cross-Origin Resource Sharing for REST API
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
  */
 
 // Prevent direct access
@@ -9,6 +12,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * RAE CORS Handler
+ *
+ * Manages CORS headers for REST API responses.
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
+ */
 class RAE_CORS_Handler {
 
 	/**
@@ -31,10 +42,10 @@ class RAE_CORS_Handler {
 		);
 
 		// Get the origin of the request
-		$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+		$origin = isset( $_SERVER['HTTP_ORIGIN'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) ) : '';
 
 		// Check if the origin is in our allowed list
-		if ( in_array( $origin, $allowed_origins ) ) {
+		if ( in_array( $origin, $allowed_origins, true ) ) {
 			header( 'Access-Control-Allow-Origin: ' . $origin );
 		}
 
@@ -45,7 +56,8 @@ class RAE_CORS_Handler {
 		header( 'Access-Control-Max-Age: 86400' ); // 24 hours
 
 		// Handle preflight OPTIONS requests
-		if ( $_SERVER['REQUEST_METHOD'] === 'OPTIONS' ) {
+		$request_method = isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : '';
+		if ( 'OPTIONS' === $request_method ) {
 			header( 'Access-Control-Allow-Origin: ' . $origin );
 			header( 'Access-Control-Allow-Methods: GET, POST, OPTIONS' );
 			header( 'Access-Control-Allow-Headers: Content-Type, Authorization' );

@@ -2,6 +2,9 @@
 /**
  * Resume Post Type
  * Handles registration and configuration of the resume custom post type
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
  */
 
 // Prevent direct access
@@ -9,6 +12,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Resume Post Type
+ *
+ * Registers and manages resume custom post type.
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
+ */
 class RAE_Resume_Post_Type {
 
 	/**

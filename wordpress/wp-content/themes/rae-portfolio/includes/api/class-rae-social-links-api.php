@@ -2,6 +2,9 @@
 /**
  * Social Links REST API
  * Provides REST endpoints for social links data
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
  */
 
 // Prevent direct access
@@ -9,10 +12,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Social Links API
+ *
+ * REST API endpoints for social links functionality.
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
+ */
 class RAE_Social_Links_API extends RAE_API_Base {
 
 	/**
 	 * API endpoint path
+	 *
+	 * @var string
 	 */
 	protected string $endpoint = 'social-links';
 
@@ -61,6 +74,8 @@ class RAE_Social_Links_API extends RAE_API_Base {
 
 	/**
 	 * Get social links endpoint
+	 *
+	 * @param WP_REST_Request $request The REST request object.
 	 */
 	public function get_social_links( WP_REST_Request $request ): WP_REST_Response {
 		try {

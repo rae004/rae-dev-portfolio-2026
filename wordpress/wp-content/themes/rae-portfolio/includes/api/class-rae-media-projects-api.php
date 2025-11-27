@@ -2,6 +2,9 @@
 /**
  * Media Projects API
  * Handles REST API endpoints for media projects
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
  */
 
 // Prevent direct access
@@ -9,6 +12,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * RAE Media Projects API
+ *
+ * Handles REST API endpoints for media projects
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
+ */
 class RAE_Media_Projects_API extends RAE_API_Base {
 
 	/**
@@ -61,7 +72,7 @@ class RAE_Media_Projects_API extends RAE_API_Base {
 				'permission_callback' => array( $this, 'public_permission_callback' ),
 				'args'                => array(
 					'id' => array(
-						'validate_callback' => function ( $param, $request, $key ) {
+						'validate_callback' => function ( $param ) {
 							return is_numeric( $param );
 						},
 					),
@@ -72,8 +83,12 @@ class RAE_Media_Projects_API extends RAE_API_Base {
 
 	/**
 	 * Get media projects
+	 *
+	 * @param WP_REST_Request $request The REST request object
+	 *
+	 * @return WP_Error|WP_REST_Response|WP_HTTP_Response
 	 */
-	public function get_items( $request ): WP_Error|WP_REST_Response|WP_HTTP_Response {
+	public function get_items( WP_REST_Request $request ): WP_Error|WP_REST_Response|WP_HTTP_Response {
 		$params = $this->get_sanitized_params( $request, array( 'per_page' => 100 ) );
 		$args   = $this->format_query_args( 'media-project', $params );
 
@@ -89,12 +104,16 @@ class RAE_Media_Projects_API extends RAE_API_Base {
 
 	/**
 	 * Get single media project
+	 *
+	 * @param WP_REST_Request $request The REST request object
+	 *
+	 * @return WP_Error|WP_REST_Response|WP_HTTP_Response
 	 */
-	public function get_item( $request ): WP_Error|WP_REST_Response|WP_HTTP_Response {
+	public function get_item( WP_REST_Request $request ): WP_Error|WP_REST_Response|WP_HTTP_Response {
 		$id   = $request->get_param( 'id' );
 		$post = get_post( $id );
 
-		if ( empty( $post ) || $post->post_type !== 'media-project' || $post->post_status !== 'publish' ) {
+		if ( empty( $post ) || 'media-project' !== $post->post_type || 'publish' !== $post->post_status ) {
 			return new WP_Error( 'not_found', 'Media project not found', array( 'status' => 404 ) );
 		}
 
@@ -104,8 +123,12 @@ class RAE_Media_Projects_API extends RAE_API_Base {
 
 	/**
 	 * Prepare media project item data for REST API response
+	 *
+	 * @param WP_Post $post The media project post object
+	 *
+	 * @return array Formatted media project data
 	 */
-	public function prepare_item( $post ): array {
+	public function prepare_item( WP_Post $post ): array {
 		// Get featured image
 		$featured_image_id  = get_post_thumbnail_id( $post->ID );
 		$featured_image_url = $featured_image_id ? wp_get_attachment_image_url( $featured_image_id, 'full' ) : null;
@@ -138,23 +161,23 @@ class RAE_Media_Projects_API extends RAE_API_Base {
 				'rendered'  => get_the_excerpt( $post ),
 				'protected' => false,
 			),
-			'featured_media'     => $featured_image_id ?: 0,
+			'featured_media'     => $featured_image_id ? $featured_image_id : 0,
 			'template'           => '',
 			'meta'               => array(),
 			'class_list'         => get_post_class( '', $post->ID ),
 			'featured_image_url' => $featured_image_url,
-			'project_type'       => $project_type ?: null,
+			'project_type'       => $project_type ? $project_type : null,
 		);
 
 		// Add project-specific metadata based on type
-		if ( $project_type === 'Music' ) {
+		if ( 'Music' === $project_type ) {
 			$item = array_merge( $item, $this->get_music_project_data( $post->ID ) );
-		} elseif ( $project_type === 'Audio_Post_Production' ) {
+		} elseif ( 'Audio_Post_Production' === $project_type ) {
 			$item = array_merge( $item, $this->get_audio_post_project_data( $post->ID ) );
 		}
 
 		// Get related skills
-		$item['related_skills'] = $this->get_related_skills( $post->ID );
+		$item['related_skills'] = RAE_Related_Skill_Provider::get_related_skills( $post->ID, '_media_project_related_skills' );
 
 		// Add links
 		$item['_links'] = array(
@@ -175,15 +198,31 @@ class RAE_Media_Projects_API extends RAE_API_Base {
 
 	/**
 	 * Get music project specific data
+	 *
+	 * @param int $post_id The post ID
+	 *
+	 * @return array Music project data
 	 */
-	private function get_music_project_data( $post_id ): array {
+	private function get_music_project_data( int $post_id ): array {
 		return array(
-			'music_artist_name'    => get_post_meta( $post_id, '_music_artist_name', true ) ?: null,
-			'music_genre'          => get_post_meta( $post_id, '_music_genre', true ) ?: null,
-			'music_record_label'   => get_post_meta( $post_id, '_music_record_label', true ) ?: null,
-			'music_release_date'   => get_post_meta( $post_id, '_music_release_date', true ) ?: null,
-			'music_album_title'    => get_post_meta( $post_id, '_music_album_title', true ) ?: null,
-			'music_role'           => get_post_meta( $post_id, '_music_role', true ) ?: null,
+			'music_artist_name'    => get_post_meta( $post_id, '_music_artist_name', true )
+				? get_post_meta( $post_id, '_music_artist_name', true )
+				: null,
+			'music_genre'          => get_post_meta( $post_id, '_music_genre', true )
+				? get_post_meta( $post_id, '_music_genre', true )
+				: null,
+			'music_record_label'   => get_post_meta( $post_id, '_music_record_label', true )
+				? get_post_meta( $post_id, '_music_record_label', true )
+				: null,
+			'music_release_date'   => get_post_meta( $post_id, '_music_release_date', true )
+				? get_post_meta( $post_id, '_music_release_date', true )
+				: null,
+			'music_album_title'    => get_post_meta( $post_id, '_music_album_title', true )
+				? get_post_meta( $post_id, '_music_album_title', true )
+				: null,
+			'music_role'           => get_post_meta( $post_id, '_music_role', true )
+				? get_post_meta( $post_id, '_music_role', true )
+				: null,
 			'music_credits'        => RAE_Meta_Utilities::get_list_meta( $post_id, '_music_credits' ),
 			'music_equipment_used' => RAE_Meta_Utilities::get_list_meta( $post_id, '_music_equipment_used' ),
 			'music_studios'        => RAE_Meta_Utilities::get_list_meta( $post_id, '_music_studios' ),
@@ -193,53 +232,32 @@ class RAE_Media_Projects_API extends RAE_API_Base {
 
 	/**
 	 * Get audio post production project specific data
+	 *
+	 * @param int $post_id The post ID
+	 *
+	 * @return array Audio post production project data
 	 */
-	private function get_audio_post_project_data( $post_id ): array {
+	private function get_audio_post_project_data( int $post_id ): array {
 		return array(
-			'audio_director'           => get_post_meta( $post_id, '_audio_director', true ) ?: null,
-			'audio_genre'              => get_post_meta( $post_id, '_audio_genre', true ) ?: null,
-			'audio_release_date'       => get_post_meta( $post_id, '_audio_release_date', true ) ?: null,
-			'audio_production_company' => get_post_meta( $post_id, '_audio_production_company', true ) ?: null,
-			'audio_role'               => get_post_meta( $post_id, '_audio_role', true ) ?: null,
+			'audio_director'           => get_post_meta( $post_id, '_audio_director', true )
+				? get_post_meta( $post_id, '_audio_director', true )
+				: null,
+			'audio_genre'              => get_post_meta( $post_id, '_audio_genre', true )
+				? get_post_meta( $post_id, '_audio_genre', true )
+				: null,
+			'audio_release_date'       => get_post_meta( $post_id, '_audio_release_date', true )
+				? get_post_meta( $post_id, '_audio_release_date', true )
+				: null,
+			'audio_production_company' => get_post_meta( $post_id, '_audio_production_company', true )
+				? get_post_meta( $post_id, '_audio_production_company', true )
+				: null,
+			'audio_role'               => get_post_meta( $post_id, '_audio_role', true )
+				? get_post_meta( $post_id, '_audio_role', true )
+				: null,
 			'audio_credits'            => RAE_Meta_Utilities::get_list_meta( $post_id, '_audio_credits' ),
 			'audio_equipment_used'     => RAE_Meta_Utilities::get_list_meta( $post_id, '_audio_equipment_used' ),
 			'audio_studios'            => RAE_Meta_Utilities::get_list_meta( $post_id, '_audio_studios' ),
 			'audio_collaborators'      => RAE_Meta_Utilities::get_list_meta( $post_id, '_audio_collaborators' ),
 		);
-	}
-
-	/**
-	 * Get related skills for the media project
-	 */
-	private function get_related_skills( $post_id ): array {
-		$related_skill_ids = get_post_meta( $post_id, '_media_project_related_skills', true );
-		$related_skills    = array();
-
-		if ( is_array( $related_skill_ids ) && ! empty( $related_skill_ids ) ) {
-			foreach ( $related_skill_ids as $skill_id ) {
-				$skill_post = get_post( $skill_id );
-				if ( $skill_post && $skill_post->post_type === 'skill' && $skill_post->post_status === 'publish' ) {
-					// Use Skills API to prepare skill items
-					if ( class_exists( 'RAE_Skills_API' ) ) {
-						$skills_api       = new RAE_Skills_API();
-						$related_skills[] = $skills_api->prepare_item( $skill_post );
-					}
-				}
-			}
-
-			// Sort skills by weight (descending) then alphabetically
-			usort(
-				$related_skills,
-				function ( $a, $b ) {
-					$weight_diff = $b['skills_weight'] - $a['skills_weight'];
-					if ( $weight_diff !== 0 ) {
-						return $weight_diff;
-					}
-					return strcmp( $a['skills_value'] ?: $a['title']['rendered'], $b['skills_value'] ?: $b['title']['rendered'] );
-				}
-			);
-		}
-
-		return $related_skills;
 	}
 }

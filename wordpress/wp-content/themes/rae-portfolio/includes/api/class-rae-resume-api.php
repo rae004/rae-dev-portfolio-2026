@@ -1,7 +1,10 @@
 <?php
 /**
- * Skills API
- * Handles REST API endpoints for skills
+ * Resume API
+ * Handles REST API endpoints for resume items
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
  */
 
 // Prevent direct access
@@ -9,7 +12,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class RAE_Skills_API extends RAE_API_Base {
+/**
+ * RAE Skills API
+ *
+ * Provides REST API endpoints for skills.
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
+ */
+class RAE_Resume_API extends RAE_API_Base {
 
 	/**
 	 * Constructor
@@ -22,17 +33,17 @@ class RAE_Skills_API extends RAE_API_Base {
 	 * Register REST API endpoints
 	 */
 	public function register_endpoints(): void {
-		// Skills collection endpoint
+		// Resume collection endpoint
 		register_rest_route(
 			'wp/v2',
-			'/skills',
+			'/resume',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_items' ),
 				'permission_callback' => array( $this, 'public_permission_callback' ),
 				'args'                => array(
 					'per_page' => array(
-						'default'           => 100,
+						'default'           => 10,
 						'sanitize_callback' => 'absint',
 					),
 					'page'     => array(
@@ -51,17 +62,17 @@ class RAE_Skills_API extends RAE_API_Base {
 			)
 		);
 
-		// Individual skill endpoint
+		// Individual resume item endpoint
 		register_rest_route(
 			'wp/v2',
-			'/skills/(?P<id>\d+)',
+			'/resume/(?P<id>\d+)',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_item' ),
 				'permission_callback' => array( $this, 'public_permission_callback' ),
 				'args'                => array(
 					'id' => array(
-						'validate_callback' => function ( $param, $request, $key ) {
+						'validate_callback' => function ( $param ) {
 							return is_numeric( $param );
 						},
 					),
@@ -71,11 +82,15 @@ class RAE_Skills_API extends RAE_API_Base {
 	}
 
 	/**
-	 * Get skills
+	 * Get resume items
+	 *
+	 * @param WP_REST_Request $request The REST request object
+	 *
+	 * @return WP_Error|WP_REST_Response|WP_HTTP_Response
 	 */
-	public function get_items( $request ): WP_Error|WP_REST_Response|WP_HTTP_Response {
-		$params = $this->get_sanitized_params( $request, array( 'per_page' => 100 ) );
-		$args   = $this->format_query_args( 'skill', $params );
+	public function get_items( WP_REST_Request $request ): WP_Error|WP_REST_Response|WP_HTTP_Response {
+		$params = $this->get_sanitized_params( $request );
+		$args   = $this->format_query_args( 'resume', $params );
 
 		$posts = get_posts( $args );
 		$data  = array();
@@ -88,14 +103,18 @@ class RAE_Skills_API extends RAE_API_Base {
 	}
 
 	/**
-	 * Get single skill
+	 * Get single resume item
+	 *
+	 * @param WP_REST_Request $request The REST request object
+	 *
+	 * @return WP_Error|WP_REST_Response|WP_HTTP_Response
 	 */
-	public function get_item( $request ): WP_Error|WP_REST_Response|WP_HTTP_Response {
+	public function get_item( WP_REST_Request $request ): WP_Error|WP_REST_Response|WP_HTTP_Response {
 		$id   = $request->get_param( 'id' );
 		$post = get_post( $id );
 
-		if ( empty( $post ) || $post->post_type !== 'skill' || $post->post_status !== 'publish' ) {
-			return new WP_Error( 'not_found', 'Skill not found', array( 'status' => 404 ) );
+		if ( empty( $post ) || 'resume' !== $post->post_type || 'publish' !== $post->post_status ) {
+			return new WP_Error( 'not_found', 'Resume item not found', array( 'status' => 404 ) );
 		}
 
 		$data = $this->prepare_item( $post );
@@ -103,18 +122,25 @@ class RAE_Skills_API extends RAE_API_Base {
 	}
 
 	/**
-	 * Prepare skill item data for REST API response
+	 * Prepare resume item data for REST API response
+	 *
+	 * @param WP_Post $post The resume post object
+	 *
+	 * @return array Formatted resume data
 	 */
-	public function prepare_item( $post ): array {
-		// Get skill meta
-		$skills_type     = get_post_meta( $post->ID, '_skill_type', true );
-		$skills_value    = get_post_meta( $post->ID, '_skill_value', true );
-		$skills_weight   = get_post_meta( $post->ID, '_skill_weight', true );
-		$skills_info_url = get_post_meta( $post->ID, '_skill_info_url', true );
+	public function prepare_item( WP_Post $post ): array {
+		// Get employment date meta
+		$start_date         = get_post_meta( $post->ID, '_resume_start_date', true );
+		$end_date           = get_post_meta( $post->ID, '_resume_end_date', true );
+		$currently_employed = get_post_meta( $post->ID, '_resume_currently_employed', true );
+		$start_date_raw     = get_post_meta( $post->ID, '_resume_start_date_raw', true );
+		$end_date_raw       = get_post_meta( $post->ID, '_resume_end_date_raw', true );
 
 		// Get featured image
 		$featured_image_id  = get_post_thumbnail_id( $post->ID );
 		$featured_image_url = $featured_image_id ? wp_get_attachment_image_url( $featured_image_id, 'full' ) : null;
+
+		$related_skills = RAE_Related_Skill_Provider::get_related_skills( $post->ID, '_resume_related_skills' );
 
 		return array(
 			'id'                 => $post->ID,
@@ -140,24 +166,33 @@ class RAE_Skills_API extends RAE_API_Base {
 				'rendered'  => get_the_excerpt( $post ),
 				'protected' => false,
 			),
-			'featured_media'     => $featured_image_id ?: 0,
+			'featured_media'     => $featured_image_id ? $featured_image_id : 0,
 			'template'           => '',
 			'meta'               => array(),
 			'class_list'         => get_post_class( '', $post->ID ),
 			'featured_image_url' => $featured_image_url,
-			'skills_type'        => $skills_type ?: null,
-			'skills_value'       => $skills_value ?: null,
-			'skills_weight'      => $skills_weight !== '' ? (int) $skills_weight : 0,
-			'skills_info_url'    => $skills_info_url ?: null,
+			'employment_dates'   => array(
+				'start_date'         => $start_date ? $start_date : null,
+				'end_date'           => $end_date ? $end_date : null,
+				'currently_employed' => '1' === $currently_employed,
+				'start_date_raw'     => $start_date_raw ? $start_date_raw : null,
+				'end_date_raw'       => $end_date_raw ? $end_date_raw : null,
+				'formatted_range'    => RAE_Date_Formatter::format_employment_date_range(
+					$start_date,
+					$end_date,
+					'1' === $currently_employed
+				),
+			),
+			'related_skills'     => $related_skills,
 			'_links'             => array(
 				'self'       => array(
 					array(
-						'href' => rest_url( 'wp/v2/skills/' . $post->ID ),
+						'href' => rest_url( 'wp/v2/resume/' . $post->ID ),
 					),
 				),
 				'collection' => array(
 					array(
-						'href' => rest_url( 'wp/v2/skills' ),
+						'href' => rest_url( 'wp/v2/resume' ),
 					),
 				),
 			),

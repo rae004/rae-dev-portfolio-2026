@@ -1,7 +1,10 @@
 <?php
 /**
- * reCAPTCHA REST API
+ * Google reCAPTCHA REST API
  * Provides REST endpoints for reCAPTCHA v3 verification
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
  */
 
 // Prevent direct access
@@ -9,10 +12,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * RAE reCAPTCHA API
+ *
+ * REST API endpoints for reCAPTCHA functionality.
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
+ */
 class RAE_ReCaptcha_API extends RAE_API_Base {
 
 	/**
 	 * API endpoint path
+	 *
+	 * @var string
 	 */
 	protected string $endpoint = 'recaptcha';
 
@@ -121,6 +134,10 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
 
 	/**
 	 * Verify reCAPTCHA v3 token
+	 *
+	 * @param WP_REST_Request $request The REST request object
+	 *
+	 * @return WP_REST_Response
 	 */
 	public function verify_v3_token( WP_REST_Request $request ): WP_REST_Response {
 		try {
@@ -211,7 +228,11 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
 			return new WP_REST_Response( $response_data, 200 );
 
 		} catch ( Exception $e ) {
-			error_log( 'reCAPTCHA v3 Verification Error: ' . $e->getMessage() );
+			// Log error for debugging not used in production
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( 'reCAPTCHA v3 Verification Error: ' . $e->getMessage() );
+			}
 
 			return new WP_REST_Response(
 				array(
@@ -227,6 +248,12 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
 
 	/**
 	 * Call Google reCAPTCHA verify API
+	 *
+	 * @param string $token The reCAPTCHA token
+	 * @param string $secret_key The secret key
+	 *
+	 * @return array API response data
+	 * @throws Exception If the API call fails
 	 */
 	private function call_google_verify_api( string $token, string $secret_key ): array {
 		$user_ip = $this->get_user_ip();
@@ -251,22 +278,34 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			error_log( 'reCAPTCHA API Error: ' . $response->get_error_message() );
+			// Log error for debugging not used in production
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( 'reCAPTCHA API Error: ' . $response->get_error_message() );
+			}
 			throw new Exception( 'Failed to contact reCAPTCHA verification service' );
 		}
 
 		$response_code = wp_remote_retrieve_response_code( $response );
 		$response_body = wp_remote_retrieve_body( $response );
 
-		if ( $response_code !== 200 ) {
-			error_log( "reCAPTCHA API HTTP Error: $response_code" );
+		if ( 200 !== $response_code ) {
+			// Log error for debugging not used in production
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( "reCAPTCHA API HTTP Error: $response_code" );
+			}
 			throw new Exception( 'reCAPTCHA verification service returned an error' );
 		}
 
 		$result = json_decode( $response_body, true );
 
-		if ( json_last_error() !== JSON_ERROR_NONE ) {
-			error_log( 'reCAPTCHA API JSON Error: ' . json_last_error_msg() );
+		if ( JSON_ERROR_NONE !== json_last_error() ) {
+			// Log error for debugging not used in production
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( 'reCAPTCHA API JSON Error: ' . json_last_error_msg() );
+			}
 			throw new Exception( 'Invalid response from reCAPTCHA verification service' );
 		}
 
@@ -275,6 +314,11 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
 
 	/**
 	 * Evaluate reCAPTCHA v3 score
+	 *
+	 * @param float $score     The reCAPTCHA score
+	 * @param float $threshold The threshold value
+	 *
+	 * @return bool Whether the score passes the threshold
 	 */
 	private function evaluate_v3_score( float $score, float $threshold ): bool {
 		return $score >= $threshold;
@@ -289,7 +333,7 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
 
 		$attempts = get_transient( $rate_limit_key );
 
-		if ( $attempts === false ) {
+		if ( false === $attempts ) {
 			$attempts = 0;
 		}
 
@@ -321,7 +365,7 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
 
 		foreach ( $headers as $header ) {
 			if ( ! empty( $_SERVER[ $header ] ) ) {
-				$ip = $_SERVER[ $header ];
+				$ip = sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) );
 
 				// Handle comma-separated list (X-Forwarded-For can contain multiple IPs)
 				if ( str_contains( $ip, ',' ) ) {
@@ -329,24 +373,42 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
 				}
 
 				// Validate IP address
-				if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+				if ( filter_var(
+					$ip,
+					FILTER_VALIDATE_IP,
+					FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+				) ) {
 					return $ip;
 				}
 			}
 		}
 
 		// Fallback to REMOTE_ADDR
-		return $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+		return isset( $_SERVER['REMOTE_ADDR'] ) ?
+			sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '127.0.0.1';
 	}
 
 	/**
 	 * Log verification attempt
+	 *
+	 * @param string     $token   The reCAPTCHA token
+	 * @param float|null $score   The reCAPTCHA score (if available)
+	 * @param bool       $success Whether verification succeeded
+	 * @param string     $action  The action being verified
+	 * @param string     $version The reCAPTCHA version
 	 */
-	private function log_verification_attempt( string $token, ?float $score, bool $success, string $action, string $version = 'v3' ): void {
+	private function log_verification_attempt(
+		string $token,
+		?float $score,
+		bool $success,
+		string $action,
+		string $version = 'v3'
+	): void {
 		$log_entry = array(
 			'timestamp'  => current_time( 'mysql' ),
 			'ip'         => $this->get_user_ip(),
-			'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
+			'user_agent' => isset( $_SERVER['HTTP_USER_AGENT'] ) ?
+				sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '',
 			'version'    => $version,
 			'action'     => $action,
 			'score'      => $score,
@@ -354,18 +416,19 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
 			'token_hash' => hash( 'sha256', $token ), // Log hash, not actual token
 		);
 
-		// Log to WordPress debug log if enabled
+		// Log to WordPress debug log if enabled not in production
 		if ( WP_DEBUG_LOG ) {
 			$log_message = sprintf(
 				'reCAPTCHA %s: %s | Action: %s | Score: %s | Success: %s | IP: %s',
 				strtoupper( $version ),
 				$success ? 'PASS' : 'FAIL',
 				$action,
-				$score !== null ? number_format( $score, 2 ) : 'N/A',
+				null !== $score ? number_format( $score, 2 ) : 'N/A',
 				$success ? 'YES' : 'NO',
 				$log_entry['ip']
 			);
 
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			error_log( $log_message );
 		}
 
@@ -388,6 +451,10 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
 
 	/**
 	 * Validate token parameter
+	 *
+	 * @param mixed $value The value to validate
+	 *
+	 * @return bool Whether the token is valid
 	 */
 	public function validate_token( $value ): bool {
 		return ! empty( $value ) && is_string( $value ) && strlen( $value ) > 10;
@@ -395,9 +462,13 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
 
 	/**
 	 * Validate action parameter
+	 *
+	 * @param mixed $value The value to validate
+	 *
+	 * @return bool Whether the action is valid
 	 */
 	public function validate_action( $value ): bool {
 		$valid_actions = array( 'contact_form', 'newsletter_signup', 'login', 'comment' );
-		return ! empty( $value ) && is_string( $value ) && in_array( $value, $valid_actions );
+		return ! empty( $value ) && is_string( $value ) && in_array( $value, $valid_actions, true );
 	}
 }

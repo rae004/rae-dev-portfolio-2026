@@ -2,6 +2,9 @@
 /**
  * Software Project Details Meta Box
  * Handles project details fields: Release Date, Demo Link, Repository Link, Project State, and Skill Categories
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
  */
 
 // Prevent direct access
@@ -9,6 +12,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * RAE Software Details Meta Box
+ *
+ * Adds and manages the software project details meta box.
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
+ */
 class RAE_Software_Details_Meta_Box {
 
 	/**
@@ -35,8 +46,10 @@ class RAE_Software_Details_Meta_Box {
 
 	/**
 	 * Software project details meta box callback
+	 *
+	 * @param WP_Post $post The current post object
 	 */
-	public function meta_box_callback( $post ): void {
+	public function meta_box_callback( WP_Post $post ): void {
 		// Add nonce for security
 		wp_nonce_field( 'rae_software_project_details_nonce', 'rae_software_project_details_nonce_field' );
 
@@ -67,6 +80,7 @@ class RAE_Software_Details_Meta_Box {
 			'post_type'      => 'skill',
 			'post_status'    => 'publish',
 			'posts_per_page' => -1,
+            // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 			'meta_query'     => array(
 				array(
 					'key'     => '_skill_type',
@@ -81,7 +95,7 @@ class RAE_Software_Details_Meta_Box {
 			while ( $skills_query->have_posts() ) {
 				$skills_query->the_post();
 				$skill_type = get_post_meta( get_the_ID(), '_skill_type', true );
-				if ( $skill_type && ! in_array( $skill_type, $categories ) ) {
+				if ( $skill_type && ! in_array( $skill_type, $categories, true ) ) {
 					$categories[] = $skill_type;
 				}
 			}
@@ -94,8 +108,22 @@ class RAE_Software_Details_Meta_Box {
 
 	/**
 	 * Render the project details interface
+	 *
+	 * @param string $release_date    The project release date
+	 * @param string $demo_link       Link to live demo
+	 * @param string $repo_link       Link to repository
+	 * @param string $project_state   Current project state
+	 * @param array  $tech_categories Technical categories
+	 * @param array  $skill_categories Skill categories
 	 */
-	private function render_details_interface( $release_date, $demo_link, $repo_link, $project_state, $tech_categories, $skill_categories ): void {
+	private function render_details_interface(
+		string $release_date,
+		string $demo_link,
+		string $repo_link,
+		string $project_state,
+		array $tech_categories,
+		array $skill_categories
+	): void {
 		?>
 		<div class="rae-software-details-fields">
 			<table class="form-table">
@@ -169,37 +197,73 @@ class RAE_Software_Details_Meta_Box {
 							<label>Technologies for Card Display</label>
 						</th>
 						<td>
-							<div class="tech-categories-selection" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 15px; background: #f9f9f9;">
+							<div class="tech-categories-selection"
+								style="
+									max-height: 200px;
+									overflow-y: auto;
+									border: 1px solid #ddd;
+									padding: 15px;
+									background: #f9f9f9;"
+							>
 								<?php if ( ! empty( $skill_categories ) ) : ?>
 									<p class="description" style="margin-top: 0;">
 										Select which skill categories should appear in the "Technologies:" section on project cards. 
 										Skills will be sorted by weight (descending) within selected categories.
 									</p>
 									
-									<div class="categories-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 15px;">
+									<div class="categories-grid"
+										style="
+											display: grid;
+											grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+											gap: 10px;
+											margin-top: 15px;"
+									>
 										<?php foreach ( $skill_categories as $category ) : ?>
-											<label class="category-checkbox-label" style="display: flex; align-items: center; padding: 8px; border: 1px solid #ddd; border-radius: 3px; background: white; cursor: pointer;">
+											<label class="category-checkbox-label"
+													style="
+														display: flex;
+														align-items: center;
+														padding: 8px;
+														border: 1px solid #ddd;
+														border-radius: 3px;
+														background: white;
+														cursor: pointer;"
+											>
 												<input type="checkbox" 
 														name="software_project_tech_categories[]" 
 														value="<?php echo esc_attr( $category ); ?>"
-														<?php checked( in_array( $category, $tech_categories ) ); ?>
+														<?php checked( in_array( $category, $tech_categories, true ) ); ?>
 														style="margin-right: 8px;" />
 												<span class="category-name"><?php echo esc_html( $category ); ?></span>
 											</label>
 										<?php endforeach; ?>
 									</div>
 									
-									<div class="category-controls" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
-										<button type="button" id="select-all-categories" class="button button-secondary" style="margin-right: 10px;">
+									<div class="category-controls"
+										style="
+											margin-top: 15px;
+											padding-top: 15px;
+											border-top: 1px solid #ddd;"
+									>
+										<button
+											type="button"
+											id="select-all-categories"
+											class="button button-secondary"
+											style="margin-right: 10px;"
+										>
 											Select All
 										</button>
-										<button type="button" id="deselect-all-categories" class="button button-secondary">
+										<button
+											type="button"
+											id="deselect-all-categories"
+											class="button button-secondary"
+										>
 											Deselect All
 										</button>
 									</div>
 								<?php else : ?>
 									<p style="text-align: center; color: #666; font-style: italic;">
-										No skill categories found. <a href="<?php echo admin_url( 'post-new.php?post_type=skill' ); ?>">Create some skills</a> first.
+										No skill categories found.
 									</p>
 								<?php endif; ?>
 							</div>
@@ -243,11 +307,15 @@ class RAE_Software_Details_Meta_Box {
 				$('#software_project_demo_link, #software_project_repo_link').on('blur', function() {
 					const $input = $(this);
 					const value = $input.val().trim();
+					const afterElm = document.createElement("p");
+					afterElm.className = 'url-error-message';
+					afterElm.setAttribute("style", "color: #d63638; margin-top: 5px;");
+					afterElm.innerText = 'Please enter a valid URL starting with https://';
 					
 					if (value && !isValidUrl(value)) {
 						$input.css('border-color', '#d63638');
 						if (!$input.next('.url-error-message').length) {
-							$input.after('<p class="url-error-message" style="color: #d63638; margin-top: 5px;">Please enter a valid URL starting with https://</p>');
+							$input.after(afterElm);
 						}
 					} else {
 						$input.css('border-color', '');
@@ -277,7 +345,7 @@ class RAE_Software_Details_Meta_Box {
 				function isValidUrl(string) {
 					try {
 						new URL(string);
-						return string.startsWith('http://') || string.startsWith('https://');
+						return string.startsWith('https://');
 					} catch (_) {
 						return false;
 					}
@@ -296,19 +364,16 @@ class RAE_Software_Details_Meta_Box {
 			.tech-categories-selection .category-checkbox-label input[type="checkbox"]:checked + .category-name {
 				font-weight: bold;
 			}
-			
-			.url-error-message {
-				font-size: 12px !important;
-				margin-bottom: 0 !important;
-			}
 		</style>
 		<?php
 	}
 
 	/**
 	 * Save software project details metadata
+	 *
+	 * @param int $post_id The post ID to save metadata for
 	 */
-	public function save_meta_data( $post_id ): void {
+	public function save_meta_data( int $post_id ): void {
 		// Check if user has permission to edit the post
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
 			return;
@@ -316,7 +381,13 @@ class RAE_Software_Details_Meta_Box {
 
 		// Verify nonce
 		if ( ! isset( $_POST['rae_software_project_details_nonce_field'] ) ||
-			! wp_verify_nonce( $_POST['rae_software_project_details_nonce_field'], 'rae_software_project_details_nonce' ) ) {
+			! wp_verify_nonce(
+				sanitize_text_field(
+					wp_unslash( $_POST['rae_software_project_details_nonce_field'] )
+				),
+				'rae_software_project_details_nonce'
+			)
+		) {
 			return;
 		}
 
@@ -332,34 +403,34 @@ class RAE_Software_Details_Meta_Box {
 
 		// Save release date
 		if ( isset( $_POST['software_project_release_date'] ) ) {
-			$release_date = sanitize_text_field( $_POST['software_project_release_date'] );
+			$release_date = sanitize_text_field( wp_unslash( $_POST['software_project_release_date'] ) );
 			update_post_meta( $post_id, '_software_project_release_date', $release_date );
 		}
 
 		// Save demo link with URL validation
 		if ( isset( $_POST['software_project_demo_link'] ) ) {
-			$demo_link = esc_url_raw( $_POST['software_project_demo_link'] );
+			$demo_link = esc_url_raw( wp_unslash( $_POST['software_project_demo_link'] ) );
 			update_post_meta( $post_id, '_software_project_demo_link', $demo_link );
 		}
 
 		// Save repository link with URL validation
 		if ( isset( $_POST['software_project_repo_link'] ) ) {
-			$repo_link = esc_url_raw( $_POST['software_project_repo_link'] );
+			$repo_link = esc_url_raw( wp_unslash( $_POST['software_project_repo_link'] ) );
 			update_post_meta( $post_id, '_software_project_repo_link', $repo_link );
 		}
 
 		// Save project state
 		if ( isset( $_POST['software_project_state'] ) ) {
-			$project_state  = sanitize_text_field( $_POST['software_project_state'] );
+			$project_state  = sanitize_text_field( wp_unslash( $_POST['software_project_state'] ) );
 			$allowed_states = array( 'Ongoing', 'Future', 'Completed' );
-			if ( in_array( $project_state, $allowed_states ) || empty( $project_state ) ) {
+			if ( in_array( $project_state, $allowed_states, true ) || empty( $project_state ) ) {
 				update_post_meta( $post_id, '_software_project_state', $project_state );
 			}
 		}
 
 		// Save technology categories
 		if ( isset( $_POST['software_project_tech_categories'] ) && is_array( $_POST['software_project_tech_categories'] ) ) {
-			$tech_categories = array_map( 'sanitize_text_field', $_POST['software_project_tech_categories'] );
+			$tech_categories = array_map( 'sanitize_text_field', wp_unslash( $_POST['software_project_tech_categories'] ) );
 			update_post_meta( $post_id, '_software_project_tech_categories', $tech_categories );
 		} else {
 			// No categories selected, save empty array

@@ -2,6 +2,9 @@
 /**
  * Media Projects Post Type
  * Handles registration and configuration of the media projects custom post type
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
  */
 
 // Prevent direct access
@@ -9,6 +12,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Media Projects Post Type
+ *
+ * Registers and manages media projects custom post type.
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
+ */
 class RAE_Media_Projects_Post_Type {
 
 	/**

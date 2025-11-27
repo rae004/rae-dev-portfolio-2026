@@ -2,6 +2,9 @@
 /**
  * Rae Portfolio Theme Loader
  * Auto-loads all theme functionality modules
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
  */
 
 // Prevent direct access
@@ -9,10 +12,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * RAE Theme Loader
+ *
+ * Autoloads all theme functionality modules and initializes the RAE Portfolio theme.
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
+ */
 class RAE_Theme_Loader {
 
 	/**
 	 * Instance of this class
+	 *
+	 * @var ?RAE_Theme_Loader
 	 */
 	private static ?RAE_Theme_Loader $instance = null;
 
@@ -40,39 +53,40 @@ class RAE_Theme_Loader {
 		$includes_path = get_template_directory() . '/includes/';
 
 		// Load theme setup and utilities first
-		$this->load_file( $includes_path . 'theme/class-theme-setup.php' );
-		$this->load_file( $includes_path . 'theme/class-cors-handler.php' );
+		$this->load_file( $includes_path . 'theme/class-rae-theme-setup.php' );
+		$this->load_file( $includes_path . 'theme/class-rae-cors-handler.php' );
 
 		// Load utilities
-		$this->load_file( $includes_path . 'utilities/class-date-formatter.php' );
-		$this->load_file( $includes_path . 'utilities/class-meta-utilities.php' );
+		$this->load_file( $includes_path . 'utilities/class-rae-date-formatter.php' );
+		$this->load_file( $includes_path . 'utilities/class-rae-meta-utilities.php' );
+		$this->load_file( $includes_path . 'utilities/class-rae-related-skill-provider.php' );
 
 		// Load post types
-		$this->load_file( $includes_path . 'post-types/class-resume.php' );
-		$this->load_file( $includes_path . 'post-types/class-skills.php' );
-		$this->load_file( $includes_path . 'post-types/class-media-projects.php' );
-		$this->load_file( $includes_path . 'post-types/class-software-projects.php' );
+		$this->load_file( $includes_path . 'post-types/class-rae-resume-post-type.php' );
+		$this->load_file( $includes_path . 'post-types/class-rae-skills-post-type.php' );
+		$this->load_file( $includes_path . 'post-types/class-rae-media-projects-post-type.php' );
+		$this->load_file( $includes_path . 'post-types/class-rae-software-projects-post-type.php' );
 
 		// Load API classes
-		$this->load_file( $includes_path . 'api/class-api-base.php' );
-		$this->load_file( $includes_path . 'api/class-resume-api.php' );
-		$this->load_file( $includes_path . 'api/class-skills-api.php' );
-		$this->load_file( $includes_path . 'api/class-media-projects-api.php' );
-		$this->load_file( $includes_path . 'api/class-software-projects-api.php' );
-		$this->load_file( $includes_path . 'api/class-social-links-api.php' );
-		$this->load_file( $includes_path . 'api/class-recaptcha-api.php' );
+		$this->load_file( $includes_path . 'api/class-rae-api-base.php' );
+		$this->load_file( $includes_path . 'api/class-rae-resume-api.php' );
+		$this->load_file( $includes_path . 'api/class-rae-skills-api.php' );
+		$this->load_file( $includes_path . 'api/class-rae-media-projects-api.php' );
+		$this->load_file( $includes_path . 'api/class-rae-software-projects-api.php' );
+		$this->load_file( $includes_path . 'api/class-rae-social-links-api.php' );
+		$this->load_file( $includes_path . 'api/class-rae-recaptcha-api.php' );
 
 		// Load admin functionality
-		$this->load_file( $includes_path . 'admin/class-meta-boxes.php' );
-		$this->load_file( $includes_path . 'admin/class-social-links-options.php' );
-		$this->load_file( $includes_path . 'admin/class-recaptcha-options.php' );
-		$this->load_file( $includes_path . 'admin/meta-boxes/class-employment-dates.php' );
-		$this->load_file( $includes_path . 'admin/meta-boxes/class-resume-skills.php' );
-		$this->load_file( $includes_path . 'admin/meta-boxes/class-media-skills.php' );
-		$this->load_file( $includes_path . 'admin/meta-boxes/class-software-details.php' );
-		$this->load_file( $includes_path . 'admin/meta-boxes/class-software-skills.php' );
-		$this->load_file( $includes_path . 'admin/meta-boxes/class-skills-meta.php' );
-		$this->load_file( $includes_path . 'admin/meta-boxes/class-media-project-details.php' );
+		$this->load_file( $includes_path . 'admin/class-rae-meta-boxes.php' );
+		$this->load_file( $includes_path . 'admin/class-rae-social-links-options.php' );
+		$this->load_file( $includes_path . 'admin/class-rae-recaptcha-options.php' );
+		$this->load_file( $includes_path . 'admin/meta-boxes/class-rae-employment-dates-meta-box.php' );
+		$this->load_file( $includes_path . 'admin/meta-boxes/class-rae-resume-skills-meta-box.php' );
+		$this->load_file( $includes_path . 'admin/meta-boxes/class-rae-media-skills-meta-box.php' );
+		$this->load_file( $includes_path . 'admin/meta-boxes/class-rae-software-details-meta-box.php' );
+		$this->load_file( $includes_path . 'admin/meta-boxes/class-rae-software-skills-meta-box.php' );
+		$this->load_file( $includes_path . 'admin/meta-boxes/class-rae-skills-meta-box.php' );
+		$this->load_file( $includes_path . 'admin/meta-boxes/class-rae-media-project-details.php' );
 
 		// Initialize all classes after loading
 		$this->initialize_classes();
@@ -80,8 +94,10 @@ class RAE_Theme_Loader {
 
 	/**
 	 * Load a file if it exists
+	 *
+	 * @param string $file_path The absolute path to the file to load.
 	 */
-	private function load_file( $file_path ): void {
+	private function load_file( string $file_path ): void {
 		if ( file_exists( $file_path ) ) {
 			require_once $file_path;
 		}

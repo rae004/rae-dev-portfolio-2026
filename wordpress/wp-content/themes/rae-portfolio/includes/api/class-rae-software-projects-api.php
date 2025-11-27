@@ -2,6 +2,9 @@
 /**
  * Software Projects API
  * Handles REST API endpoints for software projects
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
  */
 
 // Prevent direct access
@@ -9,6 +12,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * RAE Software Projects API
+ *
+ * Provides REST API endpoints for software projects.
+ *
+ * @package RAE_Portfolio
+ * @since 1.0.0
+ */
 class RAE_Software_Projects_API extends RAE_API_Base {
 
 	/**
@@ -72,8 +83,12 @@ class RAE_Software_Projects_API extends RAE_API_Base {
 
 	/**
 	 * Get software projects collection
+	 *
+	 * @param WP_REST_Request $request The REST request.
+	 *
+	 * @return WP_Error|WP_REST_Response The response or error.
 	 */
-	public function get_items( $request ): WP_Error|WP_REST_Response {
+	public function get_items( WP_REST_Request $request ): WP_Error|WP_REST_Response {
 		try {
 			$per_page = $request->get_param( 'per_page' );
 			$page     = $request->get_param( 'page' );
@@ -115,13 +130,17 @@ class RAE_Software_Projects_API extends RAE_API_Base {
 
 	/**
 	 * Get individual software project
+	 *
+	 * @param WP_REST_Request $request The REST request.
+	 *
+	 * @return WP_Error|WP_REST_Response The response or error.
 	 */
-	public function get_item( $request ): WP_Error|WP_REST_Response {
+	public function get_item( WP_REST_Request $request ): WP_Error|WP_REST_Response {
 		try {
 			$id   = (int) $request['id'];
 			$post = get_post( $id );
 
-			if ( empty( $post ) || $post->post_type !== 'software-project' || $post->post_status !== 'publish' ) {
+			if ( empty( $post ) || 'software-project' !== $post->post_type || 'publish' !== $post->post_status ) {
 				return new WP_Error( 'software_project_not_found', 'Software project not found.', array( 'status' => 404 ) );
 			}
 
@@ -135,6 +154,9 @@ class RAE_Software_Projects_API extends RAE_API_Base {
 
 	/**
 	 * Prepare software project for API response
+	 *
+	 * @param WP_Post $post The software project post object
+	 * @return array Formatted software project data
 	 */
 	private function prepare_software_project_for_response( $post ): array {
 		// Get basic post data
@@ -168,7 +190,7 @@ class RAE_Software_Projects_API extends RAE_API_Base {
 			'ping_status'        => $post->ping_status,
 			'sticky'             => false,
 			'template'           => '',
-			'format'             => get_post_format( $post->ID ) ?: 'standard',
+			'format'             => get_post_format( $post->ID ) ? get_post_format( $post->ID ) : 'standard',
 			'meta'               => array(),
 			'categories'         => array(),
 			'tags'               => array(),
@@ -176,11 +198,22 @@ class RAE_Software_Projects_API extends RAE_API_Base {
 		);
 
 		// Add software project specific fields
-		$data['project_release_date'] = get_post_meta( $post->ID, '_software_project_release_date', true ) ?: null;
-		$data['project_demo_link']    = get_post_meta( $post->ID, '_software_project_demo_link', true ) ?: null;
-		$data['project_repo_link']    = get_post_meta( $post->ID, '_software_project_repo_link', true ) ?: null;
-		$data['project_state']        = get_post_meta( $post->ID, '_software_project_state', true ) ?: null;
-		$data['tech_categories']      = get_post_meta( $post->ID, '_software_project_tech_categories', true ) ?: array();
+
+		$data['project_release_date'] = get_post_meta( $post->ID, '_software_project_release_date', true )
+			? get_post_meta( $post->ID, '_software_project_release_date', true )
+			: null;
+		$data['project_demo_link']    = get_post_meta( $post->ID, '_software_project_demo_link', true )
+			? get_post_meta( $post->ID, '_software_project_demo_link', true )
+			: null;
+		$data['project_repo_link']    = get_post_meta( $post->ID, '_software_project_repo_link', true )
+			? get_post_meta( $post->ID, '_software_project_repo_link', true )
+			: null;
+		$data['project_state']        = get_post_meta( $post->ID, '_software_project_state', true )
+			? get_post_meta( $post->ID, '_software_project_state', true )
+			: null;
+		$data['tech_categories']      = get_post_meta( $post->ID, '_software_project_tech_categories', true )
+			? get_post_meta( $post->ID, '_software_project_tech_categories', true )
+			: array();
 
 		// Add related skills with full skill data
 		$data['related_skills'] = $this->get_software_project_skills( $post->ID );
@@ -190,8 +223,12 @@ class RAE_Software_Projects_API extends RAE_API_Base {
 
 	/**
 	 * Get related skills for a software project with full skill data
+	 *
+	 * @param int $project_id The software project ID
+	 *
+	 * @return array List of related skills with full data
 	 */
-	private function get_software_project_skills( $project_id ): array {
+	private function get_software_project_skills( int $project_id ): array {
 		$skill_ids = get_post_meta( $project_id, '_software_project_related_skills', true );
 
 		if ( empty( $skill_ids ) || ! is_array( $skill_ids ) ) {
@@ -203,7 +240,7 @@ class RAE_Software_Projects_API extends RAE_API_Base {
 		foreach ( $skill_ids as $skill_id ) {
 			$skill_post = get_post( $skill_id );
 
-			if ( ! $skill_post || $skill_post->post_type !== 'skill' || $skill_post->post_status !== 'publish' ) {
+			if ( ! $skill_post || 'skill' !== $skill_post->post_type || 'publish' !== $skill_post->post_status ) {
 				continue;
 			}
 
@@ -237,18 +274,26 @@ class RAE_Software_Projects_API extends RAE_API_Base {
 				'ping_status'        => $skill_post->ping_status,
 				'sticky'             => false,
 				'template'           => '',
-				'format'             => get_post_format( $skill_post->ID ) ?: 'standard',
+				'format'             => get_post_format( $skill_post->ID ) ? get_post_format( $skill_post->ID ) : 'standard',
 				'meta'               => array(),
 				'categories'         => array(),
 				'tags'               => array(),
 				'featured_image_url' => get_the_post_thumbnail_url( $skill_post->ID, 'full' ),
 
 				// Add skill-specific fields
-				'skills_type'        => get_post_meta( $skill_post->ID, '_skill_type', true ) ?: 'Other',
-				'skills_value'       => get_post_meta( $skill_post->ID, '_skill_value', true ) ?: get_the_title( $skill_post->ID ),
+				'skills_type'        => get_post_meta( $skill_post->ID, '_skill_type', true )
+					? get_post_meta( $skill_post->ID, '_skill_type', true )
+					: 'Other',
+				'skills_value'       => get_post_meta( $skill_post->ID, '_skill_value', true )
+					? get_post_meta( $skill_post->ID, '_skill_value', true )
+					: get_the_title( $skill_post->ID ),
 				'skills_weight'      => (int) get_post_meta( $skill_post->ID, '_skill_weight', true ),
-				'skills_info_url'    => get_post_meta( $skill_post->ID, '_skill_info_url', true ) ?: null,
-				'skills_description' => get_post_meta( $skill_post->ID, '_skill_description', true ) ?: null,
+				'skills_info_url'    => get_post_meta( $skill_post->ID, '_skill_info_url', true )
+					? get_post_meta( $skill_post->ID, '_skill_info_url', true )
+					: null,
+				'skills_description' => get_post_meta( $skill_post->ID, '_skill_description', true )
+					? get_post_meta( $skill_post->ID, '_skill_description', true )
+					: null,
 			);
 
 			$skills[] = $skill_data;
@@ -259,7 +304,7 @@ class RAE_Software_Projects_API extends RAE_API_Base {
 			$skills,
 			function ( $a, $b ) {
 				$weight_diff = $b['skills_weight'] - $a['skills_weight'];
-				if ( $weight_diff !== 0 ) {
+				if ( 0 !== $weight_diff ) {
 					return $weight_diff;
 				}
 				return strcmp( $a['skills_value'], $b['skills_value'] );
