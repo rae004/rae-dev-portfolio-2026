@@ -32,18 +32,18 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
 	/**
 	 * API namespace
 	 */
-	const string API_NAMESPACE = 'wp/v2';
+	const API_NAMESPACE = 'wp/v2';
 
 	/**
 	 * Google reCAPTCHA verify URL
 	 */
-	const string GOOGLE_VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify';
+	const GOOGLE_VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify';
 
 	/**
 	 * Rate limiting settings
 	 */
-	const int RATE_LIMIT_ATTEMPTS = 10;
-	const int RATE_LIMIT_WINDOW   = 300; // 5 minutes
+	const RATE_LIMIT_ATTEMPTS = 10;
+	const RATE_LIMIT_WINDOW   = 300; // 5 minutes
 
 	/**
 	 * Constructor

@@ -25,12 +25,12 @@ class RAE_ReCaptcha_Options {
 	/**
 	 * Option name for storing reCAPTCHA settings
 	 */
-	const string OPTION_NAME = 'rae_recaptcha_settings';
+	const OPTION_NAME = 'rae_recaptcha_settings';
 
 	/**
 	 * Default score threshold for reCAPTCHA v3
 	 */
-	const float DEFAULT_THRESHOLD = 0.5;
+	const DEFAULT_THRESHOLD = 0.5;
 
 	/**
 	 * Constructor

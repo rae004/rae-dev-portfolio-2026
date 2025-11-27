@@ -32,7 +32,7 @@ class RAE_Social_Links_API extends RAE_API_Base {
 	/**
 	 * API namespace
 	 */
-	const string API_NAMESPACE = 'wp/v2';
+	const API_NAMESPACE = 'wp/v2';
 
 	/**
 	 * Constructor

@@ -25,12 +25,12 @@ class RAE_Social_Links_Options {
 	/**
 	 * Option name for storing social links
 	 */
-	const string OPTION_NAME = 'rae_social_links';
+	const OPTION_NAME = 'rae_social_links';
 
 	/**
 	 * Maximum allowed social links
 	 */
-	const int MAX_LINKS = 9;
+	const MAX_LINKS = 9;
 
 	/**
 	 * Constructor
