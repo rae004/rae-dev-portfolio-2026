@@ -2,8 +2,8 @@ import { createRootRoute, Outlet } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/router-devtools'
 import Navigation from '../components/Navigation'
 
-export const Route = createRootRoute({
-  component: () => (
+const RootComponent = () => {
+  return (
     <div className='min-h-screen'>
       <Navigation />
       <main>
@@ -11,5 +11,9 @@ export const Route = createRootRoute({
       </main>
       <TanStackRouterDevtools />
     </div>
-  ),
+  )
+}
+
+export const Route = createRootRoute({
+  component: RootComponent,
 })

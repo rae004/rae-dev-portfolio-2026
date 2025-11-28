@@ -14,6 +14,7 @@ import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as BlogRouteImport } from './routes/blog'
+import { Route as BlockedRouteImport } from './routes/blocked'
 import { Route as AccessibilityRouteImport } from './routes/accessibility'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ResumeResumeIdRouteImport } from './routes/resume/$resumeId'
@@ -45,6 +46,11 @@ const BlogRoute = BlogRouteImport.update({
   path: '/blog',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlockedRoute = BlockedRouteImport.update({
+  id: '/blocked',
+  path: '/blocked',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccessibilityRoute = AccessibilityRouteImport.update({
   id: '/accessibility',
   path: '/accessibility',
@@ -74,6 +80,7 @@ const MediaMediaIdRoute = MediaMediaIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/accessibility': typeof AccessibilityRoute
+  '/blocked': typeof BlockedRoute
   '/blog': typeof BlogRoute
   '/contact': typeof ContactRoute
   '/media': typeof MediaRouteWithChildren
@@ -86,6 +93,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/accessibility': typeof AccessibilityRoute
+  '/blocked': typeof BlockedRoute
   '/blog': typeof BlogRoute
   '/contact': typeof ContactRoute
   '/media': typeof MediaRouteWithChildren
@@ -99,6 +107,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/accessibility': typeof AccessibilityRoute
+  '/blocked': typeof BlockedRoute
   '/blog': typeof BlogRoute
   '/contact': typeof ContactRoute
   '/media': typeof MediaRouteWithChildren
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/accessibility'
+    | '/blocked'
     | '/blog'
     | '/contact'
     | '/media'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/accessibility'
+    | '/blocked'
     | '/blog'
     | '/contact'
     | '/media'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/accessibility'
+    | '/blocked'
     | '/blog'
     | '/contact'
     | '/media'
@@ -150,6 +162,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccessibilityRoute: typeof AccessibilityRoute
+  BlockedRoute: typeof BlockedRoute
   BlogRoute: typeof BlogRoute
   ContactRoute: typeof ContactRoute
   MediaRoute: typeof MediaRouteWithChildren
@@ -192,6 +205,13 @@ declare module '@tanstack/react-router' {
       path: '/blog'
       fullPath: '/blog'
       preLoaderRoute: typeof BlogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blocked': {
+      id: '/blocked'
+      path: '/blocked'
+      fullPath: '/blocked'
+      preLoaderRoute: typeof BlockedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/accessibility': {
@@ -268,6 +288,7 @@ const ResumeRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccessibilityRoute: AccessibilityRoute,
+  BlockedRoute: BlockedRoute,
   BlogRoute: BlogRoute,
   ContactRoute: ContactRoute,
   MediaRoute: MediaRouteWithChildren,

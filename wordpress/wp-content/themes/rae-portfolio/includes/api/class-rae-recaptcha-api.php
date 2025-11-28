@@ -468,7 +468,7 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
 	 * @return bool Whether the action is valid
 	 */
 	public function validate_action( $value ): bool {
-		$valid_actions = array( 'contact_form', 'newsletter_signup', 'login', 'comment' );
+		$valid_actions = array( 'contact_form', 'newsletter_signup', 'login', 'comment', 'page_view' );
 		return ! empty( $value ) && is_string( $value ) && in_array( $value, $valid_actions, true );
 	}
 }

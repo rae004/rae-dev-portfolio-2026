@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react'
 import { useForm } from '@tanstack/react-form'
 import SocialLinks from '../components/SocialLinks'
-import { useReCaptchaForm } from '../hooks/useReCaptcha'
+import { useReCaptchaForm } from '../hooks/useReCaptchaForm'
 
 interface ContactFormData {
   name: string
@@ -29,8 +29,8 @@ const ContactPage: React.FC = () => {
   )
   const [showSocialLinks, setShowSocialLinks] = useState(true)
 
-  // reCAPTCHA integration
-  const recaptcha = useReCaptchaForm('contact_form')
+  // reCAPTCHA integration for form submission (always fresh verification)
+  const { verify: verifyReCaptcha } = useReCaptchaForm()
 
   // Memoized callback to prevent infinite loops
   const handleSocialLinksEmpty = useCallback((isEmpty: boolean) => {
@@ -48,18 +48,12 @@ const ContactPage: React.FC = () => {
       setSubmitStatus('idle')
 
       try {
-        // Execute reCAPTCHA verification
-        const recaptchaResult = await recaptcha.executeForSubmission()
+        // Execute fresh reCAPTCHA verification for form submission
+        const recaptchaResult = await verifyReCaptcha()
 
         if (!recaptchaResult.success) {
           setSubmitStatus('captcha_failed')
           console.error('reCAPTCHA verification failed:', recaptchaResult.error)
-          return
-        }
-
-        // If verification failed, show error
-        if (!recaptchaResult.canProceed) {
-          setSubmitStatus('captcha_failed')
           return
         }
 

@@ -34,7 +34,7 @@ const ENVIRONMENT_CONFIGS: Record<
     wpApiBase: 'http://localhost:8080',
     recaptcha: {
       enabled: true, // Enabled for local testing
-      threshold: 0.5,
+      threshold: 0.1,
       badgePosition: 'bottomright',
     },
   },
@@ -43,7 +43,7 @@ const ENVIRONMENT_CONFIGS: Record<
     wpApiBase: 'https://api-dev.rae-dev.com',
     recaptcha: {
       enabled: true, // Will be dynamically loaded from WordPress
-      threshold: 0.5, // Default, will be overridden by WordPress settings
+      threshold: 0.1, // Default, will be overridden by WordPress settings
       badgePosition: 'bottomright',
     },
   },
@@ -52,7 +52,7 @@ const ENVIRONMENT_CONFIGS: Record<
     wpApiBase: 'https://api.rae-dev.com',
     recaptcha: {
       enabled: true, // Will be dynamically loaded from WordPress
-      threshold: 0.5, // Default, will be overridden by WordPress settings
+      threshold: 0.1, // Default, will be overridden by WordPress settings
       badgePosition: 'bottomright',
     },
   },
@@ -127,11 +127,6 @@ export const getReCaptchaConfig = () => config.recaptcha
  * Check if reCAPTCHA is enabled in current environment
  */
 export const isReCaptchaEnabled = () => config.recaptcha.enabled
-
-/**
- * Get reCAPTCHA threshold for current environment
- */
-export const getReCaptchaThreshold = () => config.recaptcha.threshold
 
 /**
  * Get reCAPTCHA badge position for current environment
