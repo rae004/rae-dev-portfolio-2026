@@ -3,7 +3,7 @@
  * Handles Google reCAPTCHA v3 integration with WordPress backend
  */
 
-import { devLog } from '../config/environment'
+import { devLog, getWordPressApiBase } from '../config/environment'
 
 type BadgePosition = 'bottomright' | 'bottomleft' | 'inline'
 type ThemeType = 'light' | 'dark'
@@ -211,7 +211,7 @@ export class ReCaptchaService {
    * Fetch reCAPTCHA configuration from WordPress API
    */
   private async fetchConfigFromWordPress(): Promise<ReCaptchaConfig> {
-    const apiBase = import.meta.env.VITE_WP_API_BASE || 'http://localhost:8080'
+    const apiBase = getWordPressApiBase()
     const response = await fetch(`${apiBase}/?rest_route=/wp/v2/recaptcha/status`)
 
     if (!response.ok) {
@@ -231,7 +231,7 @@ export class ReCaptchaService {
     token: string,
     action: string
   ): Promise<ReCaptchaVerificationResponse> {
-    const apiBase = import.meta.env.VITE_WP_API_BASE || 'http://localhost:8080'
+    const apiBase = getWordPressApiBase()
     const url = `${apiBase}/?rest_route=/wp/v2/recaptcha/verify`
 
     const body = { token, action }
