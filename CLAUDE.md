@@ -10,7 +10,7 @@ Modern portfolio website for Robert Engel showcasing career journey from music i
 - **Integration**: Full end-to-end data flow working ✅
 - **Custom Features**: Skills system, employment dates, dynamic content ✅
 - **Resume Detail Pages**: Complete with skill relationships ✅
-- **🛡️ Security**: Google reCAPTCHA v3 + v2 challenge system ✅ 
+- **🛡️ Security**: Google reCAPTCHA v3 protection (v3-only, no v2 challenge) ✅ 
 - **🎨 Social Links**: Configurable social media integration ✅
 - **🌟 Dynamic Theming**: reCAPTCHA badges adapt to DaisyUI theme changes in real-time ✅
 - **🧹 Code Quality**: Modern ES6+ standards with comprehensive TypeScript integration ✅
@@ -38,15 +38,14 @@ Modern portfolio website for Robert Engel showcasing career journey from music i
 │   │   ├── lib/queryClient.ts          # TanStack Query config
 │   │   ├── services/
 │   │   │   ├── wordpress.ts            # WordPress API service
-│   │   │   └── recaptcha.ts            # reCAPTCHA v3/v2 service ✅
+│   │   │   └── recaptcha.ts            # reCAPTCHA v3 service ✅
 │   │   ├── hooks/
 │   │   │   ├── useWordPress.ts         # React Query hooks
-│   │   │   ├── useReCaptcha.ts         # reCAPTCHA hooks ✅
-│   │   │   └── useReCaptchaChallengeModal.ts # Challenge modal ✅
+│   │   │   └── useReCaptchaForm.ts     # reCAPTCHA form hooks ✅
 │   │   ├── types/wordpress.ts          # WordPress API types
 │   │   ├── components/                 # SkillPill, SkillsGroup, etc.
 │   │   │   ├── SocialLinks.tsx         # Social media links ✅
-│   │   │   └── ReCaptchaChallenge.tsx  # reCAPTCHA challenge modal ✅
+│   │   │   └── ReCaptchaGate.tsx       # reCAPTCHA page protection ✅
 │   │   ├── pages/                      # Route components
 │   │   │   └── ContactPage.tsx         # Enhanced with reCAPTCHA ✅
 │   │   ├── styles/recaptcha.css        # reCAPTCHA DaisyUI theming ✅
@@ -81,7 +80,7 @@ Modern portfolio website for Robert Engel showcasing career journey from music i
 - **Skills**: `/wp/v2/skills` (with categories and grouping)
 - **Blog Posts**: `/wp/v2/posts`
 - **🔗 Social Links**: `/wp/v2/social-links` (configurable social media links) ✅
-- **🛡️ reCAPTCHA**: `/wp/v2/recaptcha/status`, `/wp/v2/recaptcha/verify`, `/wp/v2/recaptcha/challenge` ✅
+- **🛡️ reCAPTCHA**: `/wp/v2/recaptcha/status`, `/wp/v2/recaptcha/verify` ✅
 
 ## Critical Technical Decisions
 1. **DaisyUI v4.12.10**: MUST stay on v4.x - v5.x breaks themes
@@ -201,12 +200,12 @@ curl -s "http://localhost:8080/?rest_route=/wp/v2/recaptcha/status" | jq
 
 ### 🛡️ Google reCAPTCHA v3 Protection ✅ Complete
 - **WordPress Admin**: Settings → Google reCAPTCHA v3 options with comprehensive configuration
-- **Dual System**: reCAPTCHA v3 invisible scoring + v2 challenge fallback for low scores
-- **REST API**: `/wp/v2/recaptcha/status`, `/wp/v2/recaptcha/verify`, `/wp/v2/recaptcha/challenge`
-- **Frontend**: Complete React integration with TanStack Query and challenge modal
-- **Security**: Rate limiting, audit logging, graceful degradation, secret key protection
+- **v3-Only System**: reCAPTCHA v3 invisible scoring with direct blocking for low scores
+- **REST API**: `/wp/v2/recaptcha/status`, `/wp/v2/recaptcha/verify`
+- **Frontend**: Complete React integration with TanStack Query and page-level protection
+- **Security**: Score threshold enforcement, graceful degradation, secret key protection
 - **🌟 Dynamic Theming**: Real-time badge theme switching with aggressive DOM cleanup and container recreation
-- **Contact Form**: Enhanced with invisible protection and challenge flow
+- **Contact Form**: Enhanced with invisible protection and direct success/failure flow
 
 ### 🌟 Dynamic reCAPTCHA Theming ✅ Complete
 - **MutationObserver**: Monitors `data-theme` attribute changes on HTML element for instant detection
@@ -234,7 +233,7 @@ curl -s "http://localhost:8080/?rest_route=/wp/v2/recaptcha/status" | jq
 - **CloudFront**: Uses nip.io DNS resolution for IP-based origins
 - **🎨 JavaScript Standard**: ALWAYS use const/let, NEVER use var keyword (linting enforced)
 - **🔗 Social Links**: Maximum 9 links, auto-detects platform icons, drag-and-drop reordering
-- **🛡️ reCAPTCHA**: v3 scoring threshold configurable 0.1-0.9 (default 0.5), v2 challenge for low scores, dynamic light/dark theming
+- **🛡️ reCAPTCHA**: v3-only scoring threshold configurable 0.1-0.9 (default 0.5), direct blocking for low scores, dynamic light/dark theming
 - **🧹 Code Quality**: Simplified implementation, removed ~100 lines of theme switching complexity
 
 ## Working Features
@@ -254,9 +253,9 @@ curl -s "http://localhost:8080/?rest_route=/wp/v2/recaptcha/status" | jq
 - ✅ 🔗 **Social Links System**: WordPress admin configuration with platform auto-detection
 - ✅ 🔗 **Social Links Frontend**: Dynamic rendering with conditional "Connect With Me" section
 - ✅ 🛡️ **reCAPTCHA v3 Protection**: Invisible scoring with WordPress admin configuration
-- ✅ 🛡️ **reCAPTCHA Challenge System**: v2 fallback modal for suspicious activity
-- ✅ 🛡️ **Contact Form Security**: Complete reCAPTCHA integration with error handling
-- ✅ 🎨 **reCAPTCHA Theming**: Simplified to Google's standard light theme
+- ✅ 🛡️ **Direct Blocking System**: Low-score users redirected to blocked page
+- ✅ 🛡️ **Contact Form Security**: Complete reCAPTCHA v3 integration with error handling
+- ✅ 🎨 **reCAPTCHA Theming**: Dynamic light/dark theme switching
 - ✅ 🧪 **Code Quality**: ESLint + TypeScript + Modern ES6+ standards enforced
 - ✅ 📋 **PHPCS Compliance**: WordPress Coding Standards with 78% violation reduction (335+ → ~75)
 
@@ -265,7 +264,7 @@ curl -s "http://localhost:8080/?rest_route=/wp/v2/recaptcha/status" | jq
 **Status**: All major features implemented, tested, and production ready
 
 ### ✅ Testing Completed
-- **✅ reCAPTCHA Testing**: Working with actual Google API keys for v3/v2
+- **✅ reCAPTCHA Testing**: Working with actual Google API keys for v3
 - **✅ Social Links**: All platform icons and links functional
 - **✅ Dynamic Badge Theming**: Real-time light/dark theme switching working perfectly
 - **✅ Mobile Support**: Responsive design confirmed
@@ -285,7 +284,7 @@ curl -s "http://localhost:8080/?rest_route=/wp/v2/recaptcha/status" | jq
 
 ## Recent Implementation Summary (Nov 2025)
 - **🔗 Social Links**: Complete WordPress admin + frontend integration with platform detection
-- **🛡️ reCAPTCHA v3**: Full dual v3/v2 system with challenge modal and explicit rendering
+- **🛡️ reCAPTCHA v3**: v3-only system with direct blocking and explicit rendering
 - **🌟 Dynamic Theming**: Revolutionary real-time reCAPTCHA badge theme switching with aggressive DOM cleanup
 - **🎨 Code Standards**: ES6+ modernization, ESLint compliance, TypeScript safety
 - **📋 PHPCS Refactoring**: Comprehensive WordPress coding standards compliance (78% improvement)
