@@ -1,5 +1,17 @@
 # Rae Dev Portfolio 2026
 
+[![CI](https://github.com/rae004/rae-dev-portfolio-2026/actions/workflows/ci.yml/badge.svg)](https://github.com/rae004/rae-dev-portfolio-2026/actions/workflows/ci.yml)
+[![Release](https://github.com/rae004/rae-dev-portfolio-2026/actions/workflows/release-please.yml/badge.svg)](https://github.com/rae004/rae-dev-portfolio-2026/actions/workflows/release-please.yml)
+[![Version](https://img.shields.io/github/package-json/v/rae004/rae-dev-portfolio-2026?filename=frontend%2Fpackage.json&color=blue&label=version)](./CHANGELOG.md)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![PHP](https://img.shields.io/badge/PHP-8.2-777BB4?logo=php&logoColor=white)](https://www.php.net/)
+[![WordPress](https://img.shields.io/badge/WordPress-6.8-21759B?logo=wordpress&logoColor=white)](https://wordpress.org/)
+[![Node.js](https://img.shields.io/badge/Node-22-brightgreen?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
+[![AWS CDK](https://img.shields.io/badge/AWS%20CDK-2-FF9900?logo=amazonaws&logoColor=white)](https://aws.amazon.com/cdk/)
+
 Portfolio site for Robert Engel: a headless WordPress backend feeding a React + TypeScript SPA, deployed to AWS via CDK.
 
 ## Architecture
