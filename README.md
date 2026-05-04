@@ -1,6 +1,7 @@
 # Rae Dev Portfolio 2026
 
 [![CI](https://github.com/rae004/rae-dev-portfolio-2026/actions/workflows/ci.yml/badge.svg)](https://github.com/rae004/rae-dev-portfolio-2026/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/rae004/rae-dev-portfolio-2026/branch/main/graph/badge.svg)](https://codecov.io/gh/rae004/rae-dev-portfolio-2026)
 [![Release](https://github.com/rae004/rae-dev-portfolio-2026/actions/workflows/release-please.yml/badge.svg)](https://github.com/rae004/rae-dev-portfolio-2026/actions/workflows/release-please.yml)
 [![Version](https://img.shields.io/github/package-json/v/rae004/rae-dev-portfolio-2026?filename=frontend%2Fpackage.json&color=blue&label=version)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)

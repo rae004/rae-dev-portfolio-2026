@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -45,6 +46,24 @@ export default defineConfig(({ mode }) => {
       __APP_ENV__: JSON.stringify(appEnv),
       // Legacy support
       __DEV__: JSON.stringify(process.env.NODE_ENV === 'development'),
+    },
+
+    test: {
+      environment: 'jsdom',
+      setupFiles: ['./src/test/setup.ts'],
+      css: true,
+      coverage: {
+        provider: 'v8',
+        reporter: ['text', 'lcov', 'html'],
+        include: ['src/**/*.{ts,tsx}'],
+        exclude: [
+          'src/main.tsx',
+          'src/routeTree.gen.ts',
+          'src/test/**',
+          'src/**/*.d.ts',
+          'src/vite-env.d.ts',
+        ],
+      },
     },
   }
 })
