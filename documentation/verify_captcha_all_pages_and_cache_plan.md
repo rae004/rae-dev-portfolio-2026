@@ -2,7 +2,7 @@
 
 **Project**: RAE Dev Portfolio 2026  
 **Date**: November 28, 2025  
-**Status**: ✅ COMPLETED - FRESH IMPLEMENTATION SUCCESSFUL + 🚀 NEXT.JS MIGRATION STARTED  
+**Status**: ✅ COMPLETED — FRESH IMPLEMENTATION SUCCESSFUL  
 **Objective**: Implement site-wide reCAPTCHA verification with 5-minute intelligent caching
 
 ## Executive Summary
@@ -235,11 +235,10 @@ if (!config.recaptcha.enabled || !wpConfig?.enabled) {
 1. **`src/App.tsx`** - Replaced ReCaptchaProvider with ReCaptchaGate
 2. **`src/routes/__root.tsx`** - Removed useSimplePageProtection hook
 3. **`src/pages/ContactPage.tsx`** - Updated to use new useReCaptchaForm hook
-4. **`src/main.tsx`** - Removed recaptcha.css import (not needed)
-5. **`src/config/environment.ts`** - Cleaned up, removed getReCaptchaThreshold helper
+4. **`src/config/environment.ts`** - Cleaned up, removed getReCaptchaThreshold helper
 
 ### ❌ Files Deleted
-1. **`src/services/recaptcha.ts`** - 575-line complex service (replaced by utils)
+1. **`src/services/recaptcha.ts`** - 575-line complex service (replaced by utils/recaptcha.ts)
 2. **`src/components/providers/ReCaptchaProvider.tsx`** - 310-line provider (replaced by gate)
 3. **`src/hooks/useSimplePageProtection.ts`** - 123-line hook (logic moved to gate)
 4. **`src/hooks/usePageProtection.ts`** - Redundant hook
@@ -248,7 +247,9 @@ if (!config.recaptcha.enabled || !wpConfig?.enabled) {
 7. **`src/hooks/useReCaptchaSiteWide.ts`** - Redundant hook
 8. **`src/hooks/useRouterProtection.ts`** - Timing issue hook
 9. **`src/hooks/useRouterReCaptcha.ts`** - Race condition hook
-10. **`src/styles/recaptcha.css`** - Not needed with explicit rendering
+
+### ⚠️ Files Retained
+- **`src/styles/recaptcha.css`** — still imported from `src/main.tsx`. The DaisyUI theming concerns it covers continue to apply alongside the explicit-render approach in `ReCaptchaGate`. Removing it was scoped out of this plan.
 
 ## 🎉 Success Criteria Met
 
@@ -324,65 +325,4 @@ This implementation serves as a model for how to approach similar architectural 
 
 ---
 
-## 🚀 NEXT.JS MIGRATION PROGRESS (November 28, 2025)
-
-### Phase 1, Day 1: Foundation Setup - ✅ COMPLETED
-
-Following the comprehensive Next.js migration plan documented in `documentation/next_js_migration_plan.md`, we have successfully completed the foundational setup:
-
-#### ✅ Project Initialization
-- **Next.js 15.1+ Project**: Initialized `frontend-next/` with App Router, TypeScript, and Tailwind
-- **Node Version**: Upgraded to Node v22+ for Next.js compatibility
-- **Package Manager**: Confirmed PNPM v10+ working with all dependencies
-
-#### ✅ Configuration & Dependencies
-- **TypeScript**: Enhanced with strict settings from existing frontend (ES2022 target, strict mode)
-- **Tailwind CSS v3.4.18**: Successfully downgraded from v4 for DaisyUI compatibility
-- **DaisyUI 4.12.10**: All 29 themes configured and verified working in build
-- **ESLint + Prettier**: Next.js-optimized configuration with existing code standards
-- **TanStack Stack**: React Query 5.90+ and React Form 1.26+ installed for WordPress integration
-
-#### ✅ WordPress API Integration Setup
-- **Environment Configuration**: Multi-environment detection (local/dev/prod) with API base URLs
-- **WordPress Types**: Complete TypeScript interfaces for all custom post types and API responses
-- **WordPress Service**: Fetch functions with ISR (Incremental Static Regeneration) support
-- **Next.js Configuration**: Image optimization, environment variables, typed routes enabled
-
-#### ✅ Infrastructure Preparation  
-- **SST v2**: Installed `sst@two` (v2.49.6) for proven AWS CDK deployment approach
-- **Package Scripts**: Added SST deployment commands alongside existing CDK scripts
-- **Migration Scripts**: Prepared for NextjsSite construct deployment to replace S3+CloudFront
-
-#### ✅ Root Layout & Providers
-- **Root Layout**: Created with Inter font, DaisyUI theme support, and proper metadata
-- **TanStack Query Provider**: Client-side provider with React Query DevTools for development
-- **Build Verification**: All components compile successfully with no TypeScript errors
-
-### Next Steps: Phase 1, Day 2-3 (Component Migration)
-
-The foundation is solid and ready for the next phase of component migration:
-
-1. **Navigation Component**: Port to Next.js with Server/Client Component patterns
-2. **UI Components**: Migrate all 15 components from current SPA (SkillPill, MediaProjectCard, etc.)
-3. **reCAPTCHA Integration**: Port the fresh reCAPTCHA architecture to Next.js App Router
-4. **WordPress Hooks**: Create TanStack Query hooks for server-side data fetching
-
-### Architecture Compatibility
-
-The fresh reCAPTCHA implementation from this document is **perfectly positioned** for Next.js migration:
-
-- **ReCaptchaGate Component**: Will become a Client Component with 'use client' directive
-- **WordPress API Integration**: Already designed with fetch() and Next.js ISR patterns
-- **Theme Switching**: MutationObserver approach works identically in Next.js
-- **Caching Strategy**: Component state caching translates directly to Next.js Client Components
-
-### SEO Problem Resolution
-
-This Next.js migration directly addresses the critical SEO issue where Google bots cannot index React SPA content:
-
-- **Server-Side Rendering**: All resume items, projects, and blog posts will be pre-rendered
-- **Static Generation**: ISR ensures fresh content with optimal performance  
-- **Perfect Indexing**: Google bots will see full HTML content on first request
-- **Business Impact**: Portfolio will be discoverable by potential employers and clients
-
-The Next.js migration maintains 100% functionality while solving the business-critical SEO problem identified earlier in the conversation.
+> **Note (2026-05):** an earlier revision of this document appended a "Next.js migration progress" section describing a `frontend-next/` project. That migration was not carried forward — the SPA in `frontend/` remains the only frontend in the repo — and the section has been removed to keep this plan accurate to shipped state.

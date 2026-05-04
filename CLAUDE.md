@@ -37,8 +37,7 @@ Modern portfolio website for Robert Engel showcasing career journey from music i
 │   ├── src/
 │   │   ├── lib/queryClient.ts          # TanStack Query config
 │   │   ├── services/
-│   │   │   ├── wordpress.ts            # WordPress API service
-│   │   │   └── recaptcha.ts            # reCAPTCHA v3 service ✅
+│   │   │   └── wordpress.ts            # WordPress API service
 │   │   ├── hooks/
 │   │   │   ├── useWordPress.ts         # React Query hooks
 │   │   │   └── useReCaptchaForm.ts     # reCAPTCHA form hooks ✅
@@ -47,20 +46,34 @@ Modern portfolio website for Robert Engel showcasing career journey from music i
 │   │   │   ├── SocialLinks.tsx         # Social media links ✅
 │   │   │   └── ReCaptchaGate.tsx       # reCAPTCHA page protection ✅
 │   │   ├── pages/                      # Route components
-│   │   │   └── ContactPage.tsx         # Enhanced with reCAPTCHA ✅
-│   │   ├── styles/recaptcha.css        # reCAPTCHA DaisyUI theming ✅
+│   │   │   ├── ContactPage.tsx         # Enhanced with reCAPTCHA ✅
+│   │   │   └── BlockedPage.tsx         # Shown when reCAPTCHA score is below threshold ✅
+│   │   ├── utils/recaptcha.ts          # reCAPTCHA v3 utilities (script load, theme detect, badge cleanup) ✅
+│   │   ├── styles/recaptcha.css        # reCAPTCHA DaisyUI theming (still imported from main.tsx) ✅
 │   │   └── config/environment.ts       # Enhanced with reCAPTCHA config ✅
 ├── wordpress/            # WordPress CMS ✅
 │   ├── wp-content/themes/rae-portfolio/
-│   │   ├── functions.php               # Custom post types, CORS, REST API
-│   │   ├── includes/                   # Modular theme components
+│   │   ├── functions.php                       # Bootstraps theme loader (modular)
+│   │   ├── includes/                           # Modular theme components (all classes prefixed `class-rae-*`)
+│   │   │   ├── class-rae-theme-loader.php      # Auto-loads all components
 │   │   │   ├── admin/
-│   │   │   │   ├── class-social-links-options.php # Social links admin ✅
-│   │   │   │   └── class-recaptcha-options.php     # reCAPTCHA admin ✅
+│   │   │   │   ├── class-rae-social-links-options.php # Social links admin ✅
+│   │   │   │   ├── class-rae-recaptcha-options.php    # reCAPTCHA admin ✅
+│   │   │   │   ├── class-rae-meta-boxes.php           # Loads admin meta boxes
+│   │   │   │   └── meta-boxes/                        # Per-post-type meta boxes
 │   │   │   ├── api/
-│   │   │   │   ├── class-social-links-api.php      # Social links REST API ✅
-│   │   │   │   └── class-recaptcha-api.php         # reCAPTCHA REST API ✅
-│   │   │   └── class-theme-loader.php              # Auto-loads all components
+│   │   │   │   ├── class-rae-api-base.php             # Shared REST controller base
+│   │   │   │   ├── class-rae-resume-api.php
+│   │   │   │   ├── class-rae-skills-api.php
+│   │   │   │   ├── class-rae-software-projects-api.php
+│   │   │   │   ├── class-rae-media-projects-api.php
+│   │   │   │   ├── class-rae-social-links-api.php     # Social links REST API ✅
+│   │   │   │   └── class-rae-recaptcha-api.php        # reCAPTCHA REST API ✅
+│   │   │   ├── post-types/                            # Resume / Skills / Software / Media post type registrations
+│   │   │   ├── theme/                                 # class-rae-theme-setup.php, class-rae-cors-handler.php
+│   │   │   └── utilities/                             # Date formatter, meta utilities, related-skill provider
+│   │   ├── composer.json / composer.lock              # PHPCS dev dependencies
+│   │   ├── ruleset.xml                                # WP Coding Standards ruleset
 │   │   └── style.css, index.php
 │   └── wp-config.php
 ├── infrastructure/       # AWS CDK code ✅
@@ -166,7 +179,7 @@ curl -s "http://localhost:8080/?rest_route=/wp/v2/recaptcha/status" | jq
 ```
 
 ## Current Infrastructure State
-- **Static IP**: 34.198.95.27 (LightSail WordPress instance)
+- **Static IP**: 44.216.72.226 (LightSail WordPress instance, name: `rae-portfolio-wp-ip-dev`)
 - **WordPress HTTPS**: https://api-dev.rae-dev.com/wp-admin/ ✅
 - **Frontend HTTPS**: https://dev.rae-dev.com ✅
 - **CloudFront Distributions**: Frontend + WordPress both deployed ✅
