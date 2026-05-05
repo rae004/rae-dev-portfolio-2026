@@ -110,6 +110,57 @@ describe('RaePortfolioStack (dev with cert)', () => {
     template.hasOutput('WordPressDistributionId', {});
     template.hasOutput('WordPressPublicIP', {});
     template.hasOutput('WordPressAPIURL', {});
+    template.hasOutput('GithubDeployRoleArn', {});
+  });
+
+  test('creates a GitHub OIDC provider scoped to actions.githubusercontent.com', () => {
+    template.resourceCountIs('Custom::AWSCDKOpenIdConnectProvider', 1);
+  });
+
+  test('GitHub deploy role trust is scoped to the dev environment for this repo', () => {
+    template.hasResourceProperties('AWS::IAM::Role', {
+      RoleName: 'github-deploy-dev',
+      AssumeRolePolicyDocument: Match.objectLike({
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Action: 'sts:AssumeRoleWithWebIdentity',
+            Effect: 'Allow',
+            Condition: Match.objectLike({
+              StringEquals: Match.objectLike({
+                'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
+                'token.actions.githubusercontent.com:sub':
+                  'repo:rae004/rae-dev-portfolio-2026:environment:dev',
+              }),
+            }),
+          }),
+        ]),
+      }),
+    });
+  });
+
+  test('GitHub deploy role can invalidate the frontend distribution and only the frontend distribution', () => {
+    // The deploy role's inline policy should target a specific Frontend
+    // distribution ARN — never `*` and never the WordPress distribution.
+    const policies = template.findResources('AWS::IAM::Policy');
+    const deployPolicies = Object.entries(policies).filter(([, p]) =>
+      JSON.stringify(p.Properties.Roles ?? []).includes('GithubDeployRole'),
+    );
+    expect(deployPolicies).toHaveLength(1);
+
+    const statements: Array<{
+      Action?: string | string[];
+      Resource?: unknown;
+    }> = deployPolicies[0][1].Properties.PolicyDocument.Statement;
+    const invalidationStatements = statements.filter(stmt => {
+      const actions = Array.isArray(stmt.Action) ? stmt.Action : [stmt.Action];
+      return actions.includes('cloudfront:CreateInvalidation');
+    });
+
+    expect(invalidationStatements).toHaveLength(1);
+    const resourceJson = JSON.stringify(invalidationStatements[0].Resource);
+    expect(resourceJson).toContain('FrontendDistribution');
+    expect(resourceJson).not.toContain('WordPressDistribution');
+    expect(invalidationStatements[0].Resource).not.toBe('*');
   });
 });
 

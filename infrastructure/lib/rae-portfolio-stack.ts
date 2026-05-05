@@ -498,10 +498,59 @@ HEALTHEOF
       retainOnDelete: envName === 'prod',
     });
 
+    // GitHub Actions OIDC trust + per-environment deploy role.
+    //
+    // Trust is scoped to a specific GitHub Environment (`environment:<envName>`)
+    // rather than a branch ref so the deployment guardrails live in one place
+    // (the GitHub Environment can require reviewers, restrict secrets, etc.).
+    //
+    // The OIDC provider is an account-level singleton — only the dev stack
+    // creates it; prod (when added) imports the existing ARN.
+    const githubOidcProvider = envName === 'dev'
+      ? new iam.OpenIdConnectProvider(this, 'GithubOidcProvider', {
+          url: 'https://token.actions.githubusercontent.com',
+          clientIds: ['sts.amazonaws.com'],
+        })
+      : iam.OpenIdConnectProvider.fromOpenIdConnectProviderArn(
+          this,
+          'GithubOidcProvider',
+          `arn:aws:iam::${this.account}:oidc-provider/token.actions.githubusercontent.com`,
+        );
+
+    const githubDeployRole = new iam.Role(this, 'GithubDeployRole', {
+      roleName: `github-deploy-${envName}`,
+      description: `Assumed by GitHub Actions to deploy the frontend SPA to ${envName}`,
+      assumedBy: new iam.FederatedPrincipal(
+        githubOidcProvider.openIdConnectProviderArn,
+        {
+          StringEquals: {
+            'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
+            'token.actions.githubusercontent.com:sub': `repo:rae004/rae-dev-portfolio-2026:environment:${envName}`,
+          },
+        },
+        'sts:AssumeRoleWithWebIdentity',
+      ),
+      maxSessionDuration: cdk.Duration.hours(1),
+    });
+
+    websiteBucket.grantReadWrite(githubDeployRole);
+
+    githubDeployRole.addToPolicy(new iam.PolicyStatement({
+      actions: ['cloudfront:CreateInvalidation'],
+      resources: [
+        `arn:aws:cloudfront::${this.account}:distribution/${frontendDistribution.distributionId}`,
+      ],
+    }));
+
     // Outputs
     new cdk.CfnOutput(this, 'WebsiteBucketName', {
       value: websiteBucket.bucketName,
       description: 'S3 bucket name for website hosting',
+    });
+
+    new cdk.CfnOutput(this, 'GithubDeployRoleArn', {
+      value: githubDeployRole.roleArn,
+      description: 'IAM role ARN for GitHub Actions to deploy the frontend SPA',
     });
 
     new cdk.CfnOutput(this, 'FrontendDistributionId', {

@@ -327,6 +327,45 @@ aws lightsail attach-static-ip --static-ip-name rae-portfolio-wp-ip-dev --instan
 
 ## Maintenance
 
+### Frontend Deploys
+
+The SPA auto-deploys to S3 + CloudFront whenever release-please cuts a tag on
+`main`. The flow is:
+
+1. Merge a conventional-commit PR (squash) into `main`.
+2. `release-please.yml` opens a "release PR".
+3. Merge the release PR → release-please publishes a `vX.Y.Z` tag and the
+   `deploy-frontend-dev` job runs (under the `dev` GitHub Environment), assuming
+   the `github-deploy-dev` IAM role via OIDC, syncing `frontend/dist/` to
+   `rae-portfolio-dev-233416806179`, invalidating CloudFront, and running a
+   `curl` smoke test against `https://dev.rae-dev.com`.
+
+No long-lived AWS keys are stored in GitHub. The role's trust policy is scoped
+to `repo:rae004/rae-dev-portfolio-2026:environment:dev`, so only workflow jobs
+that explicitly target the `dev` environment can assume it.
+
+### WordPress Theme Deploys (manual)
+
+The repo's custom theme at `wordpress/wp-content/themes/rae-portfolio/` is
+**not** auto-deployed. The Lightsail instance is not part of the release flow.
+When you bump the theme `Version:` in `style.css` and want it live:
+
+```bash
+# from the repo root, with your Lightsail SSH key on hand
+rsync -avz --delete \
+  --exclude vendor --exclude .composer.lock \
+  wordpress/wp-content/themes/rae-portfolio/ \
+  bitnami@44.216.72.226:/opt/bitnami/wordpress/wp-content/themes/rae-portfolio/
+
+ssh bitnami@44.216.72.226 \
+  'sudo -u root wp cache flush --allow-root --path=/opt/bitnami/wordpress'
+```
+
+Plugin and core updates are applied through `wp-admin`. Database content is
+hand-curated. Automating theme sync (likely via SSM Run Command, since SSH +
+long-lived keys are undesirable) is a future enhancement — see the discussion
+in the project's CI/CD planning history.
+
 ### Regular Tasks
 
 1. **WordPress Updates**: Monthly security updates
