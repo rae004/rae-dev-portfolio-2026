@@ -1,6 +1,11 @@
 /// <reference types="vitest" />
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+
+const pkg = JSON.parse(readFileSync('./package.json', 'utf-8')) as {
+  version: string
+}
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -44,6 +49,8 @@ export default defineConfig(({ mode }) => {
     define: {
       // App environment for runtime detection
       __APP_ENV__: JSON.stringify(appEnv),
+      // Frontend package version (release-please bumps this on every release)
+      __APP_VERSION__: JSON.stringify(pkg.version),
       // Legacy support
       __DEV__: JSON.stringify(process.env.NODE_ENV === 'development'),
     },

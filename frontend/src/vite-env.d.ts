@@ -10,3 +10,4 @@ interface ImportMeta {
 
 // Build-time environment constants injected by Vite
 declare const __APP_ENV__: string | undefined
+declare const __APP_VERSION__: string
