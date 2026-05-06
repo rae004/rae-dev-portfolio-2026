@@ -1,0 +1,18 @@
+# Changelog
+
+## [0.1.1](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.1.0...v0.1.1) (2026-05-06)
+
+
+### Features
+
+* add frontend test suite and Codecov integration ([6d599a8](https://github.com/rae004/rae-dev-portfolio-2026/commit/6d599a80ebaef89159587c877ac91c6a98ba42ac))
+* auto-deploy SPA to dev on release-please tag via OIDC ([a64bee5](https://github.com/rae004/rae-dev-portfolio-2026/commit/a64bee55a90320716fe180f6d55fb7b25bd57b3c))
+* bootstrap CI and release-please workflow ([3ae9ded](https://github.com/rae004/rae-dev-portfolio-2026/commit/3ae9ded784dde514307c4775449ce153afdf3570))
+* bootstrap CI/CD pipeline with auto-deploy to dev ([8e00277](https://github.com/rae004/rae-dev-portfolio-2026/commit/8e00277ea4677d26330bb83af92b1aa9fc23f0e7))
+* **home:** show build version + env chip in home page footer ([6c52c88](https://github.com/rae004/rae-dev-portfolio-2026/commit/6c52c8803a3f63792daf7d1fcfaeabec9408db01))
+
+
+### Bug Fixes
+
+* **ci:** create frontend/dist placeholder before CDK synth/tests ([be991f9](https://github.com/rae004/rae-dev-portfolio-2026/commit/be991f9cde0d16c458c736533e75a48df58e5bc6))
+* **infra:** correct .env.example DEV_DOMAIN to apex and blank prod placeholders ([3303575](https://github.com/rae004/rae-dev-portfolio-2026/commit/3303575ee3b810533d246f31eead84ba41946d67))
