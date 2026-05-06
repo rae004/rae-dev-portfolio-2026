@@ -1,25 +1,42 @@
 import type {
-  WordPressPost,
-  ResumeItem,
-  SoftwareProject,
   MediaProject,
-  WordPressQueryParams,
+  MediaProjectQueryParams,
+  ResumeItem,
+  SkillItem,
+  SocialLinksQueryParams,
+  SocialLinksResponse,
+  SoftwareProject,
   WordPressError,
+  WordPressPost,
+  WordPressQueryParams,
 } from '../types/wordpress'
+import { devLog, getWordPressApiBase, validateEnvironment } from '../config/environment'
 
-// WordPress API base URL - using query parameter format since pretty permalinks may not be enabled
-const WP_API_BASE = 'http://localhost:8080'
+// Initialize and validate environment configuration
+const environmentConfig = validateEnvironment()
+
+// WordPress API configuration
+const WP_API_BASE = getWordPressApiBase()
 const WP_API_ROUTE = '/?rest_route=/wp/v2'
 
+// Log configuration for debugging
+devLog('WordPress Service initialized:', {
+  environment: environmentConfig.name,
+  apiBase: WP_API_BASE,
+  apiRoute: WP_API_ROUTE,
+})
+
 class WordPressAPIError extends Error {
-  constructor(
-    message: string,
-    public code: string,
-    public status: number,
-    public data?: unknown
-  ) {
+  public code: string
+  public status: number
+  public data?: unknown
+
+  constructor(message: string, code: string, status: number, data?: unknown) {
     super(message)
     this.name = 'WordPressAPIError'
+    this.code = code
+    this.status = status
+    this.data = data
   }
 }
 
@@ -74,8 +91,7 @@ async function apiRequest<T>(endpoint: string, params?: WordPressQueryParams): P
       )
     }
 
-    const data = await response.json()
-    return data
+    return await response.json()
   } catch (error) {
     if (error instanceof WordPressAPIError) {
       throw error
@@ -112,12 +128,21 @@ export const wordpressApi = {
   },
 
   // Media projects
-  async getMediaProjects(params?: WordPressQueryParams): Promise<MediaProject[]> {
+  async getMediaProjects(params?: MediaProjectQueryParams): Promise<MediaProject[]> {
     return apiRequest<MediaProject[]>('/media-projects', params)
   },
 
   async getMediaProject(id: number): Promise<MediaProject> {
     return apiRequest<MediaProject>(`/media-projects/${id}`)
+  },
+
+  // Skills
+  async getSkills(params?: WordPressQueryParams): Promise<SkillItem[]> {
+    return apiRequest<SkillItem[]>('/skills', params)
+  },
+
+  async getSkill(id: number): Promise<SkillItem> {
+    return apiRequest<SkillItem>(`/skills/${id}`)
   },
 
   // Blog posts
@@ -127,6 +152,21 @@ export const wordpressApi = {
 
   async getBlogPost(id: number): Promise<WordPressPost> {
     return apiRequest<WordPressPost>(`/posts/${id}`)
+  },
+
+  // Social links
+  async getSocialLinks(params?: SocialLinksQueryParams): Promise<SocialLinksResponse> {
+    const queryParams: WordPressQueryParams = {}
+
+    if (params?.enabled_only !== undefined) {
+      queryParams.enabled_only = params.enabled_only ? '1' : '0'
+    }
+
+    if (params?.limit !== undefined) {
+      queryParams.limit = params.limit.toString()
+    }
+
+    return apiRequest<SocialLinksResponse>('/social-links', queryParams)
   },
 
   // Health check

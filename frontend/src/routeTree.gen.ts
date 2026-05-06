@@ -14,8 +14,12 @@ import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as BlogRouteImport } from './routes/blog'
+import { Route as BlockedRouteImport } from './routes/blocked'
 import { Route as AccessibilityRouteImport } from './routes/accessibility'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ResumeResumeIdRouteImport } from './routes/resume/$resumeId'
+import { Route as ProjectsProjectIdRouteImport } from './routes/projects/$projectId'
+import { Route as MediaMediaIdRouteImport } from './routes/media/$mediaId'
 
 const ResumeRoute = ResumeRouteImport.update({
   id: '/resume',
@@ -42,6 +46,11 @@ const BlogRoute = BlogRouteImport.update({
   path: '/blog',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlockedRoute = BlockedRouteImport.update({
+  id: '/blocked',
+  path: '/blocked',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccessibilityRoute = AccessibilityRouteImport.update({
   id: '/accessibility',
   path: '/accessibility',
@@ -52,73 +61,113 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResumeResumeIdRoute = ResumeResumeIdRouteImport.update({
+  id: '/$resumeId',
+  path: '/$resumeId',
+  getParentRoute: () => ResumeRoute,
+} as any)
+const ProjectsProjectIdRoute = ProjectsProjectIdRouteImport.update({
+  id: '/$projectId',
+  path: '/$projectId',
+  getParentRoute: () => ProjectsRoute,
+} as any)
+const MediaMediaIdRoute = MediaMediaIdRouteImport.update({
+  id: '/$mediaId',
+  path: '/$mediaId',
+  getParentRoute: () => MediaRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/accessibility': typeof AccessibilityRoute
+  '/blocked': typeof BlockedRoute
   '/blog': typeof BlogRoute
   '/contact': typeof ContactRoute
-  '/media': typeof MediaRoute
-  '/projects': typeof ProjectsRoute
-  '/resume': typeof ResumeRoute
+  '/media': typeof MediaRouteWithChildren
+  '/projects': typeof ProjectsRouteWithChildren
+  '/resume': typeof ResumeRouteWithChildren
+  '/media/$mediaId': typeof MediaMediaIdRoute
+  '/projects/$projectId': typeof ProjectsProjectIdRoute
+  '/resume/$resumeId': typeof ResumeResumeIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/accessibility': typeof AccessibilityRoute
+  '/blocked': typeof BlockedRoute
   '/blog': typeof BlogRoute
   '/contact': typeof ContactRoute
-  '/media': typeof MediaRoute
-  '/projects': typeof ProjectsRoute
-  '/resume': typeof ResumeRoute
+  '/media': typeof MediaRouteWithChildren
+  '/projects': typeof ProjectsRouteWithChildren
+  '/resume': typeof ResumeRouteWithChildren
+  '/media/$mediaId': typeof MediaMediaIdRoute
+  '/projects/$projectId': typeof ProjectsProjectIdRoute
+  '/resume/$resumeId': typeof ResumeResumeIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/accessibility': typeof AccessibilityRoute
+  '/blocked': typeof BlockedRoute
   '/blog': typeof BlogRoute
   '/contact': typeof ContactRoute
-  '/media': typeof MediaRoute
-  '/projects': typeof ProjectsRoute
-  '/resume': typeof ResumeRoute
+  '/media': typeof MediaRouteWithChildren
+  '/projects': typeof ProjectsRouteWithChildren
+  '/resume': typeof ResumeRouteWithChildren
+  '/media/$mediaId': typeof MediaMediaIdRoute
+  '/projects/$projectId': typeof ProjectsProjectIdRoute
+  '/resume/$resumeId': typeof ResumeResumeIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/accessibility'
+    | '/blocked'
     | '/blog'
     | '/contact'
     | '/media'
     | '/projects'
     | '/resume'
+    | '/media/$mediaId'
+    | '/projects/$projectId'
+    | '/resume/$resumeId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/accessibility'
+    | '/blocked'
     | '/blog'
     | '/contact'
     | '/media'
     | '/projects'
     | '/resume'
+    | '/media/$mediaId'
+    | '/projects/$projectId'
+    | '/resume/$resumeId'
   id:
     | '__root__'
     | '/'
     | '/accessibility'
+    | '/blocked'
     | '/blog'
     | '/contact'
     | '/media'
     | '/projects'
     | '/resume'
+    | '/media/$mediaId'
+    | '/projects/$projectId'
+    | '/resume/$resumeId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccessibilityRoute: typeof AccessibilityRoute
+  BlockedRoute: typeof BlockedRoute
   BlogRoute: typeof BlogRoute
   ContactRoute: typeof ContactRoute
-  MediaRoute: typeof MediaRoute
-  ProjectsRoute: typeof ProjectsRoute
-  ResumeRoute: typeof ResumeRoute
+  MediaRoute: typeof MediaRouteWithChildren
+  ProjectsRoute: typeof ProjectsRouteWithChildren
+  ResumeRoute: typeof ResumeRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -158,6 +207,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blocked': {
+      id: '/blocked'
+      path: '/blocked'
+      fullPath: '/blocked'
+      preLoaderRoute: typeof BlockedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/accessibility': {
       id: '/accessibility'
       path: '/accessibility'
@@ -172,17 +228,72 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/resume/$resumeId': {
+      id: '/resume/$resumeId'
+      path: '/$resumeId'
+      fullPath: '/resume/$resumeId'
+      preLoaderRoute: typeof ResumeResumeIdRouteImport
+      parentRoute: typeof ResumeRoute
+    }
+    '/projects/$projectId': {
+      id: '/projects/$projectId'
+      path: '/$projectId'
+      fullPath: '/projects/$projectId'
+      preLoaderRoute: typeof ProjectsProjectIdRouteImport
+      parentRoute: typeof ProjectsRoute
+    }
+    '/media/$mediaId': {
+      id: '/media/$mediaId'
+      path: '/$mediaId'
+      fullPath: '/media/$mediaId'
+      preLoaderRoute: typeof MediaMediaIdRouteImport
+      parentRoute: typeof MediaRoute
+    }
   }
 }
+
+interface MediaRouteChildren {
+  MediaMediaIdRoute: typeof MediaMediaIdRoute
+}
+
+const MediaRouteChildren: MediaRouteChildren = {
+  MediaMediaIdRoute: MediaMediaIdRoute,
+}
+
+const MediaRouteWithChildren = MediaRoute._addFileChildren(MediaRouteChildren)
+
+interface ProjectsRouteChildren {
+  ProjectsProjectIdRoute: typeof ProjectsProjectIdRoute
+}
+
+const ProjectsRouteChildren: ProjectsRouteChildren = {
+  ProjectsProjectIdRoute: ProjectsProjectIdRoute,
+}
+
+const ProjectsRouteWithChildren = ProjectsRoute._addFileChildren(
+  ProjectsRouteChildren,
+)
+
+interface ResumeRouteChildren {
+  ResumeResumeIdRoute: typeof ResumeResumeIdRoute
+}
+
+const ResumeRouteChildren: ResumeRouteChildren = {
+  ResumeResumeIdRoute: ResumeResumeIdRoute,
+}
+
+const ResumeRouteWithChildren =
+  ResumeRoute._addFileChildren(ResumeRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccessibilityRoute: AccessibilityRoute,
+  BlockedRoute: BlockedRoute,
   BlogRoute: BlogRoute,
   ContactRoute: ContactRoute,
-  MediaRoute: MediaRoute,
-  ProjectsRoute: ProjectsRoute,
-  ResumeRoute: ResumeRoute,
+  MediaRoute: MediaRouteWithChildren,
+  ProjectsRoute: ProjectsRouteWithChildren,
+  ResumeRoute: ResumeRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

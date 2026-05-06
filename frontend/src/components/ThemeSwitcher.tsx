@@ -34,13 +34,20 @@ const themes = [
 ]
 
 const ThemeSwitcher: React.FC = () => {
-  const [currentTheme, setCurrentTheme] = useState('light')
+  let defaultTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'black' : 'retro'
+  if (localStorage.getItem('theme')) {
+    defaultTheme = localStorage.getItem('theme') || defaultTheme
+  }
+
+  const [currentTheme, setCurrentTheme] = useState(defaultTheme)
   const [isLoading, setIsLoading] = useState(true)
   const [supportedThemes, setSupportedThemes] = useState<string[]>([])
 
   useEffect(() => {
-    // Get the theme that should already be applied by the HTML script
-    const savedTheme = localStorage.getItem('theme') || 'light'
+    let savedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'black' : 'retro'
+    if (localStorage.getItem('theme')) {
+      savedTheme = localStorage.getItem('theme') || savedTheme
+    }
     setCurrentTheme(savedTheme)
 
     // Check which themes are actually supported (have CSS variables)
@@ -48,7 +55,7 @@ const ThemeSwitcher: React.FC = () => {
     setSupportedThemes(availableThemes)
 
     // Log debug info in development
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       logThemeDebugInfo(themes)
     }
 

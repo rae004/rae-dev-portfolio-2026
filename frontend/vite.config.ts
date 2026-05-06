@@ -1,7 +1,76 @@
+/// <reference types="vitest" />
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+const pkg = JSON.parse(readFileSync('./package.json', 'utf-8')) as {
+  version: string
+}
+
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
+export default defineConfig(({ mode }) => {
+  // Determine app environment from various sources
+  const getAppEnvironment = (): string => {
+    // 1. Check explicit APP_ENV environment variable
+    if (process.env.APP_ENV) {
+      return process.env.APP_ENV
+    }
+
+    // 2. Check for specific build modes
+    if (mode === 'development') {
+      return 'local' // dev server = local Docker environment
+    }
+
+    // 3. Check VITE_ENV for production builds with specific targets
+    if (process.env.VITE_ENV === 'development') {
+      return 'development' // AWS dev environment
+    }
+
+    if (process.env.VITE_ENV === 'production') {
+      return 'production' // AWS production environment
+    }
+
+    // 4. Default fallback based on NODE_ENV
+    return process.env.NODE_ENV === 'development' ? 'local' : 'production'
+  }
+
+  const appEnv = getAppEnvironment()
+
+  console.log(`[Vite] Building for environment: ${appEnv}`)
+  console.log(`[Vite] Mode: ${mode}, NODE_ENV: ${process.env.NODE_ENV}`)
+
+  return {
+    plugins: [react()],
+
+    // Environment variables configuration
+    envPrefix: ['VITE_'],
+
+    // Define config - inject build-time constants
+    define: {
+      // App environment for runtime detection
+      __APP_ENV__: JSON.stringify(appEnv),
+      // Frontend package version (release-please bumps this on every release)
+      __APP_VERSION__: JSON.stringify(pkg.version),
+      // Legacy support
+      __DEV__: JSON.stringify(process.env.NODE_ENV === 'development'),
+    },
+
+    test: {
+      environment: 'jsdom',
+      setupFiles: ['./src/test/setup.ts'],
+      css: true,
+      coverage: {
+        provider: 'v8',
+        reporter: ['text', 'lcov', 'html'],
+        include: ['src/**/*.{ts,tsx}'],
+        exclude: [
+          'src/main.tsx',
+          'src/routeTree.gen.ts',
+          'src/test/**',
+          'src/**/*.d.ts',
+          'src/vite-env.d.ts',
+        ],
+      },
+    },
+  }
 })

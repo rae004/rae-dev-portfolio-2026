@@ -1,73 +1,58 @@
-# React + TypeScript + Vite
+# frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 + TypeScript + Vite 7 SPA. TanStack Router/Query/Form, Tailwind 3, DaisyUI 4.12.10. The site root is gated by `ReCaptchaGate`, which performs a single page-view verification against the WordPress reCAPTCHA endpoint and caches it for 5 minutes; sub-threshold scores route to `BlockedPage`.
 
-Currently, two official plugins are available:
+The repo-level `README.md` covers architecture, deployment, and constraints. This file documents the frontend package only.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Scripts
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+pnpm dev          # Vite dev server on :5173 (mode: development)
+pnpm build        # tsc -b && vite build
+pnpm build:local  # build with VITE_ENV unset (local API)
+pnpm build:dev    # VITE_ENV=development → api-dev.rae-dev.com
+pnpm build:prod   # VITE_ENV=production  → api.rae-dev.com
+pnpm preview      # vite preview
+pnpm lint         # eslint .
+pnpm lint:fix     # eslint . --fix
+pnpm format       # prettier --write .
+pnpm format:check # prettier --check .
+pnpm routes:generate  # tsr generate (regenerate routeTree.gen.ts)
+pnpm routes:watch     # tsr watch
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Source layout
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+src/
+  App.tsx, main.tsx          # Query client + ReCaptchaGate + Router bootstrap
+  config/environment.ts      # build-time env constants (no .env files)
+  routes/                    # TanStack Router file routes; routeTree.gen.ts is generated
+  pages/                     # Page components for each route
+  components/
+    ReCaptchaGate.tsx        # Site-wide reCAPTCHA gate (page_view verification + theme observer)
+    SocialLinks.tsx          # Connect-with-me block, conditional on configured links
+    icons/                   # Reusable SVG icon components
+    ui/                      # LoadingSpinner and other shared UI primitives
+    ...                      # Navigation, ThemeSwitcher, Skill/Resume/Media/Software cards
+  hooks/
+    useWordPress.ts          # TanStack Query hooks for all WordPress data
+    useReCaptchaForm.ts      # Form-submission reCAPTCHA token helper
+  services/wordpress.ts      # WordPress API service layer
+  utils/
+    recaptcha.ts             # Script loader, theme detection, badge cleanup, executeReCaptcha
+    mediaProjectUtils.ts, softwareProjectUtils.ts, skillMatching.ts, themeDebug.ts
+  styles/
+    index.css, recaptcha.css # Tailwind entry + reCAPTCHA badge theme overrides
+  types/wordpress.ts         # WordPress API TypeScript types
+```
+
+## Environment configuration
+
+There is no `.env` file. `VITE_ENV` is read at build time and resolved in `src/config/environment.ts` to one of `local` / `development` / `production`, which selects the WordPress API base URL, reCAPTCHA enable flag, and threshold default. Per-mode builds use the `build:local` / `build:dev` / `build:prod` scripts above.
+
+## Constraints
+
+- DaisyUI must stay on **v4.12.10** — v5 is not API-compatible with the theme system this app uses.
+- Tailwind stays on **v3.x** for the same reason.
+- Run `pnpm routes:generate` after adding or moving a file in `src/routes/`. CI does not regenerate.

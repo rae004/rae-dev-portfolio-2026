@@ -1,0 +1,165 @@
+name: CI
+
+on:
+  pull_request:
+
+jobs:
+  frontend-lint:
+    name: Frontend lint + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        working-directory: ./frontend
+        run: pnpm lint
+
+      - name: Format check
+        working-directory: ./frontend
+        run: pnpm format:check
+
+      - name: Build (acts as type-check via tsc -b)
+        working-directory: ./frontend
+        run: pnpm build
+
+  frontend-tests:
+    name: Frontend tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests with coverage
+        working-directory: ./frontend
+        run: pnpm test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./frontend/coverage/lcov.info
+          flags: frontend
+          fail_ci_if_error: false
+
+  wordpress-phpcs:
+    name: WordPress PHPCS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: composer:v2
+          coverage: none
+
+      - name: Install Composer dependencies
+        working-directory: ./wordpress/wp-content/themes/rae-portfolio
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Run PHPCS
+        working-directory: ./wordpress/wp-content/themes/rae-portfolio
+        run: composer run phpcs
+
+  cdk-synth:
+    name: CDK synth
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: infrastructure/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: ./infrastructure
+        run: pnpm install --frozen-lockfile
+
+      # The stack's BucketDeployment construct references ../frontend/dist as
+      # an asset source. A clean CI checkout has no dist/. The placeholder
+      # just needs to exist for asset staging; content is irrelevant for synth.
+      # TODO: remove once BucketDeployment is dropped from the stack (the
+      # GitHub Actions deploy job handles SPA uploads now).
+      - name: Create frontend dist placeholder
+        run: |
+          mkdir -p frontend/dist
+          echo "<!-- ci placeholder, real bundle is uploaded by the deploy workflow -->" > frontend/dist/index.html
+
+      - name: CDK synth
+        working-directory: ./infrastructure
+        env:
+          CDK_DEFAULT_ACCOUNT: "233416806179"
+          CDK_DEFAULT_REGION: us-east-1
+        run: pnpm exec cdk synth RaePortfolioDev --quiet
+
+  cdk-tests:
+    name: CDK assertion tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: infrastructure/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: ./infrastructure
+        run: pnpm install --frozen-lockfile
+
+      # See note in cdk-synth above.
+      - name: Create frontend dist placeholder
+        run: |
+          mkdir -p frontend/dist
+          echo "<!-- ci placeholder, real bundle is uploaded by the deploy workflow -->" > frontend/dist/index.html
+
+      - name: Run jest tests
+        working-directory: ./infrastructure
+        run: pnpm test

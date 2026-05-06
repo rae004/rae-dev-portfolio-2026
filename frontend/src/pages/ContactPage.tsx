@@ -1,5 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { useForm } from '@tanstack/react-form'
+import SocialLinks from '../components/SocialLinks'
+import { useReCaptchaForm } from '../hooks/useReCaptchaForm'
 
 interface ContactFormData {
   name: string
@@ -22,7 +24,18 @@ function FieldInfo({ field }: { field: any }) {
 }
 
 const ContactPage: React.FC = () => {
-  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error' | 'captcha_failed'>(
+    'idle'
+  )
+  const [showSocialLinks, setShowSocialLinks] = useState(true)
+
+  // reCAPTCHA integration for form submission (always fresh verification)
+  const { verify: verifyReCaptcha } = useReCaptchaForm()
+
+  // Memoized callback to prevent infinite loops
+  const handleSocialLinksEmpty = useCallback((isEmpty: boolean) => {
+    setShowSocialLinks(!isEmpty)
+  }, [])
 
   const form = useForm({
     defaultValues: {
@@ -35,20 +48,43 @@ const ContactPage: React.FC = () => {
       setSubmitStatus('idle')
 
       try {
-        // Simulate form submission (replace with actual API call)
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        // Execute fresh reCAPTCHA verification for form submission
+        const recaptchaResult = await verifyReCaptcha()
 
-        console.log('Form submitted:', value)
-        setSubmitStatus('success')
+        if (!recaptchaResult.success) {
+          setSubmitStatus('captcha_failed')
+          console.error('reCAPTCHA verification failed:', recaptchaResult.error)
+          return
+        }
 
-        // Reset form after successful submission
-        form.reset()
+        // Proceed with form submission
+        await submitForm(value)
       } catch (error) {
         console.error('Form submission error:', error)
         setSubmitStatus('error')
       }
     },
   })
+
+  /**
+   * Actual form submission logic
+   */
+  const submitForm = async (formData: ContactFormData) => {
+    try {
+      // Simulate form submission (replace with actual API call)
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
+      console.log('Form submitted:', formData)
+      setSubmitStatus('success')
+
+      // Reset form after successful submission
+      form.reset()
+    } catch (error) {
+      console.error('Form submission error:', error)
+      setSubmitStatus('error')
+    }
+  }
+
   return (
     <div className='container mx-auto px-4 py-8'>
       <div className='max-w-4xl mx-auto'>
@@ -96,6 +132,26 @@ const ContactPage: React.FC = () => {
                     />
                   </svg>
                   <span>Failed to send message. Please try again.</span>
+                </div>
+              )}
+
+              {/* reCAPTCHA Error Message */}
+              {submitStatus === 'captcha_failed' && (
+                <div className='alert alert-warning mb-4'>
+                  <svg
+                    xmlns='http://www.w3.org/2000/svg'
+                    className='stroke-current shrink-0 h-6 w-6'
+                    fill='none'
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth='2'
+                      d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.728-.833-2.498 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z'
+                    />
+                  </svg>
+                  <span>Security verification failed. Please try again later.</span>
                 </div>
               )}
 
@@ -258,29 +314,20 @@ const ContactPage: React.FC = () => {
           </div>
 
           <div className='space-y-6'>
-            <div className='card bg-base-100 shadow-xl'>
-              <div className='card-body'>
-                <h3 className='card-title'>Connect With Me</h3>
-                <div className='space-y-4'>
-                  <div className='flex items-center space-x-3'>
-                    <span className='text-2xl'>💼</span>
-                    <a href='#' className='link link-primary'>
-                      LinkedIn Profile
-                    </a>
-                  </div>
-                  <div className='flex items-center space-x-3'>
-                    <span className='text-2xl'>🐙</span>
-                    <a href='#' className='link link-primary'>
-                      GitHub Profile
-                    </a>
-                  </div>
-                  <div className='flex items-center space-x-3'>
-                    <span className='text-2xl'>📧</span>
-                    <span>contact@rae-dev.com</span>
-                  </div>
+            {showSocialLinks && (
+              <div className='card bg-base-100 shadow-xl'>
+                <div className='card-body'>
+                  <h3 className='card-title'>Connect With Me</h3>
+                  <SocialLinks
+                    className='space-y-4'
+                    showLabels={true}
+                    maxDisplay={6}
+                    enabledOnly={true}
+                    onEmpty={handleSocialLinksEmpty}
+                  />
                 </div>
               </div>
-            </div>
+            )}
 
             <div className='card bg-base-100 shadow-xl'>
               <div className='card-body'>

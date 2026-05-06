@@ -1,10 +1,10 @@
 import React from 'react'
 import { useSoftwareProjects } from '../hooks/useWordPress'
-import type { SoftwareProject } from '../types/wordpress'
+import SoftwareProjectCard from '../components/SoftwareProjectCard'
 
 const ProjectsPage: React.FC = () => {
   const {
-    data: wpProjects,
+    data: softwareProjects,
     isLoading,
     error,
   } = useSoftwareProjects({
@@ -12,56 +12,6 @@ const ProjectsPage: React.FC = () => {
     orderby: 'date',
     order: 'desc',
   })
-
-  // Fallback projects for when WordPress is unavailable
-  const fallbackProjects = [
-    {
-      title: 'Portfolio Website 2026',
-      description:
-        'Modern portfolio built with React, TypeScript, TanStack Router, and deployed on AWS',
-      tech: ['React', 'TypeScript', 'AWS CDK', 'TanStack Router'],
-      status: 'In Development',
-    },
-    {
-      title: 'E-commerce Solutions',
-      description: 'Custom e-commerce implementations using Magento, Shopify, and WordPress',
-      tech: ['PHP', 'JavaScript', 'Magento', 'Shopify'],
-      status: 'Completed',
-    },
-    {
-      title: 'Cloud Infrastructure',
-      description: 'AWS infrastructure deployments using CDK and best practices',
-      tech: ['AWS', 'TypeScript', 'CDK', 'CloudFormation'],
-      status: 'Ongoing',
-    },
-  ]
-
-  // Transform WordPress data to match component expectations
-  const transformWpProject = (wp: SoftwareProject) => {
-    // Extract tech stack and status from content or use defaults
-    const content = wp.content.rendered.replace(/<[^>]*>/g, '') // Strip HTML
-
-    // Try to extract tech stack from content (basic implementation)
-    const techMatch = content.match(/Technologies?:?\s*([^.]+)/i)
-    const statusMatch = content.match(/Status:?\s*([^.]+)/i)
-
-    return {
-      title: wp.title.rendered,
-      description: wp.excerpt.rendered
-        ? wp.excerpt.rendered.replace(/<[^>]*>/g, '').trim()
-        : content.substring(0, 150) + '...',
-      tech: techMatch
-        ? techMatch[1]
-            .split(/[,;]/)
-            .map(t => t.trim())
-            .filter(Boolean)
-        : ['Web Development'],
-      status: statusMatch ? statusMatch[1].trim() : 'Completed',
-    }
-  }
-
-  // Use WordPress data if available, otherwise fallback
-  const projects = error || !wpProjects ? fallbackProjects : wpProjects.map(transformWpProject)
 
   return (
     <div className='container mx-auto px-4 py-8'>
@@ -72,12 +22,13 @@ const ProjectsPage: React.FC = () => {
         {isLoading && (
           <div className='flex justify-center items-center py-12'>
             <span className='loading loading-spinner loading-lg'></span>
+            <span className='ml-3'>Loading projects...</span>
           </div>
         )}
 
-        {/* Error State with Fallback Content */}
+        {/* Error State */}
         {error && (
-          <div className='alert alert-warning mb-8'>
+          <div className='alert alert-error mb-8'>
             <svg
               xmlns='http://www.w3.org/2000/svg'
               className='stroke-current shrink-0 h-6 w-6'
@@ -88,54 +39,52 @@ const ProjectsPage: React.FC = () => {
                 strokeLinecap='round'
                 strokeLinejoin='round'
                 strokeWidth='2'
-                d='M12 9v2m0 4h.01m-6.938 4h13.876a2 2 0 001.789-2.894l-6.938-13.856a2 2 0 00-3.578 0L.394 16.106A2 2 0 002.183 19z'
+                d='M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z'
               />
             </svg>
-            <span>Unable to load projects from CMS. Showing featured projects instead.</span>
+            <span>
+              Unable to load projects from WordPress CMS.{' '}
+              {error.message || 'Please try again later.'}
+            </span>
           </div>
         )}
 
-        <div className='grid md:grid-cols-2 lg:grid-cols-3 gap-6'>
-          {projects.map((project, index) => (
-            <div key={index} className='card bg-base-100 shadow-xl'>
-              <div className='card-body'>
-                <h2 className='card-title'>{project.title}</h2>
-                <p className='text-sm text-base-content/70 mb-4'>{project.description}</p>
-
-                <div className='mb-4'>
-                  <h3 className='font-semibold mb-2'>Technologies:</h3>
-                  <div className='flex flex-wrap gap-1'>
-                    {project.tech.map((tech, techIndex) => (
-                      <span key={techIndex} className='badge badge-outline badge-sm'>
-                        {tech}
-                      </span>
-                    ))}
-                  </div>
+        {/* Projects Grid - REQUIREMENT 4: Maintain card layout */}
+        {!isLoading && !error && softwareProjects && (
+          <>
+            {softwareProjects.length === 0 ? (
+              <div className='text-center py-12'>
+                <div className='text-6xl mb-4'>🚀</div>
+                <h2 className='text-2xl font-semibold mb-2'>No projects yet</h2>
+                <p className='text-base-content/70'>
+                  Software projects will appear here once they're added to the CMS.
+                </p>
+              </div>
+            ) : (
+              <div className='space-y-8'>
+                <div className='text-sm text-base-content/70 mb-6'>
+                  Showing {softwareProjects.length} project
+                  {softwareProjects.length !== 1 ? 's' : ''}
                 </div>
 
-                <div className='card-actions justify-between items-center'>
-                  <span
-                    className={`badge ${
-                      project.status === 'Completed'
-                        ? 'badge-success'
-                        : project.status === 'In Development'
-                          ? 'badge-warning'
-                          : 'badge-info'
-                    }`}
-                  >
-                    {project.status}
-                  </span>
-                  <button className='btn btn-primary btn-sm'>View Details</button>
+                {/* Project Cards in Grid Layout - maintain original 3-column design */}
+                <div className='grid md:grid-cols-2 lg:grid-cols-3 gap-6'>
+                  {softwareProjects.map(project => (
+                    <div key={project.id} className='card bg-base-100 shadow-xl'>
+                      <SoftwareProjectCard
+                        project={project}
+                        layout='summary'
+                        showMetadata={true}
+                        showSkills={true}
+                        maxSkillsPreview={4}
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-
-        <div className='text-center mt-12'>
-          <p className='text-lg mb-4'>More projects coming soon!</p>
-          <button className='btn btn-outline'>View on GitHub</button>
-        </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   )

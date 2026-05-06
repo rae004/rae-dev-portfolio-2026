@@ -225,8 +225,32 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      <footer className='py-6 bg-base-200 border-t border-base-300'>
+        <div className='container mx-auto px-4 text-center'>
+          <span
+            className='badge badge-ghost text-xs text-base-content/60'
+            aria-label='Frontend build version and environment'
+          >
+            v{__APP_VERSION__} · {shortEnvLabel(__APP_ENV__)}
+          </span>
+        </div>
+      </footer>
     </div>
   )
+}
+
+const shortEnvLabel = (env: string | undefined): string => {
+  switch (env) {
+    case 'development':
+      return 'dev'
+    case 'production':
+      return 'prod'
+    case 'local':
+      return 'local'
+    default:
+      return env ?? 'unknown'
+  }
 }
 
 export default HomePage

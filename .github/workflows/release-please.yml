@@ -1,0 +1,89 @@
+name: Release Please
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.rp.outputs.release_created }}
+      tag_name: ${{ steps.rp.outputs.tag_name }}
+    steps:
+      - id: rp
+        uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  deploy-frontend-dev:
+    name: Deploy frontend to dev
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      id-token: write   # required for OIDC token exchange
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (dev target)
+        working-directory: ./frontend
+        run: pnpm build:dev
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Sync to S3
+        run: |
+          aws s3 sync frontend/dist/ s3://rae-portfolio-dev-233416806179 \
+            --delete \
+            --no-progress
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id EY6SKG56NXSIP \
+            --paths '/*'
+
+      - name: Smoke test
+        run: |
+          echo "Waiting 30s for CloudFront invalidation to start propagating..."
+          sleep 30
+          for attempt in 1 2 3; do
+            if curl -fsS https://dev.rae-dev.com | grep -q '<title>'; then
+              echo "Smoke test passed (attempt $attempt)"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 20s..."
+            sleep 20
+          done
+          echo "Smoke test failed after 3 attempts" >&2
+          exit 1

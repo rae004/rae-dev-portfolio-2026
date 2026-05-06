@@ -1,0 +1,61 @@
+/**
+ * reCAPTCHA Container Styling
+ * Note: Badge content is controlled via explicit rendering with Google's native themes
+ */
+#recaptcha-badge-container > .grecaptcha-badge {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  border-radius: 0.5em !important;
+}
+
+/* Container for reCAPTCHA badge (what we can actually style) */
+#recaptcha-badge-container {
+  /* Positioning is handled via JS, this is just for backup/fallback */
+  position: fixed;
+  bottom: 14px;
+  right: 14px;
+  z-index: 1000;
+  pointer-events: none; /* Allow clicks to pass through container */
+}
+
+/* Ensure badge content gets pointer events */
+#recaptcha-badge-container * {
+  pointer-events: auto;
+}
+
+/* Mobile responsiveness for container positioning */
+@media (max-width: 768px) {
+  #recaptcha-badge-container {
+    bottom: 10px;
+    right: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  #recaptcha-badge-container {
+    bottom: 8px;
+    right: 8px;
+  }
+}
+
+/* Print media - hide container entirely */
+@media print {
+  #recaptcha-badge-container {
+    display: none !important;
+  }
+}
+
+/* High contrast mode support for container */
+@media (prefers-contrast: more) {
+  #recaptcha-badge-container {
+    filter: contrast(1.2);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  #recaptcha-badge-container,
+  #recaptcha-badge-container * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

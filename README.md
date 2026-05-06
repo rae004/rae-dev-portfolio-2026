@@ -1,280 +1,147 @@
 # Rae Dev Portfolio 2026
 
-A modern portfolio website showcasing Robert Engel's diverse career journey from music industry to cloud engineering. Built with React frontend and headless WordPress backend, featuring 29+ beautiful themes and **fully working WordPress integration**.
+[![CI](https://github.com/rae004/rae-dev-portfolio-2026/actions/workflows/ci.yml/badge.svg)](https://github.com/rae004/rae-dev-portfolio-2026/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/rae004/rae-dev-portfolio-2026/branch/main/graph/badge.svg)](https://codecov.io/gh/rae004/rae-dev-portfolio-2026)
+[![Release](https://github.com/rae004/rae-dev-portfolio-2026/actions/workflows/release-please.yml/badge.svg)](https://github.com/rae004/rae-dev-portfolio-2026/actions/workflows/release-please.yml)
+[![Version](https://img.shields.io/github/package-json/v/rae004/rae-dev-portfolio-2026?filename=frontend%2Fpackage.json&color=blue&label=version)](./CHANGELOG.md)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![PHP](https://img.shields.io/badge/PHP-8.2-777BB4?logo=php&logoColor=white)](https://www.php.net/)
+[![WordPress](https://img.shields.io/badge/WordPress-6.8-21759B?logo=wordpress&logoColor=white)](https://wordpress.org/)
+[![Node.js](https://img.shields.io/badge/Node-22-brightgreen?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
+[![AWS CDK](https://img.shields.io/badge/AWS%20CDK-2-FF9900?logo=amazonaws&logoColor=white)](https://aws.amazon.com/cdk/)
 
-## 🏗️ Architecture
+Portfolio site for Robert Engel: a headless WordPress backend feeding a React + TypeScript SPA, deployed to AWS via CDK.
 
-- **Frontend**: React 19.1.1 + TypeScript + Vite 7.1.7 + TanStack Router + DaisyUI v4.12.10
-- **Backend**: WordPress 6.8.3 CMS (Headless) with custom post types
-- **Data Layer**: TanStack Query + WordPress REST API ✅ **WORKING**
-- **Infrastructure**: AWS (LightSail, S3, CloudFront, CDK) - *Coming Soon*
-- **Development**: Docker Compose with WordPress, MySQL, phpMyAdmin + WP-CLI
+## Architecture
 
-## ✨ Current Status: Phase 2 Complete ✅
+- **Frontend**: React 19 + TypeScript + Vite 7 + TanStack Router/Query/Form + Tailwind 3 + DaisyUI 4.12.10
+- **Backend**: WordPress 6.8.x with a custom modular theme (`rae-portfolio`, v1.7.1) — REST API only
+- **Infrastructure**: AWS CDK v2 — S3 + CloudFront for the SPA, LightSail + CloudFront for WordPress, ACM wildcard cert, Route 53 aliases, Lambda automation for static-IP attachment and WordPress URL configuration
+- **Local dev**: Docker Compose (WordPress + MySQL 8 + phpMyAdmin)
 
-### ✅ Frontend Foundation (Phase 1)
-- React + TypeScript setup with Vite 7.1.7
-- TanStack Router with file-based routing
-- DaisyUI v4.12.10 with 29+ working themes
-- Responsive design with mobile-first approach
-- Theme persistence with smooth transitions
+```
+dev.rae-dev.com      → CloudFront (EY6SKG56NXSIP) → S3 (rae-portfolio-dev-...)
+api-dev.rae-dev.com  → CloudFront (E30OWCNPNLLE11) → LightSail (44.216.72.226)
+```
 
-### ✅ WordPress Integration (Phase 2) - **WORKING**
-- Docker Compose environment with WordPress 6.8.3 + WP-CLI 2.8.1
-- Custom "rae-portfolio" theme with REST API enhancements
-- Custom post types: `resume`, `software-project`, `media-project`
-- CORS configuration for frontend communication
-- TanStack Query integration with error handling and loading states
-- **Dynamic data loading from WordPress API working on Resume page**
-- Featured image URL support in REST API
+## Repository layout
 
-### 🚧 Coming Next (Phase 3)
-- Complete dynamic pages (Projects, Media, Blog, Home)
-- TanStack Form integration for contact page
-- AWS infrastructure deployment using CDK
-- CI/CD with GitHub Actions
-- Performance optimization
+```
+frontend/        # React SPA (Vite, TanStack stack, DaisyUI)
+wordpress/       # WordPress install; custom theme under wp-content/themes/rae-portfolio
+infrastructure/  # AWS CDK app (RaePortfolioDev / RaePortfolioProd stacks)
+scripts/         # WordPress HTTPS configuration helpers (manual recovery)
+documentation/   # Implementation plans and operational guides
+docker-compose.yml + Dockerfile.wordpress
+```
 
-## Quick Start
+The custom WP theme is split into modular `class-rae-*` files under `wordpress/wp-content/themes/rae-portfolio/includes/` (post types, REST API controllers, admin meta boxes, options pages, theme setup, CORS, utilities). PHPCS is wired up via Composer with a project ruleset.
 
-### Prerequisites
+## Prerequisites
 
-- **Node.js**: 18.16+ (current: v18.16.0, recommended: 22+ for optimal Vite 7.x)
-- **PNPM**: v8.6.0+ (Package manager)
-- **Docker & Docker Compose**: For WordPress backend
-- **NVM**: Recommended for Node version management
+- Node.js 22+ (Vite 7 / TanStack stack); 18.16+ works but is not recommended
+- PNPM 8.6+ for the frontend; the infrastructure app also uses PNPM
+- Docker + Docker Compose for the local WordPress stack
+- AWS CLI configured (the `infrastructure/package.json` `cdk` script targets `--profile rae_dev`)
 
-### 🚀 Quick Start (Full Stack)
+## Quick start
 
 ```bash
-# 1. Start WordPress backend
-docker-compose up -d
+docker-compose up -d                     # WordPress + MySQL + phpMyAdmin
+cd frontend && pnpm install && pnpm dev  # SPA on :5173
+```
 
-# 2. Start React frontend
-cd frontend
-nvm use 22  # Upgrade from current v18.16.0 if available
+Local access points:
+
+- React app: http://localhost:5173
+- WordPress admin: http://localhost:8080/wp-admin (admin / admin123456)
+- phpMyAdmin: http://localhost:8081
+- WordPress REST root: http://localhost:8080/?rest_route=/wp/v2/
+
+WordPress runs without pretty permalinks in Docker, so REST endpoints use `?rest_route=` rather than `/wp-json/...`.
+
+## Frontend scripts
+
+```bash
+pnpm dev          # Vite dev server (mode: development)
+pnpm build:local  # build with VITE_ENV unset (local API)
+pnpm build:dev    # build pointing at api-dev.rae-dev.com
+pnpm build:prod   # build pointing at api.rae-dev.com
+pnpm lint         # ESLint
+pnpm format       # Prettier write
+pnpm routes:generate  # regenerate TanStack Router tree
+```
+
+Environment selection is build-time only — values are injected via Vite `define` from `frontend/src/config/environment.ts`. There are no runtime `.env` files in `frontend/`.
+
+## WordPress REST endpoints
+
+Custom post types and admin-options endpoints exposed by the theme:
+
+- `/wp/v2/resume` — resume items (with employment dates + skill relations)
+- `/wp/v2/skills` — skill taxonomy items with category grouping
+- `/wp/v2/software-projects` — software project posts (with skill relations)
+- `/wp/v2/media-projects` — media/music projects (with skill relations + streaming links)
+- `/wp/v2/social-links` — admin-configured social profiles
+- `/wp/v2/recaptcha/status` and `/wp/v2/recaptcha/verify` — reCAPTCHA v3 config + verification
+
+Two WordPress admin Settings pages back this: **Settings → Social Links** and **Settings → Google reCAPTCHA v3 options**.
+
+## reCAPTCHA v3
+
+Site-wide protection is implemented as a single `ReCaptchaGate` component wrapping the router (`frontend/src/components/ReCaptchaGate.tsx`), backed by `frontend/src/utils/recaptcha.ts` and `frontend/src/hooks/useReCaptchaForm.ts`. One `page_view` verification runs per session, cached in component state for 5 minutes; scores below the WordPress-configured threshold redirect to `BlockedPage`. Theme switching is handled via a `MutationObserver` that re-renders the badge against Google's light or dark theme based on the active DaisyUI theme.
+
+## Infrastructure
+
+```bash
+cd infrastructure
 pnpm install
-pnpm dev
+pnpm cdk:diff RaePortfolioDev
+pnpm cdk:deploy RaePortfolioDev
 ```
 
-### 🌐 Access Points (All Verified Working)
+`infrastructure/.env` (see `.env.example`) supplies `DEV_CERTIFICATE_ARN`, `DEV_DOMAIN`, `CDK_DEFAULT_ACCOUNT`, `CDK_DEFAULT_REGION`. The CDK app defines both `RaePortfolioDev` and `RaePortfolioProd`; only the dev stack is currently deployed.
 
-- **React Frontend**: http://localhost:5173 ✅
-- **WordPress Admin**: http://localhost:8080/wp-admin (admin/admin123456) ✅
-- **WordPress Frontend**: http://localhost:8080 ✅
-- **phpMyAdmin**: http://localhost:8081 ✅
-- **WordPress REST API**: http://localhost:8080/?rest_route=/wp/v2/ ✅
+After a deploy, build and sync the SPA:
 
-### 📊 WordPress API Endpoints (All Working)
-
-- **Resume Items**: `/?rest_route=/wp/v2/resume` ✅ (3 items available)
-- **Software Projects**: `/?rest_route=/wp/v2/software-projects` ✅
-- **Media Projects**: `/?rest_route=/wp/v2/media-projects` ✅
-- **Blog Posts**: `/?rest_route=/wp/v2/posts` ✅
-- **API Discovery**: `/?rest_route=/wp/v2/` ✅
-
-## Project Structure
-
-```
-├── .github/workflows/          # GitHub Actions CI/CD - Empty
-├── infrastructure/             # AWS CDK code - Empty
-├── frontend/                  # React TypeScript application ✅ Complete
-│   ├── src/
-│   │   ├── components/        # Navigation, ThemeSwitcher
-│   │   ├── hooks/            # useWordPress.ts (React Query hooks)
-│   │   ├── lib/              # queryClient.ts (TanStack Query config)
-│   │   ├── pages/            # Route components with dynamic data
-│   │   ├── routes/           # TanStack Router definitions
-│   │   ├── services/         # wordpress.ts (API service layer)
-│   │   ├── types/            # wordpress.ts (TypeScript definitions)
-│   │   └── utils/            # themeDebug.ts (development utilities)
-├── wordpress/                 # WordPress CMS files ✅ Complete
-│   ├── wp-content/themes/rae-portfolio/  # Custom headless theme
-│   │   ├── functions.php     # Custom post types, CORS, REST API
-│   │   ├── style.css         # Theme stylesheet
-│   │   └── index.php         # Custom dashboard
-├── docker-compose.yml         # WordPress + MySQL + phpMyAdmin ✅
-├── Dockerfile.wordpress       # Custom WordPress container with WP-CLI ✅
-├── scripts/                   # Bash automation scripts - Empty
-└── documentation/             # Project documentation
-    ├── rae_dev_portfolio_2026_generated_plan.md
-    ├── rae_dev_portfolio_2026_prompt.md
-    └── rea_dev_resume.pdf
-```
-
-## 🎯 Features
-
-### ✅ Frontend Capabilities (All Working)
-- **Modern React**: 19.1.1 with TypeScript and Vite 7.1.7
-- **Routing**: TanStack Router with file-based routing
-- **UI Framework**: DaisyUI v4.12.10 with 29+ beautiful themes
-- **Responsive Design**: Mobile-first with breakpoints for all devices
-- **Accessibility**: WCAG 2.2 AA compliance with dedicated accessibility page
-- **Theme System**: Persistent theme switching with smooth transitions
-- **State Management**: TanStack Query for server state management
-
-### ✅ WordPress Integration (Fully Functional)
-- **Headless WordPress**: 6.8.3 with custom theme and post types
-- **REST API**: Full integration with custom endpoints and CORS support
-- **Custom Post Types**: Resume, Software Projects, Media Projects (all registered)
-- **Data Fetching**: TanStack Query hooks with error handling and loading states
-- **Content Management**: WordPress admin interface working with sample data
-- **WP-CLI Integration**: Command-line interface for WordPress management
-
-### ✅ Developer Experience
-- **TypeScript**: Full type safety with WordPress API types
-- **Hot Reload**: Fast development with Vite HMR
-- **Query Devtools**: React Query devtools for debugging (installed and working)
-- **Error Handling**: Graceful fallbacks and user-friendly error messages
-- **Code Quality**: ESLint configuration with React best practices
-- **Container Management**: Docker Compose with WP-CLI for debugging
-
-### 🚧 Planned Features
-- **Dynamic Pages**: Complete remaining pages (Projects, Media, Blog, Home)
-- **TanStack Form**: Contact form with validation
-- **AWS Infrastructure**: CDK deployment with LightSail, S3, CloudFront
-- **CI/CD Pipeline**: GitHub Actions for automated deployment
-- **Performance**: Bundle optimization (<13KB target)
-
-## 💻 Development Commands
-
-### Frontend Development
 ```bash
-cd frontend
-nvm use 22              # Switch to Node.js 22+ (current: v18.16.0)
-pnpm install           # Install dependencies
-pnpm dev              # Start dev server with HMR
-pnpm build            # Build for production
-pnpm preview          # Preview production build
-pnpm routes:generate  # Regenerate TanStack Router routes
+cd frontend && pnpm build:dev
+aws s3 sync dist/ s3://rae-portfolio-dev-233416806179 --delete
+aws cloudfront create-invalidation --distribution-id EY6SKG56NXSIP --paths '/*'
 ```
 
-### WordPress Development with WP-CLI
-```bash
-# WordPress & Database Management
-docker-compose up -d --build         # Start all services (rebuild if needed)
-docker-compose down                  # Stop all services
-docker-compose logs -f wordpress     # View WordPress logs
-docker-compose restart               # Restart services
+For full deploy procedure (including the manual WordPress URL/HTTPS steps and recovery via `claude-working-wp-config.php`), see `documentation/AWS_DEPLOYMENT_GUIDE.md` and `documentation/TROUBLESHOOTING_QUICK_REFERENCE.md`.
 
-# WP-CLI Commands (New!)
-docker exec rae-portfolio-wp wp theme list --allow-root
-docker exec rae-portfolio-wp wp post-type list --allow-root
-docker exec rae-portfolio-wp wp post list --post_type=resume --allow-root
+## Constraints worth knowing
 
-# Database Access
-docker exec -it rae-portfolio-db mysql -u wordpress -pwordpress
-```
+- **Do not upgrade DaisyUI past v4.12.10** — v5 breaks the theme system this project relies on.
+- **No ACF.** Earlier ACF use caused REST 500s; the theme uses native `register_post_type` / `register_meta` only.
+- **Block Editor is disabled** for custom post types (Classic Editor) to avoid REST 404s.
+- **CORS** is enforced in two layers: WordPress (`class-rae-cors-handler.php`) and a CloudFront response-headers policy.
+- **CloudFront → LightSail** uses nip.io to give the static IP a hostname for the origin config.
 
-### Troubleshooting
-```bash
-# Reset WordPress (if needed)
-docker-compose down -v    # Remove volumes
-docker-compose up -d      # Fresh start
+## Documentation
 
-# Check container status
-docker ps                 # View running containers
-docker-compose logs       # View all logs
+Operational:
+- `documentation/AWS_DEPLOYMENT_GUIDE.md`
+- `documentation/TROUBLESHOOTING_QUICK_REFERENCE.md`
+- `infrastructure/DEPLOYMENT.md`
+- `scripts/README.md`
 
-# Debug WordPress issues
-docker exec rae-portfolio-wp wp config set WP_DEBUG true --allow-root
-docker exec rae-portfolio-wp tail -f /var/www/html/wp-content/debug.log
-```
-
-## 🏛️ Technical Architecture
-
-### Data Flow (Working End-to-End)
-```
-React Frontend (localhost:5173)
-    ↕️ TanStack Query (with caching & retry)
-WordPress REST API (localhost:8080/?rest_route=/wp/v2/)
-    ↕️ Custom Theme Functions (rae-portfolio)
-WordPress Database (MySQL 8.0)
-```
-
-### Key Components
-
-#### Frontend (`/frontend/`)
-- **App.tsx**: QueryClient provider and router setup with React Query devtools
-- **lib/queryClient.ts**: TanStack Query configuration with caching
-- **services/wordpress.ts**: WordPress API service layer with error handling
-- **hooks/useWordPress.ts**: React Query hooks for all WordPress operations
-- **types/wordpress.ts**: Complete TypeScript definitions for WordPress API
-- **pages/ResumePage.tsx**: Dynamic data loading with fallbacks (working example)
-
-#### WordPress (`/wordpress/`)
-- **wp-content/themes/rae-portfolio/**: Custom headless theme (active)
-- **functions.php**: Custom post types, CORS, REST API enhancements, featured images
-- **Custom Post Types**: `resume`, `software-project`, `media-project` (all registered)
-- **Sample Data**: 3 resume items, ready for projects and media content
-
-#### Docker Environment
-- **WordPress**: Custom container with WP-CLI 2.8.1 for management
-- **MySQL 8.0**: Database with persistent volumes
-- **phpMyAdmin**: Database management interface
-
-### Critical Configuration Notes (Verified)
-- **DaisyUI Version**: MUST use v4.12.10 ✅ (v5.x breaks theme system)
-- **Node.js Version**: Currently v18.16.0, works but recommend 22+ for Vite 7.x
-- **WordPress REST API**: Uses query parameter format `/?rest_route=` ✅ Working
-- **CORS Configuration**: Enabled for localhost:5173 ✅ Working
-- **WP-CLI**: Installed and functional for debugging
-
-## 🐛 Resolved Issues
-
-### ✅ WordPress API Integration (FIXED)
-- **Issue**: Custom post type endpoints returning 500 errors
-- **Root Cause**: ACF (Advanced Custom Fields) function calls without plugin
-- **Solution**: Removed ACF dependencies, kept core functionality
-- **Status**: All endpoints now working and returning JSON data
-
-### ✅ React Query Devtools (FIXED)
-- **Issue**: Missing @tanstack/react-query-devtools package
-- **Solution**: Installed as dev dependency v5.90.2
-- **Status**: Devtools working in development mode
-
-### ✅ WP-CLI Integration (ADDED)
-- **Enhancement**: Added WP-CLI to Docker container for debugging
-- **Implementation**: Custom Dockerfile.wordpress with WP-CLI 2.8.1
-- **Benefit**: Easy WordPress management and troubleshooting
-
-## ⚠️ Known Development Notes
-
-### WordPress API Format
-- **Development**: Uses query parameter format `/?rest_route=/wp/v2/endpoint`
-- **Reason**: Pretty permalinks not configured in Docker environment
-- **Status**: Working as designed, no issues
-
-### Environment Configuration
-- **Node Version**: Currently v18.16.0, works but v22+ recommended
-- **Docker Warning**: Obsolete `version` attribute in docker-compose.yml (harmless)
-- **Missing**: `.env` file (not required for current functionality)
-
-## 📚 Resources
-
-- [TanStack Query Documentation](https://tanstack.com/query/latest)
-- [DaisyUI v4 Documentation](https://v4.daisyui.com/)
-- [WordPress REST API Handbook](https://developer.wordpress.org/rest-api/)
-- [TanStack Router Guide](https://tanstack.com/router/latest)
-- [WP-CLI Documentation](https://wp-cli.org/)
-
-## 🏆 Current Achievements
-
-✅ **Complete Frontend**: Modern React with advanced theming system  
-✅ **Complete Backend**: Working WordPress CMS with custom post types  
-✅ **Full Integration**: End-to-end data flow from WordPress to React  
-✅ **Developer Tools**: Hot reload, query devtools, WP-CLI, error handling  
-✅ **Type Safety**: Complete TypeScript implementation  
-✅ **Production Ready**: Professional UI/UX with graceful degradation  
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly (both frontend and WordPress integration)
-5. Submit a pull request
+Implementation plans (historical, features have shipped):
+- `documentation/google_recaptcha_v3_plan.md`
+- `documentation/verify_captcha_all_pages_and_cache_plan.md`
+- `documentation/social_links_config_plan.md`
+- `documentation/software_projects_build_plan.md`
+- `documentation/media_page_build_plan.md`
+- `documentation/media_page_skills_relationship_build_plan.md`
+- `documentation/resume_item_page_implementation_plan.md`
+- `documentation/skills_item_implementation_plan.md`
+- `documentation/code_cleanup_and_optimization_plan.md`
 
 ## License
 
-Private portfolio project - All rights reserved.
+Private portfolio project — all rights reserved.
