@@ -117,16 +117,6 @@ jobs:
         working-directory: ./infrastructure
         run: pnpm install --frozen-lockfile
 
-      # The stack's BucketDeployment construct references ../frontend/dist as
-      # an asset source. A clean CI checkout has no dist/. The placeholder
-      # just needs to exist for asset staging; content is irrelevant for synth.
-      # TODO: remove once BucketDeployment is dropped from the stack (the
-      # GitHub Actions deploy job handles SPA uploads now).
-      - name: Create frontend dist placeholder
-        run: |
-          mkdir -p frontend/dist
-          echo "<!-- ci placeholder, real bundle is uploaded by the deploy workflow -->" > frontend/dist/index.html
-
       - name: CDK synth
         working-directory: ./infrastructure
         env:
@@ -155,12 +145,6 @@ jobs:
       - name: Install dependencies
         working-directory: ./infrastructure
         run: pnpm install --frozen-lockfile
-
-      # See note in cdk-synth above.
-      - name: Create frontend dist placeholder
-        run: |
-          mkdir -p frontend/dist
-          echo "<!-- ci placeholder, real bundle is uploaded by the deploy workflow -->" > frontend/dist/index.html
 
       - name: Run jest tests
         working-directory: ./infrastructure
