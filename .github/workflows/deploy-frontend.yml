@@ -1,0 +1,94 @@
+name: Deploy Frontend
+
+# Reusable workflow that builds the SPA and uploads it to S3 + invalidates
+# CloudFront for the dev environment. Two trigger modes:
+#
+#   - workflow_call: invoked from release-please.yml after a tag is cut.
+#     Pass the tag as `ref` so the deployed bundle matches the released
+#     version exactly.
+#
+#   - workflow_dispatch: manual trigger from the Actions UI. Use for
+#     incident recovery, hotfix deploys without cutting a release, or to
+#     populate a freshly-provisioned bucket. Defaults to the current main.
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: "Git ref to deploy (tag, branch, or SHA)"
+        required: false
+        type: string
+        default: ""
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to deploy (defaults to current main)"
+        required: false
+        type: string
+        default: ""
+
+jobs:
+  deploy-frontend:
+    name: Deploy frontend to dev
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      id-token: write   # required for OIDC token exchange
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (dev target)
+        working-directory: ./frontend
+        run: pnpm build:dev
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Sync to S3
+        run: |
+          aws s3 sync frontend/dist/ s3://rae-portfolio-dev-233416806179 \
+            --delete \
+            --no-progress
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id EY6SKG56NXSIP \
+            --paths '/*'
+
+      - name: Smoke test
+        run: |
+          echo "Waiting 30s for CloudFront invalidation to start propagating..."
+          sleep 30
+          for attempt in 1 2 3; do
+            if curl -fsS https://dev.rae-dev.com | grep -q '<title>'; then
+              echo "Smoke test passed (attempt $attempt)"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 20s..."
+            sleep 20
+          done
+          echo "Smoke test failed after 3 attempts" >&2
+          exit 1

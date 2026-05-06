@@ -1,6 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
-import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as route53 from 'aws-cdk-lib/aws-route53';
@@ -487,16 +486,6 @@ HEALTHEOF
         ),
       });
     }
-
-    // S3 Deployment for frontend assets (will be added later via CI/CD)
-    // Commented out for initial deployment - will be handled by GitHub Actions
-    new s3deploy.BucketDeployment(this, 'DeployWebsite', {
-      sources: [s3deploy.Source.asset('../frontend/dist')],
-      destinationBucket: websiteBucket,
-      distribution: frontendDistribution,
-      distributionPaths: ['/*'],
-      retainOnDelete: envName === 'prod',
-    });
 
     // GitHub Actions OIDC trust + per-environment deploy role.
     //
