@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.2](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.1.1...v0.1.2) (2026-05-06)
+
+
+### Bug Fixes
+
+* **ci,release:** run CI on push to main + bump minor on feat pre-1.0 ([5dc88d8](https://github.com/rae004/rae-dev-portfolio-2026/commit/5dc88d870713ee3a67702ca9e90ea15365149104))
+* **ci,release:** unblock codecov main-branch coverage and bump-minor-on-feat ([8ef69e5](https://github.com/rae004/rae-dev-portfolio-2026/commit/8ef69e58ab9d29959ab42e496dc84747f9f59de2))
+
 ## [0.1.1](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.1.0...v0.1.1) (2026-05-06)
 
 
