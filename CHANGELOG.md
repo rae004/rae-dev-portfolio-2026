@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.3](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.1.2...v0.1.3) (2026-05-07)
+
+
+### Code Refactoring
+
+* drop BucketDeployment, factor deploy into reusable workflow ([cf3efa7](https://github.com/rae004/rae-dev-portfolio-2026/commit/cf3efa7fa499918a269642f7615ba9af4d021a24))
+* drop BucketDeployment, factor frontend deploy into reusable workflow ([56511cf](https://github.com/rae004/rae-dev-portfolio-2026/commit/56511cf2239cd2b79590f972221fa81f5835ac13))
+
 ## [0.1.2](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.1.1...v0.1.2) (2026-05-06)
 
 
