@@ -83,7 +83,10 @@ jobs:
           echo "Waiting 30s for CloudFront invalidation to start propagating..."
           sleep 30
           for attempt in 1 2 3; do
-            if curl -fsS https://dev.rae-dev.com | grep -q '<title>'; then
+            # Match the actual portfolio title content, not just any <title>
+            # tag — a broken build that emits an empty <title></title> would
+            # otherwise sneak past the gate.
+            if curl -fsS https://dev.rae-dev.com | grep -q '<title>Rae Dev Portfolio</title>'; then
               echo "Smoke test passed (attempt $attempt)"
               exit 0
             fi
