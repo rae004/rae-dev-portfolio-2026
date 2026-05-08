@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.4](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.1.3...v0.1.4) (2026-05-08)
+
+
+### Bug Fixes
+
+* **deploy:** tighten smoke test grep to verify actual portfolio title ([7f3b4d9](https://github.com/rae004/rae-dev-portfolio-2026/commit/7f3b4d97638e42d6ff71a6cb084dadee95af40f2))
+* **deploy:** tighten smoke test grep to verify actual portfolio title ([2ea1b26](https://github.com/rae004/rae-dev-portfolio-2026/commit/2ea1b26f42f050e1fcbda6b68ff96a5ec5b7497f))
+
 ## [0.1.3](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.1.2...v0.1.3) (2026-05-07)
 
 
