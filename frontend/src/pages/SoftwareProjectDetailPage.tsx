@@ -10,6 +10,7 @@ import {
 } from '../utils/softwareProjectUtils'
 import SoftwareProjectCard from '../components/SoftwareProjectCard'
 import SkillsGroup from '../components/SkillsGroup'
+import { decodeHtml } from '../utils/decodeHtml'
 
 const SoftwareProjectDetailPage: React.FC = () => {
   const { projectId } = useParams({ from: '/projects/$projectId' })
@@ -94,7 +95,7 @@ const SoftwareProjectDetailPage: React.FC = () => {
               </Link>
             </li>
             <li>
-              <span className='text-base-content/70'>{softwareProject.title.rendered}</span>
+              <span className='text-base-content/70'>{decodeHtml(softwareProject.title.rendered)}</span>
             </li>
           </ul>
         </nav>
@@ -104,7 +105,7 @@ const SoftwareProjectDetailPage: React.FC = () => {
           <div className='flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-4'>
             <div>
               <h1 className='text-3xl lg:text-4xl font-bold mb-3'>
-                {softwareProject.title.rendered}
+                {decodeHtml(softwareProject.title.rendered)}
               </h1>
               <div className='flex flex-wrap items-center gap-3'>
                 {projectState && (
@@ -212,7 +213,7 @@ const SoftwareProjectDetailPage: React.FC = () => {
                           className='block p-3 rounded-lg border border-base-300 hover:bg-base-200 transition-colors'
                         >
                           <div className='text-sm text-base-content/70'>← Previous</div>
-                          <div className='font-medium'>{previousProject.title.rendered}</div>
+                          <div className='font-medium'>{decodeHtml(previousProject.title.rendered)}</div>
                         </Link>
                       )}
                       {nextProject && (
@@ -222,7 +223,7 @@ const SoftwareProjectDetailPage: React.FC = () => {
                           className='block p-3 rounded-lg border border-base-300 hover:bg-base-200 transition-colors'
                         >
                           <div className='text-sm text-base-content/70'>Next →</div>
-                          <div className='font-medium'>{nextProject.title.rendered}</div>
+                          <div className='font-medium'>{decodeHtml(nextProject.title.rendered)}</div>
                         </Link>
                       )}
                     </div>

@@ -11,6 +11,7 @@ import MediaProjectMetadata from '../components/MediaProjectMetadata'
 import MediaProjectGallery from '../components/MediaProjectGallery'
 import ProjectPagination from '../components/ProjectPagination'
 import SkillsGroup from '../components/SkillsGroup'
+import { decodeHtml } from '../utils/decodeHtml'
 
 const MediaDetailPage: React.FC = () => {
   const { mediaId } = useParams({ from: '/media/$mediaId' })
@@ -147,7 +148,7 @@ const MediaDetailPage: React.FC = () => {
             <Link to='/media'>Media Projects</Link>
           </li>
           <li className='font-semibold'>{getProjectTypeLabel()}</li>
-          <li className='font-semibold'>{mediaProject.title.rendered}</li>
+          <li className='font-semibold'>{decodeHtml(mediaProject.title.rendered)}</li>
         </ul>
       </div>
 
@@ -155,7 +156,7 @@ const MediaDetailPage: React.FC = () => {
       <div className='mb-8'>
         <div className='flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-4'>
           <div>
-            <h1 className='text-4xl font-bold mb-2'>{mediaProject.title.rendered}</h1>
+            <h1 className='text-4xl font-bold mb-2'>{decodeHtml(mediaProject.title.rendered)}</h1>
             <div className='flex items-center gap-2'>
               <div
                 className={`badge ${isMusicProject(mediaProject) ? 'badge-primary' : 'badge-secondary'}`}
@@ -336,7 +337,7 @@ const MediaDetailPage: React.FC = () => {
                           className='block hover:bg-base-200/50 rounded p-2 transition-colors'
                         >
                           <h4 className='font-medium text-sm link link-hover'>
-                            {project.title.rendered}
+                            {decodeHtml(project.title.rendered)}
                           </h4>
                           <p className='text-xs text-base-content/60 mt-1'>
                             {new Date(project.date).toLocaleDateString('en-US', {

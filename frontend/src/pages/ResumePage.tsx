@@ -209,17 +209,21 @@ const ResumePage: React.FC = () => {
 export default ResumePage
 
 function sortResumeItems(a: ResumeItem, b: ResumeItem) {
-  // Items with "Present" end date go first
-  if (a.employment_dates?.end_date === 'Present' && b.employment_dates?.end_date !== 'Present') {
-    return -1
-  }
-  if (b.employment_dates?.end_date === 'Present' && a.employment_dates?.end_date !== 'Present') {
-    return 1
+  const aPresent = a.employment_dates?.end_date === 'Present'
+  const bPresent = b.employment_dates?.end_date === 'Present'
+
+  if (aPresent && !bPresent) return -1
+  if (bPresent && !aPresent) return 1
+
+  // Among current roles, end_date_raw is empty — tie-break by start_date_raw
+  // desc so the most recently started role appears on top.
+  if (aPresent && bPresent) {
+    const aStart = a.employment_dates?.start_date_raw || ''
+    const bStart = b.employment_dates?.start_date_raw || ''
+    return bStart.localeCompare(aStart)
   }
 
-  // If both are "Present" or both are not "Present", sort by end_date_raw desc
   const aEndDate = a.employment_dates?.end_date_raw || ''
   const bEndDate = b.employment_dates?.end_date_raw || ''
-
   return bEndDate.localeCompare(aEndDate)
 }

@@ -8,6 +8,7 @@ import {
   getRemainingSkillsCount,
 } from '../utils/skillMatching'
 import SkillPill from './SkillPill'
+import { decodeHtml } from '../utils/decodeHtml'
 
 interface MediaProjectCardProps {
   project: MediaProject
@@ -157,14 +158,14 @@ const MediaProjectCard: React.FC<MediaProjectCardProps> = ({
           <div className='flex flex-col gap-2'>
             <h3 className={`font-semibold ${isDetailed ? 'text-2xl' : 'text-xl'}`}>
               {isDetailed ? (
-                project.title.rendered
+                decodeHtml(project.title.rendered)
               ) : (
                 <Link
                   to='/media/$mediaId'
                   params={{ mediaId: project.id.toString() }}
                   className='hover:link hover:link-primary'
                 >
-                  {project.title.rendered}
+                  {decodeHtml(project.title.rendered)}
                 </Link>
               )}
             </h3>

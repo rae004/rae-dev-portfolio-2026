@@ -9,6 +9,7 @@ import {
   getDomainFromUrl,
 } from '../utils/softwareProjectUtils'
 import SkillPill from './SkillPill'
+import { decodeHtml } from '../utils/decodeHtml'
 
 interface SoftwareProjectCardProps {
   project: SoftwareProject
@@ -77,7 +78,7 @@ const SoftwareProjectCard: React.FC<SoftwareProjectCardProps> = ({
                   params={{ projectId: project.id.toString() }}
                   className='hover:link hover:link-primary'
                 >
-                  {project.title.rendered}
+                  {decodeHtml(project.title.rendered)}
                 </Link>
               )}
             </h2>

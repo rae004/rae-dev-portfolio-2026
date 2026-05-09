@@ -1,5 +1,6 @@
 import type { ResumeItem } from '../types/wordpress'
 import { Link } from '@tanstack/react-router'
+import { decodeHtml } from '../utils/decodeHtml'
 
 interface ResumeItemPaginationProps {
   nextResume: ResumeItem | null
@@ -25,7 +26,7 @@ const ResumeItemPagination = (props: ResumeItemPaginationProps) => {
                 params={{ resumeId: previousResume.id.toString() }}
                 className='btn btn-outline btn-primary'
               >
-                ← Previous: {previousResume.title.rendered}
+                ← Previous: {decodeHtml(previousResume.title.rendered)}
               </Link>
             )}
           </div>
@@ -41,7 +42,7 @@ const ResumeItemPagination = (props: ResumeItemPaginationProps) => {
                 params={{ resumeId: nextResume.id.toString() }}
                 className='btn btn-outline btn-primary'
               >
-                Next: {nextResume.title.rendered} →
+                Next: {decodeHtml(nextResume.title.rendered)} →
               </Link>
             )}
           </div>
@@ -56,7 +57,7 @@ const ResumeItemPagination = (props: ResumeItemPaginationProps) => {
                 params={{ resumeId: previousResume.id.toString() }}
                 className='btn btn-outline btn-primary'
               >
-                ← Previous: {previousResume.title.rendered}
+                ← Previous: {decodeHtml(previousResume.title.rendered)}
               </Link>
             )}
           </div>
@@ -79,7 +80,7 @@ const ResumeItemPagination = (props: ResumeItemPaginationProps) => {
                 params={{ resumeId: nextResume.id.toString() }}
                 className='btn btn-outline btn-primary'
               >
-                Next: {nextResume.title.rendered} →
+                Next: {decodeHtml(nextResume.title.rendered)} →
               </Link>
             )}
           </div>

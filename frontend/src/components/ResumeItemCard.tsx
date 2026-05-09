@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import type { ResumeItem, SkillItem } from '../types/wordpress'
 import { getResumeSkills, getSkillPreview, getRemainingSkillsCount } from '../utils/skillMatching'
 import SkillPill from './SkillPill'
+import { decodeHtml } from '../utils/decodeHtml'
 
 interface ResumeItemCardProps {
   resumeItem: ResumeItem
@@ -35,14 +36,14 @@ const ResumeItemCard: React.FC<ResumeItemCardProps> = ({
         <div className='flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2'>
           <h3 className={`font-semibold ${isDetailed ? 'text-2xl' : 'text-xl'}`}>
             {isDetailed ? (
-              resumeItem.title.rendered
+              decodeHtml(resumeItem.title.rendered)
             ) : (
               <Link
                 to='/resume/$resumeId'
                 params={{ resumeId: resumeItem.id.toString() }}
                 className='hover:link hover:link-primary'
               >
-                {resumeItem.title.rendered}
+                {decodeHtml(resumeItem.title.rendered)}
               </Link>
             )}
           </h3>

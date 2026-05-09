@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import type { ResumeItem, MediaProject } from '../types/wordpress'
+import { decodeHtml } from '../utils/decodeHtml'
 
 type PaginationItem = ResumeItem | MediaProject
 
@@ -45,7 +46,7 @@ const ProjectPagination = ({
         <div className={paginationClasses}>
           <div>
             <Link {...getItemRoute(previousItem)} className='btn btn-outline btn-primary'>
-              ← Previous: {previousItem.title.rendered}
+              ← Previous: {decodeHtml(previousItem.title.rendered)}
             </Link>
           </div>
 
@@ -55,7 +56,7 @@ const ProjectPagination = ({
 
           <div>
             <Link {...getItemRoute(nextItem)} className='btn btn-outline btn-primary'>
-              Next: {nextItem.title.rendered} →
+              Next: {decodeHtml(nextItem.title.rendered)} →
             </Link>
           </div>
         </div>
@@ -66,7 +67,7 @@ const ProjectPagination = ({
         <div className={paginationClasses}>
           <div>
             <Link {...getItemRoute(previousItem)} className='btn btn-outline btn-primary'>
-              ← Previous: {previousItem.title.rendered}
+              ← Previous: {decodeHtml(previousItem.title.rendered)}
             </Link>
           </div>
 
@@ -85,7 +86,7 @@ const ProjectPagination = ({
 
           <div>
             <Link {...getItemRoute(nextItem)} className='btn btn-outline btn-primary'>
-              Next: {nextItem.title.rendered} →
+              Next: {decodeHtml(nextItem.title.rendered)} →
             </Link>
           </div>
         </div>
