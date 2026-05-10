@@ -25,24 +25,26 @@ import { useQuery } from '@tanstack/react-query'
 import { config } from '../config/environment'
 import {
   fetchReCaptchaConfig,
-  verifyReCaptchaToken,
-  type ReCaptchaExecutionResult,
+  executeReCaptcha,
+  getRecaptchaClientId,
 } from '../utils/recaptcha'
 
 interface UseReCaptchaFormReturn {
   /**
-   * Execute fresh reCAPTCHA verification for contact form
-   * Always generates new token, never uses cache
+   * Generate a fresh reCAPTCHA v3 token for the 'contact_form' action.
+   * The token is single-use; the contact-form Lambda re-verifies it
+   * server-side as part of the email send. Returns null if reCAPTCHA is
+   * unavailable or token generation fails.
    */
-  verify: () => Promise<ReCaptchaExecutionResult>
+  getToken: () => Promise<string | null>
 
   /**
-   * Loading state during verification
+   * Loading state during token generation
    */
   isLoading: boolean
 
   /**
-   * Any error that occurred during verification
+   * Any error that occurred during token generation
    */
   error: string | null
 
@@ -81,81 +83,43 @@ export const useReCaptchaForm = (): UseReCaptchaFormReturn => {
   const isAvailable = !!wpConfig?.enabled && !!wpConfig?.site_keys?.v3 && !!window.grecaptcha
 
   /**
-   * Execute fresh reCAPTCHA verification for contact form
+   * Generate a fresh reCAPTCHA v3 token for the 'contact_form' action.
    *
-   * This function generates a fresh token specifically for the 'contact_form' action
-   * and verifies it with WordPress. It does not use any caching since form submissions
-   * should always have fresh verification.
+   * The token is one-time-use and is verified server-side by the contact
+   * Lambda as part of the email send (not by WordPress). This avoids the
+   * "token already consumed" error that would occur if we verified twice.
    */
-  const verify = useCallback(async (): Promise<ReCaptchaExecutionResult> => {
+  const getToken = useCallback(async (): Promise<string | null> => {
     setIsLoading(true)
     setError(null)
 
     try {
-      // Check if reCAPTCHA is available
-      if (!isAvailable) {
-        throw new Error('reCAPTCHA service not available')
+      if (!isAvailable) throw new Error('reCAPTCHA service not available')
+      if (!window.grecaptcha) throw new Error('reCAPTCHA scripts not loaded')
+
+      // The site-wide ReCaptchaGate renders the widget via `?render=explicit`
+      // mode and stashes its clientId in the shared module. We must call
+      // execute() with that clientId — passing the raw site key only works
+      // in auto-render mode.
+      const clientId = getRecaptchaClientId()
+      if (clientId === null) {
+        throw new Error('reCAPTCHA widget not initialized yet — refresh and retry')
       }
 
-      // Check if Google scripts are loaded
-      if (!window.grecaptcha) {
-        throw new Error('reCAPTCHA scripts not loaded')
-      }
-
-      console.log('[reCAPTCHA Form] Executing fresh contact_form verification')
-
-      // Execute reCAPTCHA v3 for contact form
-      const token = await new Promise<string | null>(resolve => {
-        window.grecaptcha.ready(() => {
-          // Use the site key directly for contact form verification
-          // This is independent of the badge widget created by ReCaptchaGate
-          window.grecaptcha
-            .execute(wpConfig!.site_keys.v3!, { action: 'contact_form' })
-            .then((token: string) => {
-              console.log('[reCAPTCHA Form] Token generated for contact_form')
-              resolve(token)
-            })
-            .catch((error: unknown) => {
-              console.error('[reCAPTCHA Form] Token generation failed:', error)
-              resolve(null)
-            })
-        })
-      })
-
-      if (!token) {
-        throw new Error('Failed to generate reCAPTCHA token')
-      }
-
-      // Verify token with WordPress
-      const result = await verifyReCaptchaToken(token, 'contact_form')
-      console.log('[reCAPTCHA Form] Verification result:', result)
-
-      if (!result.success) {
-        throw new Error(result.message || 'Contact form verification failed')
-      }
-
-      // Return success result
-      return {
-        success: true,
-        token,
-        score: result.score,
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'reCAPTCHA verification failed'
-      console.error('[reCAPTCHA Form] Verification error:', errorMessage)
-      setError(errorMessage)
-
-      return {
-        success: false,
-        error: errorMessage,
-      }
+      const token = await executeReCaptcha(clientId, 'contact_form')
+      if (!token) throw new Error('Failed to generate reCAPTCHA token')
+      return token
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'reCAPTCHA token generation failed'
+      setError(msg)
+      return null
     } finally {
       setIsLoading(false)
     }
-  }, [isAvailable, wpConfig])
+  }, [isAvailable])
 
   return {
-    verify,
+    getToken,
     isLoading: isLoading || isConfigLoading,
     error,
     isAvailable,

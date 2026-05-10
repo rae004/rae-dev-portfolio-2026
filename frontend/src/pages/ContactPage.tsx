@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react'
 import { useForm } from '@tanstack/react-form'
 import SocialLinks from '../components/SocialLinks'
 import { useReCaptchaForm } from '../hooks/useReCaptchaForm'
+import { config } from '../config/environment'
 
 interface ContactFormData {
   name: string
@@ -29,8 +30,7 @@ const ContactPage: React.FC = () => {
   )
   const [showSocialLinks, setShowSocialLinks] = useState(true)
 
-  // reCAPTCHA integration for form submission (always fresh verification)
-  const { verify: verifyReCaptcha } = useReCaptchaForm()
+  const { getToken: getReCaptchaToken } = useReCaptchaForm()
 
   // Memoized callback to prevent infinite loops
   const handleSocialLinksEmpty = useCallback((isEmpty: boolean) => {
@@ -47,43 +47,47 @@ const ContactPage: React.FC = () => {
     onSubmit: async ({ value }) => {
       setSubmitStatus('idle')
 
-      try {
-        // Execute fresh reCAPTCHA verification for form submission
-        const recaptchaResult = await verifyReCaptcha()
+      if (!config.contactApiUrl) {
+        console.error('Contact API URL not configured for environment:', config.name)
+        setSubmitStatus('error')
+        return
+      }
 
-        if (!recaptchaResult.success) {
-          setSubmitStatus('captcha_failed')
-          console.error('reCAPTCHA verification failed:', recaptchaResult.error)
+      // Generate a fresh single-use reCAPTCHA token. The Lambda re-verifies
+      // it server-side as part of the email send.
+      const token = await getReCaptchaToken()
+      if (!token) {
+        setSubmitStatus('captcha_failed')
+        return
+      }
+
+      try {
+        const res = await fetch(config.contactApiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...value, recaptchaToken: token }),
+        })
+
+        if (res.ok) {
+          setSubmitStatus('success')
+          form.reset()
           return
         }
 
-        // Proceed with form submission
-        await submitForm(value)
-      } catch (error) {
-        console.error('Form submission error:', error)
+        // 403 = recaptcha rejected by Lambda; everything else = generic error
+        if (res.status === 403) {
+          setSubmitStatus('captcha_failed')
+        } else {
+          setSubmitStatus('error')
+        }
+        const errBody = await res.json().catch(() => null)
+        console.error('Contact form rejected:', res.status, errBody)
+      } catch (err) {
+        console.error('Contact form network error:', err)
         setSubmitStatus('error')
       }
     },
   })
-
-  /**
-   * Actual form submission logic
-   */
-  const submitForm = async (formData: ContactFormData) => {
-    try {
-      // Simulate form submission (replace with actual API call)
-      await new Promise(resolve => setTimeout(resolve, 2000))
-
-      console.log('Form submitted:', formData)
-      setSubmitStatus('success')
-
-      // Reset form after successful submission
-      form.reset()
-    } catch (error) {
-      console.error('Form submission error:', error)
-      setSubmitStatus('error')
-    }
-  }
 
   return (
     <div className='container mx-auto px-4 py-8'>

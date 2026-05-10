@@ -10,6 +10,10 @@ export type Environment = 'local' | 'development' | 'production'
 export interface EnvironmentConfig {
   name: Environment
   wpApiBase: string
+  // Contact form API Gateway endpoint. Filled in per env after CDK deploy
+  // outputs the URL. Empty string disables form submission with a clear UI
+  // message (useful when running local without a deployed Lambda).
+  contactApiUrl: string
   isDevelopment: boolean
   isProduction: boolean
   isLocal: boolean
@@ -32,6 +36,9 @@ const ENVIRONMENT_CONFIGS: Record<
   local: {
     name: 'local',
     wpApiBase: 'http://localhost:8080',
+    // Local dev points at the deployed dev Lambda (CORS allows
+    // localhost:5173/5174).
+    contactApiUrl: 'https://hk9hc83vc3.execute-api.us-east-1.amazonaws.com/contact',
     recaptcha: {
       enabled: true, // Enabled for local testing
       threshold: 0.1,
@@ -41,6 +48,8 @@ const ENVIRONMENT_CONFIGS: Record<
   development: {
     name: 'development',
     wpApiBase: 'https://api-dev.rae-dev.com',
+    // Source: `ContactApiUrl` from RaePortfolioDev stack outputs.
+    contactApiUrl: 'https://hk9hc83vc3.execute-api.us-east-1.amazonaws.com/contact',
     recaptcha: {
       enabled: true, // Will be dynamically loaded from WordPress
       threshold: 0.1, // Default, will be overridden by WordPress settings
@@ -50,6 +59,8 @@ const ENVIRONMENT_CONFIGS: Record<
   production: {
     name: 'production',
     wpApiBase: 'https://api.rae-dev.com',
+    // Update with `ContactApiUrl` from RaePortfolioProd stack outputs.
+    contactApiUrl: '',
     recaptcha: {
       enabled: true, // Will be dynamically loaded from WordPress
       threshold: 0.1, // Default, will be overridden by WordPress settings

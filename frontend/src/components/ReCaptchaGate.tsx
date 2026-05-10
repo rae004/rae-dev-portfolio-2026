@@ -32,6 +32,7 @@ import {
   removeBadgeElements,
   createBadgeContainer,
   executeReCaptcha,
+  setRecaptchaClientId,
   type ReCaptchaConfig,
   type ThemeType,
 } from '../utils/recaptcha'
@@ -143,6 +144,7 @@ const ReCaptchaGate: React.FC<ReCaptchaGateProps> = ({ children, cacheDuration =
       })
 
       setClientId(newClientId)
+      setRecaptchaClientId(newClientId)
       setIsInitialized(true)
 
       // Start monitoring theme changes
@@ -282,6 +284,7 @@ const ReCaptchaGate: React.FC<ReCaptchaGateProps> = ({ children, cacheDuration =
         })
 
         setClientId(newClientId)
+      setRecaptchaClientId(newClientId)
         console.log('[reCAPTCHA] Badge re-rendered with clientId:', newClientId, 'theme:', newTheme)
       } catch (error) {
         console.error('[reCAPTCHA] Failed to re-render badge with new theme:', error)
