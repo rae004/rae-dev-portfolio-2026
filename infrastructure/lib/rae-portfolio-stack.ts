@@ -9,6 +9,9 @@ import * as lightsail from 'aws-cdk-lib/aws-lightsail';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as cr from 'aws-cdk-lib/custom-resources';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
+import * as apigwv2 from 'aws-cdk-lib/aws-apigatewayv2';
+import * as apigwv2int from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import { Construct } from 'constructs';
 
 export interface RaePortfolioStackProps extends cdk.StackProps {
@@ -531,7 +534,85 @@ HEALTHEOF
       ],
     }));
 
+    // ---------- Contact form: SSM param + Lambda + HTTP API ----------
+
+    // The reCAPTCHA secret + threshold live in WordPress admin (single source
+    // of truth). Lambda delegates verification to WP's /wp/v2/recaptcha/verify
+    // endpoint, so no SSM secret is needed here.
+    const recipientsParam = new ssm.StringListParameter(this, 'ContactRecipients', {
+      parameterName: `/rae-portfolio/${envName}/contact/recipients`,
+      description: 'Comma-separated recipient emails for the contact form. Edit in SSM console to add/remove addresses.',
+      stringListValue: ['rae004dev@gmail.com'],
+    });
+
+    const contactFormFunction = new lambda.Function(this, 'ContactFormFunction', {
+      runtime: lambda.Runtime.NODEJS_22_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset('./lambda/contact-form'),
+      timeout: cdk.Duration.seconds(15),
+      memorySize: 256,
+      // Cap blast radius if reCAPTCHA is somehow bypassed: at most 5
+      // concurrent invocations. Excess requests get 429 from Lambda.
+      reservedConcurrentExecutions: 5,
+      environment: {
+        NODE_OPTIONS: '--enable-source-maps',
+        FROM_ADDRESS: `no-reply@${domainName}`,
+        RECIPIENTS_PARAM: recipientsParam.parameterName,
+        WP_API_BASE: `https://${apiFqdn}`,
+      },
+    });
+
+    recipientsParam.grantRead(contactFormFunction);
+
+    // SES send permissions. In SES sandbox mode, IAM is checked on BOTH the
+    // sender identity AND each recipient identity (Gmail address etc.), so we
+    // scope to `identity/*` within this account. Out of sandbox, only the
+    // sender identity matters and this can be tightened to the domain ARN.
+    contactFormFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ses:SendEmail', 'ses:SendRawEmail'],
+      resources: [`arn:aws:ses:${this.region}:${this.account}:identity/*`],
+    }));
+
+    const contactApi = new apigwv2.HttpApi(this, 'ContactHttpApi', {
+      apiName: `rae-portfolio-contact-${envName}`,
+      description: `Contact form API for the ${envName} portfolio`,
+      corsPreflight: {
+        allowOrigins: [
+          `https://${frontendFqdn}`,
+          'http://localhost:5173',
+          'http://localhost:5174',
+        ],
+        allowMethods: [apigwv2.CorsHttpMethod.POST, apigwv2.CorsHttpMethod.OPTIONS],
+        allowHeaders: ['Content-Type'],
+        maxAge: cdk.Duration.minutes(10),
+      },
+      // Replace auto-default stage with one that has explicit throttling.
+      createDefaultStage: false,
+    });
+
+    contactApi.addRoutes({
+      path: '/contact',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new apigwv2int.HttpLambdaIntegration('ContactIntegration', contactFormFunction),
+    });
+
+    // Stage-level throttling. Nobody legitimately submits faster than this.
+    new apigwv2.HttpStage(this, 'ContactHttpDefaultStage', {
+      httpApi: contactApi,
+      stageName: '$default',
+      autoDeploy: true,
+      throttle: {
+        rateLimit: 5,
+        burstLimit: 10,
+      },
+    });
+
     // Outputs
+    new cdk.CfnOutput(this, 'ContactApiUrl', {
+      value: `${contactApi.apiEndpoint}/contact`,
+      description: 'POST endpoint for the contact form Lambda',
+    });
+
     new cdk.CfnOutput(this, 'WebsiteBucketName', {
       value: websiteBucket.bucketName,
       description: 'S3 bucket name for website hosting',

@@ -162,6 +162,81 @@ describe('RaePortfolioStack (dev with cert)', () => {
     expect(resourceJson).not.toContain('WordPressDistribution');
     expect(invalidationStatements[0].Resource).not.toBe('*');
   });
+
+  test('contact-form: creates only the recipients SSM parameter (recaptcha lives in WP admin)', () => {
+    template.hasResourceProperties('AWS::SSM::Parameter', {
+      Name: '/rae-portfolio/dev/contact/recipients',
+      Type: 'StringList',
+      Value: 'rae004dev@gmail.com',
+    });
+    // No SSM parameter for the reCAPTCHA secret — WP admin is the source of truth.
+    const params = template.findResources('AWS::SSM::Parameter');
+    const names = Object.values(params).map(p => p.Properties.Name);
+    expect(names).not.toContain('/rae-portfolio/dev/contact/recaptcha-secret');
+  });
+
+  test('contact-form: Lambda env vars point at WP for verification + the recipients param', () => {
+    // RECIPIENTS_PARAM resolves to a CFN Ref at synth — assert presence only.
+    template.hasResourceProperties('AWS::Lambda::Function', {
+      Runtime: 'nodejs22.x',
+      Handler: 'index.handler',
+      Environment: Match.objectLike({
+        Variables: Match.objectLike({
+          FROM_ADDRESS: 'no-reply@rae-dev.com',
+          WP_API_BASE: 'https://api-dev.rae-dev.com',
+          RECIPIENTS_PARAM: Match.anyValue(),
+        }),
+      }),
+    });
+  });
+
+  test('contact-form: SES send permission is scoped to identities in this account, not global *', () => {
+    const policies = template.findResources('AWS::IAM::Policy');
+    const sesStatements = Object.values(policies).flatMap(p => {
+      const stmts = p.Properties.PolicyDocument.Statement as Array<{ Action: string | string[]; Resource: unknown }>;
+      return stmts.filter(s => {
+        const actions = Array.isArray(s.Action) ? s.Action : [s.Action];
+        return actions.includes('ses:SendEmail');
+      });
+    });
+
+    expect(sesStatements.length).toBeGreaterThan(0);
+    const resourceJson = JSON.stringify(sesStatements[0].Resource);
+    // Scoped to our account's identities — sandbox mode requires permission
+    // on both sender AND recipient identities; out of sandbox can tighten.
+    expect(resourceJson).toContain('233416806179:identity/');
+    expect(sesStatements[0].Resource).not.toBe('*');
+  });
+
+  test('contact-form: HTTP API exposes a POST /contact route with CORS for the dev domain', () => {
+    template.hasResourceProperties('AWS::ApiGatewayV2::Api', {
+      ProtocolType: 'HTTP',
+      CorsConfiguration: Match.objectLike({
+        AllowMethods: Match.arrayWith(['POST']),
+        AllowOrigins: Match.arrayWith(['https://dev.rae-dev.com']),
+      }),
+    });
+    template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
+      RouteKey: 'POST /contact',
+    });
+  });
+
+  test('contact-form: Lambda has reserved concurrency cap to bound abuse cost', () => {
+    template.hasResourceProperties('AWS::Lambda::Function', {
+      Handler: 'index.handler',
+      ReservedConcurrentExecutions: 5,
+    });
+  });
+
+  test('contact-form: API stage has per-route throttling', () => {
+    template.hasResourceProperties('AWS::ApiGatewayV2::Stage', {
+      StageName: '$default',
+      DefaultRouteSettings: Match.objectLike({
+        ThrottlingRateLimit: 5,
+        ThrottlingBurstLimit: 10,
+      }),
+    });
+  });
 });
 
 describe('RaePortfolioStack (no cert)', () => {
