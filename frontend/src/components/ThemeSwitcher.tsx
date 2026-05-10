@@ -1,83 +1,75 @@
-import React, { useState, useEffect } from 'react'
-import { checkThemeSupport, logThemeDebugInfo } from '../utils/themeDebug'
+import React, { useEffect, useState } from 'react'
 
-const themes = [
-  'light',
-  'dark',
-  'cupcake',
-  'bumblebee',
-  'emerald',
-  'corporate',
-  'synthwave',
-  'retro',
-  'cyberpunk',
-  'valentine',
-  'halloween',
-  'garden',
-  'forest',
-  'aqua',
-  'lofi',
-  'pastel',
-  'fantasy',
-  'wireframe',
-  'black',
-  'luxury',
-  'dracula',
-  'cmyk',
-  'autumn',
-  'business',
-  'acid',
-  'lemonade',
-  'night',
-  'coffee',
-  'winter',
+type ThemeOption = { id: string; label: string }
+
+// Keep in sync with tailwind.config.js daisyui.themes and the inline
+// FOUC-prevention script in index.html.
+const themeGroups: { category: string; themes: ThemeOption[] }[] = [
+  {
+    category: 'Dark',
+    themes: [
+      { id: 'black', label: 'Black' },
+      { id: 'halloween', label: 'Halloween' },
+      { id: 'forest', label: 'Forest' },
+      { id: 'dracula', label: 'Dracula' },
+      { id: 'coffee', label: 'Coffee' },
+    ],
+  },
+  {
+    category: 'Color',
+    themes: [
+      { id: 'synthwave', label: 'Synthwave' },
+      { id: 'aqua', label: 'Aqua' },
+      { id: 'cyberpunk', label: 'Cyberpunk' },
+      { id: 'retro', label: 'Retro' },
+    ],
+  },
+  {
+    category: 'Light',
+    themes: [
+      { id: 'cmyk', label: 'CMYK' },
+      { id: 'acid', label: 'Acid' },
+      { id: 'bumblebee', label: 'Bumblebee' },
+      { id: 'corporate', label: 'Corporate' },
+      { id: 'lofi', label: 'LoFi' },
+    ],
+  },
 ]
 
-const ThemeSwitcher: React.FC = () => {
-  let defaultTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'black' : 'retro'
-  if (localStorage.getItem('theme')) {
-    defaultTheme = localStorage.getItem('theme') || defaultTheme
-  }
+const allThemeIds = themeGroups.flatMap(g => g.themes.map(t => t.id))
 
-  const [currentTheme, setCurrentTheme] = useState(defaultTheme)
-  const [isLoading, setIsLoading] = useState(true)
-  const [supportedThemes, setSupportedThemes] = useState<string[]>([])
+function getDefaultTheme(): string {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'black' : 'corporate'
+}
+
+function getInitialTheme(): string {
+  const saved = localStorage.getItem('theme')
+  if (saved && allThemeIds.includes(saved)) {
+    return saved
+  }
+  return getDefaultTheme()
+}
+
+const ThemeSwitcher: React.FC = () => {
+  const [currentTheme, setCurrentTheme] = useState(getInitialTheme)
 
   useEffect(() => {
-    let savedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'black' : 'retro'
-    if (localStorage.getItem('theme')) {
-      savedTheme = localStorage.getItem('theme') || savedTheme
+    // Migrate stale localStorage values from the pre-curation theme list.
+    const saved = localStorage.getItem('theme')
+    if (saved && !allThemeIds.includes(saved)) {
+      const fallback = getDefaultTheme()
+      localStorage.setItem('theme', fallback)
+      setCurrentTheme(fallback)
+      document.documentElement.setAttribute('data-theme', fallback)
     }
-    setCurrentTheme(savedTheme)
-
-    // Check which themes are actually supported (have CSS variables)
-    const availableThemes = themes.filter(theme => checkThemeSupport(theme))
-    setSupportedThemes(availableThemes)
-
-    // Log debug info in development
-    if (import.meta.env.DEV) {
-      logThemeDebugInfo(themes)
-    }
-
-    setIsLoading(false)
   }, [])
 
   const handleThemeChange = (theme: string) => {
     setCurrentTheme(theme)
     localStorage.setItem('theme', theme)
-
-    // Apply theme with a small delay to ensure smooth transition
     requestAnimationFrame(() => {
       document.documentElement.setAttribute('data-theme', theme)
     })
-  }
-
-  if (isLoading) {
-    return (
-      <div className='btn btn-ghost loading'>
-        <span className='loading loading-spinner loading-sm'></span>
-      </div>
-    )
   }
 
   return (
@@ -99,52 +91,34 @@ const ThemeSwitcher: React.FC = () => {
         </svg>
         <span className='hidden sm:inline'>Theme</span>
       </div>
-      <ul
+      <div
         tabIndex={0}
-        className='dropdown-content z-[1] menu p-2 shadow-2xl bg-base-300 rounded-box w-56 max-h-96 overflow-y-auto'
+        className='dropdown-content z-[1] p-3 shadow-2xl bg-base-300 rounded-box w-max max-w-[calc(100vw-2rem)] max-h-96 overflow-y-auto'
       >
-        <li className='menu-title'>
-          <span>Choose Theme</span>
-        </li>
-        {(supportedThemes.length > 0 ? supportedThemes : themes).map(theme => {
-          const isActive = currentTheme === theme
-          const isSupported = supportedThemes.includes(theme)
-
-          return (
-            <li key={theme}>
-              <button
-                className={`flex items-center gap-3 ${isActive ? 'active font-semibold' : ''} ${!isSupported ? 'opacity-50' : ''}`}
-                onClick={() => handleThemeChange(theme)}
-                aria-label={`Switch to ${theme} theme${!isSupported ? ' (may not be fully supported)' : ''}`}
-                disabled={!isSupported && supportedThemes.length > 0}
-              >
-                <span className='capitalize flex-1 text-left'>{theme}</span>
-                <div className='flex items-center gap-1'>
-                  {!isSupported && supportedThemes.length > 0 && (
-                    <span className='text-xs opacity-60'>⚠️</span>
-                  )}
-                  {isActive && (
-                    <svg
-                      xmlns='http://www.w3.org/2000/svg'
-                      className='h-4 w-4'
-                      fill='none'
-                      viewBox='0 0 24 24'
-                      stroke='currentColor'
+        <div className='grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 items-center'>
+          {themeGroups.map(group => (
+            <React.Fragment key={group.category}>
+              <span className='font-semibold text-sm'>{group.category}:</span>
+              <div className='flex flex-wrap gap-1'>
+                {group.themes.map(theme => {
+                  const isActive = currentTheme === theme.id
+                  return (
+                    <button
+                      key={theme.id}
+                      onClick={() => handleThemeChange(theme.id)}
+                      className={`btn btn-xs ${isActive ? 'btn-primary' : 'btn-ghost'}`}
+                      aria-label={`Switch to ${theme.label} theme`}
+                      aria-pressed={isActive}
                     >
-                      <path
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                        strokeWidth='2'
-                        d='M5 13l4 4L19 7'
-                      />
-                    </svg>
-                  )}
-                </div>
-              </button>
-            </li>
-          )
-        })}
-      </ul>
+                      {theme.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

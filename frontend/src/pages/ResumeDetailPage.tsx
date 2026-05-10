@@ -8,6 +8,7 @@ import {
 } from '../utils/skillMatching'
 import SkillsGroup from '../components/SkillsGroup'
 import ProjectPagination from '../components/ProjectPagination'
+import { decodeHtml } from '../utils/decodeHtml'
 
 const ResumeDetailPage: React.FC = () => {
   const { resumeId } = useParams({ from: '/resume/$resumeId' })
@@ -73,14 +74,14 @@ const ResumeDetailPage: React.FC = () => {
           <li>
             <Link to='/resume'>Resume</Link>
           </li>
-          <li className='font-semibold'>{resumeItem.title.rendered}</li>
+          <li className='font-semibold'>{decodeHtml(resumeItem.title.rendered)}</li>
         </ul>
       </div>
 
       {/* Resume Item Detail Card */}
       <div className='card bg-base-100 shadow-xl mb-8'>
         <div className='card-body'>
-          <h1 className='card-title text-3xl mb-4'>{resumeItem.title.rendered}</h1>
+          <h1 className='card-title text-3xl mb-4'>{decodeHtml(resumeItem.title.rendered)}</h1>
 
           {/* Employment Dates */}
           {resumeItem.employment_dates?.formatted_range && (

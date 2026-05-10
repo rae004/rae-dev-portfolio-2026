@@ -1,9 +1,9 @@
 import React from 'react'
 import { useResumeItems, useSkills } from '../hooks/useWordPress'
 import { groupSkillsByCategory, sortSkillsInCategories } from '../utils/skillMatching'
+import { sortResumeItems } from '../utils/resumeSorting'
 import SkillsGroup from '../components/SkillsGroup'
 import ResumeItemCard from '../components/ResumeItemCard'
-import type { ResumeItem } from '../types/wordpress.ts'
 
 const ResumePage: React.FC = () => {
   const {
@@ -207,19 +207,3 @@ const ResumePage: React.FC = () => {
 }
 
 export default ResumePage
-
-function sortResumeItems(a: ResumeItem, b: ResumeItem) {
-  // Items with "Present" end date go first
-  if (a.employment_dates?.end_date === 'Present' && b.employment_dates?.end_date !== 'Present') {
-    return -1
-  }
-  if (b.employment_dates?.end_date === 'Present' && a.employment_dates?.end_date !== 'Present') {
-    return 1
-  }
-
-  // If both are "Present" or both are not "Present", sort by end_date_raw desc
-  const aEndDate = a.employment_dates?.end_date_raw || ''
-  const bEndDate = b.employment_dates?.end_date_raw || ''
-
-  return bEndDate.localeCompare(aEndDate)
-}

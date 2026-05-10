@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from '@tanstack/react-router'
 import { useBlogPosts, useSoftwareProjects, useMediaProjects } from '../hooks/useWordPress'
+import { decodeHtml } from '../utils/decodeHtml'
 
 const HomePage: React.FC = () => {
   // Get recent blog posts for featured content
@@ -95,7 +96,7 @@ const HomePage: React.FC = () => {
                   {recentPosts.slice(0, 3).map((post, index) => (
                     <div key={post.id || index} className='card bg-base-200 shadow-lg'>
                       <div className='card-body'>
-                        <h3 className='card-title text-lg'>{post.title.rendered}</h3>
+                        <h3 className='card-title text-lg'>{decodeHtml(post.title.rendered)}</h3>
                         <p className='text-sm text-base-content/70'>
                           {post.excerpt.rendered
                             ? post.excerpt.rendered.replace(/<[^>]*>/g, '').substring(0, 100) +
@@ -144,7 +145,9 @@ const HomePage: React.FC = () => {
                         {softwareProjects.slice(0, 2).map((project, index) => (
                           <div key={project.id || index} className='card bg-base-100 shadow-lg'>
                             <div className='card-body'>
-                              <h4 className='card-title text-lg'>{project.title.rendered}</h4>
+                              <h4 className='card-title text-lg'>
+                                {decodeHtml(project.title.rendered)}
+                              </h4>
                               <p className='text-sm text-base-content/70'>
                                 {project.excerpt.rendered
                                   ? project.excerpt.rendered
@@ -177,7 +180,9 @@ const HomePage: React.FC = () => {
                         {mediaProjects.slice(0, 2).map((project, index) => (
                           <div key={project.id || index} className='card bg-base-100 shadow-lg'>
                             <div className='card-body'>
-                              <h4 className='card-title text-lg'>{project.title.rendered}</h4>
+                              <h4 className='card-title text-lg'>
+                                {decodeHtml(project.title.rendered)}
+                              </h4>
                               <p className='text-sm text-base-content/70'>
                                 {project.excerpt.rendered
                                   ? project.excerpt.rendered

@@ -1,6 +1,7 @@
 import React from 'react'
 import { useBlogPosts } from '../hooks/useWordPress'
 import type { WordPressPost } from '../types/wordpress'
+import { decodeHtml } from '../utils/decodeHtml'
 
 const BlogPage: React.FC = () => {
   const {
@@ -51,7 +52,7 @@ const BlogPage: React.FC = () => {
     const tagsMatch = content.match(/Tags?:?\s*([^.]+)/i)
 
     return {
-      title: wp.title.rendered,
+      title: decodeHtml(wp.title.rendered),
       excerpt: wp.excerpt.rendered
         ? wp.excerpt.rendered.replace(/<[^>]*>/g, '').trim()
         : content.substring(0, 200) + '...',
