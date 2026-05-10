@@ -95,7 +95,9 @@ const SoftwareProjectDetailPage: React.FC = () => {
               </Link>
             </li>
             <li>
-              <span className='text-base-content/70'>{decodeHtml(softwareProject.title.rendered)}</span>
+              <span className='text-base-content/70'>
+                {decodeHtml(softwareProject.title.rendered)}
+              </span>
             </li>
           </ul>
         </nav>
@@ -213,7 +215,9 @@ const SoftwareProjectDetailPage: React.FC = () => {
                           className='block p-3 rounded-lg border border-base-300 hover:bg-base-200 transition-colors'
                         >
                           <div className='text-sm text-base-content/70'>← Previous</div>
-                          <div className='font-medium'>{decodeHtml(previousProject.title.rendered)}</div>
+                          <div className='font-medium'>
+                            {decodeHtml(previousProject.title.rendered)}
+                          </div>
                         </Link>
                       )}
                       {nextProject && (
@@ -223,7 +227,9 @@ const SoftwareProjectDetailPage: React.FC = () => {
                           className='block p-3 rounded-lg border border-base-300 hover:bg-base-200 transition-colors'
                         >
                           <div className='text-sm text-base-content/70'>Next →</div>
-                          <div className='font-medium'>{decodeHtml(nextProject.title.rendered)}</div>
+                          <div className='font-medium'>
+                            {decodeHtml(nextProject.title.rendered)}
+                          </div>
                         </Link>
                       )}
                     </div>

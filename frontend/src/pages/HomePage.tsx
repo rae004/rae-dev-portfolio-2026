@@ -145,7 +145,9 @@ const HomePage: React.FC = () => {
                         {softwareProjects.slice(0, 2).map((project, index) => (
                           <div key={project.id || index} className='card bg-base-100 shadow-lg'>
                             <div className='card-body'>
-                              <h4 className='card-title text-lg'>{decodeHtml(project.title.rendered)}</h4>
+                              <h4 className='card-title text-lg'>
+                                {decodeHtml(project.title.rendered)}
+                              </h4>
                               <p className='text-sm text-base-content/70'>
                                 {project.excerpt.rendered
                                   ? project.excerpt.rendered
@@ -178,7 +180,9 @@ const HomePage: React.FC = () => {
                         {mediaProjects.slice(0, 2).map((project, index) => (
                           <div key={project.id || index} className='card bg-base-100 shadow-lg'>
                             <div className='card-body'>
-                              <h4 className='card-title text-lg'>{decodeHtml(project.title.rendered)}</h4>
+                              <h4 className='card-title text-lg'>
+                                {decodeHtml(project.title.rendered)}
+                              </h4>
                               <p className='text-sm text-base-content/70'>
                                 {project.excerpt.rendered
                                   ? project.excerpt.rendered
