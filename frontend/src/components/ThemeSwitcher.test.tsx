@@ -81,7 +81,7 @@ describe('ThemeSwitcher', () => {
     mockMatchMedia(false)
     render(<ThemeSwitcher />)
     expect(screen.getByRole('button', { name: 'Switch to Corporate theme' })).toHaveClass(
-      'btn-primary',
+      'btn-primary'
     )
   })
 

@@ -2,11 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { sortResumeItems } from './resumeSorting'
 import type { ResumeItem, EmploymentDates } from '../types/wordpress'
 
-const makeItem = (
-  id: number,
-  title: string,
-  dates: Partial<EmploymentDates>,
-): ResumeItem =>
+const makeItem = (id: number, title: string, dates: Partial<EmploymentDates>): ResumeItem =>
   ({
     id,
     title: { rendered: title },

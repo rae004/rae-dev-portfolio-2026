@@ -22,7 +22,7 @@ describe('decodeHtml', () => {
   })
 
   it('decodes the curly apostrophe (&#8217;)', () => {
-    expect(decodeHtml("Ain&#8217;t Nobody Worryin&#8217;")).toBe('Ain’t Nobody Worryin’')
+    expect(decodeHtml('Ain&#8217;t Nobody Worryin&#8217;')).toBe('Ain’t Nobody Worryin’')
   })
 
   it('passes through plain text unchanged', () => {
@@ -31,7 +31,7 @@ describe('decodeHtml', () => {
 
   it('handles strings with multiple distinct entities', () => {
     expect(decodeHtml('Mutual of Omaha &#038; Co. &#8211; Engineer')).toBe(
-      'Mutual of Omaha & Co. – Engineer',
+      'Mutual of Omaha & Co. – Engineer'
     )
   })
 })
