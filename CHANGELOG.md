@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.3.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.2.0...v0.3.0) (2026-05-10)
+
+
+### Features
+
+* **contact:** add SES-backed contact-form Lambda + HTTP API ([7df699a](https://github.com/rae004/rae-dev-portfolio-2026/commit/7df699a0cd619cbedbdd3aa687a72dcc7cffe33a))
+* **contact:** wire ContactPage to Lambda and share reCAPTCHA clientId ([6590f33](https://github.com/rae004/rae-dev-portfolio-2026/commit/6590f33c8914029842f445102c6c54e528ce8580))
+
+
+### Documentation
+
+* **contact:** document baked-in ContactApiUrl + bucket-empty footgun ([4f9e9aa](https://github.com/rae004/rae-dev-portfolio-2026/commit/4f9e9aab103ec4d1cdef4c64ad7a665d482b9bd9))
+
+
+### Tests
+
+* **contact:** cover ContactPage submit flow + hook + clientId cache ([5d77f6e](https://github.com/rae004/rae-dev-portfolio-2026/commit/5d77f6e35aa903163f5a6c1062643fd9ec788ad0))
+
 ## [0.2.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.1.4...v0.2.0) (2026-05-10)
 
 
