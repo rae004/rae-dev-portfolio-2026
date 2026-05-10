@@ -138,6 +138,57 @@ aws lightsail attach-static-ip \
   --profile rae_dev
 ```
 
+## Post-deploy dependencies
+
+### Contact-form API URL is baked into the frontend bundle
+
+The contact-form Lambda is fronted by API Gateway HTTP API v2, which gets an
+**auto-generated URL** (e.g. `https://hk9hc83vc3.execute-api.us-east-1.amazonaws.com`).
+That URL is hardcoded into `frontend/src/config/environment.ts` so the SPA can
+POST to it at build time.
+
+The URL is **stable as long as the `ContactHttpApi` CDK construct is not
+recreated**. It will change if you:
+
+- Rename the construct ID (`'ContactHttpApi'`)
+- Destroy + redeploy the stack
+- Replace the construct in a way that forces CFN to recreate it
+
+After every `cdk deploy RaePortfolioDev` (or whenever you suspect the URL
+changed), re-check the stack output:
+
+```bash
+aws cloudformation describe-stacks \
+  --stack-name RaePortfolioDev \
+  --query "Stacks[0].Outputs[?OutputKey=='ContactApiUrl'].OutputValue" \
+  --output text
+```
+
+If it differs from the value in `frontend/src/config/environment.ts`
+(`contactApiUrl` for both `local` and `development`), update both entries and
+ship a frontend rebuild. The contact form will silently fail on dev (returns
+"Service misconfigured" or a network error) until the URL matches.
+
+Long-term polish: attach a stable custom domain (e.g.
+`contact-dev.rae-dev.com`) to the API Gateway via CDK so the URL never
+changes regardless of construct lifecycle.
+
+### S3 frontend bucket is repopulated by GitHub Actions, not CDK
+
+The CDK stack no longer ships frontend assets — that's the
+`deploy-frontend.yml` workflow's job, triggered by release tags. If a CDK
+operation ever empties the bucket (notably: removing a legacy
+`BucketDeployment` construct triggers its delete-hook), you must repopulate
+manually:
+
+```bash
+cd frontend && pnpm build:dev
+aws s3 sync dist/ s3://rae-portfolio-dev-${ACCOUNT}/ --delete
+aws cloudfront create-invalidation --distribution-id <id> --paths '/*'
+```
+
+…or trigger the **Deploy Frontend** workflow manually from the Actions tab.
+
 ## Cleanup
 
 To destroy the stack:

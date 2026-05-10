@@ -283,4 +283,20 @@ export const executeReCaptcha = async (
   })
 }
 
+/**
+ * Shared clientId from ReCaptchaGate's explicit render. Other parts of the app
+ * (e.g. useReCaptchaForm) need this clientId to call grecaptcha.execute() —
+ * passing the site key directly only works in auto-render mode, which we
+ * don't use. ReCaptchaGate is responsible for keeping this in sync.
+ */
+let recaptchaClientId: number | null = null
+
+export const setRecaptchaClientId = (id: number | null): void => {
+  recaptchaClientId = id
+}
+
+export const getRecaptchaClientId = (): number | null => {
+  return recaptchaClientId
+}
+
 export { type ThemeType, type BadgePosition }

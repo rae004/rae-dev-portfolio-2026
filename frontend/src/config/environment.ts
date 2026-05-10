@@ -10,6 +10,10 @@ export type Environment = 'local' | 'development' | 'production'
 export interface EnvironmentConfig {
   name: Environment
   wpApiBase: string
+  // Contact form API Gateway endpoint. Filled in per env after CDK deploy
+  // outputs the URL. Empty string disables form submission with a clear UI
+  // message (useful when running local without a deployed Lambda).
+  contactApiUrl: string
   isDevelopment: boolean
   isProduction: boolean
   isLocal: boolean
@@ -29,9 +33,23 @@ const ENVIRONMENT_CONFIGS: Record<
   Environment,
   Omit<EnvironmentConfig, 'isDevelopment' | 'isProduction' | 'isLocal'>
 > = {
+  // NOTE on `contactApiUrl`: this is the API Gateway HTTP API URL output
+  // by the `RaePortfolioDev` CDK stack (`ContactApiUrl` output). The URL
+  // is stable as long as the `ContactHttpApi` construct is not recreated
+  // (rename, destroy+redeploy, or other CFN replacement). After every
+  // `cdk deploy`, verify it still matches with:
+  //   aws cloudformation describe-stacks --stack-name RaePortfolioDev \
+  //     --query "Stacks[0].Outputs[?OutputKey=='ContactApiUrl'].OutputValue" \
+  //     --output text
+  // If it changed, update BOTH `local` and `development` entries and ship a
+  // frontend rebuild. See infrastructure/DEPLOYMENT.md for full context.
+
   local: {
     name: 'local',
     wpApiBase: 'http://localhost:8080',
+    // Local dev points at the deployed dev Lambda (CORS allows
+    // localhost:5173/5174).
+    contactApiUrl: 'https://hk9hc83vc3.execute-api.us-east-1.amazonaws.com/contact',
     recaptcha: {
       enabled: true, // Enabled for local testing
       threshold: 0.1,
@@ -41,6 +59,7 @@ const ENVIRONMENT_CONFIGS: Record<
   development: {
     name: 'development',
     wpApiBase: 'https://api-dev.rae-dev.com',
+    contactApiUrl: 'https://hk9hc83vc3.execute-api.us-east-1.amazonaws.com/contact',
     recaptcha: {
       enabled: true, // Will be dynamically loaded from WordPress
       threshold: 0.1, // Default, will be overridden by WordPress settings
@@ -50,6 +69,8 @@ const ENVIRONMENT_CONFIGS: Record<
   production: {
     name: 'production',
     wpApiBase: 'https://api.rae-dev.com',
+    // Update with `ContactApiUrl` from RaePortfolioProd stack outputs.
+    contactApiUrl: '',
     recaptcha: {
       enabled: true, // Will be dynamically loaded from WordPress
       threshold: 0.1, // Default, will be overridden by WordPress settings
