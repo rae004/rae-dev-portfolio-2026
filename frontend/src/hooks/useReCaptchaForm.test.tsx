@@ -16,11 +16,7 @@ vi.mock('../config/environment', () => ({
 }))
 
 import { useReCaptchaForm } from './useReCaptchaForm'
-import {
-  fetchReCaptchaConfig,
-  executeReCaptcha,
-  getRecaptchaClientId,
-} from '../utils/recaptcha'
+import { fetchReCaptchaConfig, executeReCaptcha, getRecaptchaClientId } from '../utils/recaptcha'
 
 const wrapper = ({ children }: { children: ReactNode }) => {
   const qc = new QueryClient({

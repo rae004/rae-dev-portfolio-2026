@@ -63,7 +63,7 @@ describe('ContactPage submit flow', () => {
   it('posts to the contact API and shows success when the Lambda returns 200', async () => {
     getTokenMock.mockResolvedValue('valid-token')
     vi.mocked(globalThis.fetch).mockResolvedValue(
-      new Response(JSON.stringify({ success: true }), { status: 200 }),
+      new Response(JSON.stringify({ success: true }), { status: 200 })
     )
 
     render(<ContactPage />)
@@ -78,7 +78,7 @@ describe('ContactPage submit flow', () => {
       expect.objectContaining({
         method: 'POST',
         body: expect.stringContaining('"recaptchaToken":"valid-token"'),
-      }),
+      })
     )
   })
 
@@ -97,7 +97,7 @@ describe('ContactPage submit flow', () => {
   it('shows captcha_failed when the Lambda returns 403', async () => {
     getTokenMock.mockResolvedValue('valid-token')
     vi.mocked(globalThis.fetch).mockResolvedValue(
-      new Response(JSON.stringify({ error: 'reCAPTCHA verification failed' }), { status: 403 }),
+      new Response(JSON.stringify({ error: 'reCAPTCHA verification failed' }), { status: 403 })
     )
 
     render(<ContactPage />)
@@ -111,7 +111,7 @@ describe('ContactPage submit flow', () => {
   it('shows generic error when the Lambda returns 5xx', async () => {
     getTokenMock.mockResolvedValue('valid-token')
     vi.mocked(globalThis.fetch).mockResolvedValue(
-      new Response(JSON.stringify({ error: 'Internal error' }), { status: 500 }),
+      new Response(JSON.stringify({ error: 'Internal error' }), { status: 500 })
     )
 
     render(<ContactPage />)
