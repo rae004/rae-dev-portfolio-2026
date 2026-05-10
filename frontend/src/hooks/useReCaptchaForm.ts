@@ -23,11 +23,7 @@
 import { useState, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { config } from '../config/environment'
-import {
-  fetchReCaptchaConfig,
-  executeReCaptcha,
-  getRecaptchaClientId,
-} from '../utils/recaptcha'
+import { fetchReCaptchaConfig, executeReCaptcha, getRecaptchaClientId } from '../utils/recaptcha'
 
 interface UseReCaptchaFormReturn {
   /**
