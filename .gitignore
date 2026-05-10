@@ -43,12 +43,14 @@ logs
 
 # WordPress - ignore everything
 /wordpress/*
-# But include just our custom theme path
+# But include our custom theme path
 !/wordpress/wp-content/
 /wordpress/wp-content/*
 !/wordpress/wp-content/themes/
 /wordpress/wp-content/themes/*
 !/wordpress/wp-content/themes/rae-portfolio/
+# And the project scripts (content seeder, etc.)
+!/wordpress/scripts/
 
 # Docker
 docker-compose.override.yml
