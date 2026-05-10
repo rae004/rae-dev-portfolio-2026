@@ -33,6 +33,17 @@ const ENVIRONMENT_CONFIGS: Record<
   Environment,
   Omit<EnvironmentConfig, 'isDevelopment' | 'isProduction' | 'isLocal'>
 > = {
+  // NOTE on `contactApiUrl`: this is the API Gateway HTTP API URL output
+  // by the `RaePortfolioDev` CDK stack (`ContactApiUrl` output). The URL
+  // is stable as long as the `ContactHttpApi` construct is not recreated
+  // (rename, destroy+redeploy, or other CFN replacement). After every
+  // `cdk deploy`, verify it still matches with:
+  //   aws cloudformation describe-stacks --stack-name RaePortfolioDev \
+  //     --query "Stacks[0].Outputs[?OutputKey=='ContactApiUrl'].OutputValue" \
+  //     --output text
+  // If it changed, update BOTH `local` and `development` entries and ship a
+  // frontend rebuild. See infrastructure/DEPLOYMENT.md for full context.
+
   local: {
     name: 'local',
     wpApiBase: 'http://localhost:8080',
@@ -48,7 +59,6 @@ const ENVIRONMENT_CONFIGS: Record<
   development: {
     name: 'development',
     wpApiBase: 'https://api-dev.rae-dev.com',
-    // Source: `ContactApiUrl` from RaePortfolioDev stack outputs.
     contactApiUrl: 'https://hk9hc83vc3.execute-api.us-east-1.amazonaws.com/contact',
     recaptcha: {
       enabled: true, // Will be dynamically loaded from WordPress
