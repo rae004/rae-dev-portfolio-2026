@@ -7,36 +7,27 @@ module.exports = {
   plugins: [require('@tailwindcss/typography'), require('daisyui')],
   daisyui: {
     darkTheme: 'black',
+    // Curated theme list. Grouped (Dark / Color / Light) in ThemeSwitcher.
+    // Keep these in sync with ThemeSwitcher.tsx and the inline FOUC-prevention
+    // script in index.html.
     themes: [
-      'light',
-      'dark',
-      'cupcake',
-      'bumblebee',
-      'emerald',
+      // Light (first one is DaisyUI's no-preference default)
       'corporate',
-      'synthwave',
-      'retro',
-      'cyberpunk',
-      'valentine',
-      'halloween',
-      'garden',
-      'forest',
-      'aqua',
-      'lofi',
-      'pastel',
-      'fantasy',
-      'wireframe',
-      'black',
-      'luxury',
-      'dracula',
       'cmyk',
-      'autumn',
-      'business',
       'acid',
-      'lemonade',
-      'night',
+      'bumblebee',
+      'lofi',
+      // Color
+      'synthwave',
+      'aqua',
+      'cyberpunk',
+      'retro',
+      // Dark
+      'black',
+      'halloween',
+      'forest',
+      'dracula',
       'coffee',
-      'winter',
     ],
   },
 }

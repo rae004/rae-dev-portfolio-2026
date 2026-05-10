@@ -6,17 +6,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Rae Dev Portfolio</title>
     <script>
-      // Initialize theme immediately to prevent flash of unstyled content
+      // Initialize theme immediately to prevent flash of unstyled content.
+      // Keep the valid-theme list in sync with ThemeSwitcher.tsx and
+      // tailwind.config.js's daisyui.themes array.
       ;(function () {
-        let savedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
+        var validThemes = [
+          'corporate', 'cmyk', 'acid', 'bumblebee', 'lofi',
+          'synthwave', 'aqua', 'cyberpunk', 'retro',
+          'black', 'halloween', 'forest', 'dracula', 'coffee',
+        ]
+        var preferred = window.matchMedia('(prefers-color-scheme: dark)').matches
           ? 'black'
-          : 'retro'
-
-        if (localStorage.getItem('theme')) {
-          savedTheme = localStorage.getItem('theme')
-        }
-
-        document.documentElement.setAttribute('data-theme', savedTheme)
+          : 'corporate'
+        var saved = localStorage.getItem('theme')
+        var theme = saved && validThemes.indexOf(saved) !== -1 ? saved : preferred
+        document.documentElement.setAttribute('data-theme', theme)
       })()
     </script>
   </head>
