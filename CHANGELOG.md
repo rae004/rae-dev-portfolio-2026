@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.2.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.1.4...v0.2.0) (2026-05-10)
+
+
+### Features
+
+* **themes:** curate theme list and group dropdown by Dark/Color/Light ([7be9e42](https://github.com/rae004/rae-dev-portfolio-2026/commit/7be9e42979b39ed43bc0193a5540b48391487f97))
+
+
+### Bug Fixes
+
+* **frontend:** decode WP entities and fix bullet rendering ([cd677ff](https://github.com/rae004/rae-dev-portfolio-2026/commit/cd677ffa514a6ea9cd80f492feac6c2c1d256bff))
+
+
+### Tests
+
+* cover decodeHtml, ThemeSwitcher, and extracted resumeSorting util ([06a6897](https://github.com/rae004/rae-dev-portfolio-2026/commit/06a6897fddb08ecb95840b6168af573940580742))
+
 ## [0.1.4](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.1.3...v0.1.4) (2026-05-08)
 
 
