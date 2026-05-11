@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.3.0...v0.4.0) (2026-05-11)
+
+
+### Features
+
+* **projects:** sort software projects by release date, newest first ([e4b37e4](https://github.com/rae004/rae-dev-portfolio-2026/commit/e4b37e4c1e18ea770c3759f733db9d736c1e9f43))
+
 ## [0.3.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.2.0...v0.3.0) (2026-05-10)
 
 
