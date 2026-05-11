@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { useSoftwareProjects } from '../hooks/useWordPress'
 import SoftwareProjectCard from '../components/SoftwareProjectCard'
+import { sortSoftwareProjectsByReleaseDate } from '../utils/softwareProjectUtils'
 
 const ProjectsPage: React.FC = () => {
   const {
@@ -12,6 +13,14 @@ const ProjectsPage: React.FC = () => {
     orderby: 'date',
     order: 'desc',
   })
+
+  // WordPress orderby=date sorts by post-creation date, which is identical
+  // across all projects (bulk-seeded in one pass). Re-sort by the actual
+  // release-date meta so the newest project lands first.
+  const sortedProjects = useMemo(
+    () => (softwareProjects ? sortSoftwareProjectsByReleaseDate(softwareProjects, 'desc') : []),
+    [softwareProjects]
+  )
 
   return (
     <div className='container mx-auto px-4 py-8'>
@@ -69,7 +78,7 @@ const ProjectsPage: React.FC = () => {
 
                 {/* Project Cards in Grid Layout - maintain original 3-column design */}
                 <div className='grid md:grid-cols-2 lg:grid-cols-3 gap-6'>
-                  {softwareProjects.map(project => (
+                  {sortedProjects.map(project => (
                     <div key={project.id} className='card bg-base-100 shadow-xl'>
                       <SoftwareProjectCard
                         project={project}

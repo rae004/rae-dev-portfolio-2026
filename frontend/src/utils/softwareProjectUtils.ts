@@ -142,3 +142,18 @@ export function groupSkillsByCategory(skills: SkillItem[]): Record<string, Skill
 
   return sortedGrouped
 }
+
+/**
+ * Sort software projects by their release date (most recent first by default).
+ * Projects with no release date fall to the end in desc order, top in asc.
+ */
+export function sortSoftwareProjectsByReleaseDate(
+  projects: SoftwareProject[],
+  order: 'asc' | 'desc' = 'desc'
+): SoftwareProject[] {
+  return [...projects].sort((a, b) => {
+    const aDate = a.project_release_date ? new Date(a.project_release_date).getTime() : 0
+    const bDate = b.project_release_date ? new Date(b.project_release_date).getTime() : 0
+    return order === 'desc' ? bDate - aDate : aDate - bDate
+  })
+}

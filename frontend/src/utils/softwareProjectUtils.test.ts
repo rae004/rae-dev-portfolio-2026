@@ -8,6 +8,7 @@ import {
   getFilteredTechSkills,
   getAllProjectSkills,
   groupSkillsByCategory,
+  sortSoftwareProjectsByReleaseDate,
 } from './softwareProjectUtils'
 import type { SoftwareProject, SkillItem } from '../types/wordpress'
 
@@ -188,5 +189,36 @@ describe('groupSkillsByCategory (software)', () => {
   it('uses "Other" when skills_type is missing', () => {
     const grouped = groupSkillsByCategory([makeSkill({ id: 1, skills_type: '' })])
     expect(grouped.Other).toHaveLength(1)
+  })
+})
+
+describe('sortSoftwareProjectsByReleaseDate', () => {
+  it('sorts most recent first by default (desc)', () => {
+    const old = makeProject({ id: 1, project_release_date: '2022-01-01' })
+    const mid = makeProject({ id: 2, project_release_date: '2024-06-15' })
+    const recent = makeProject({ id: 3, project_release_date: '2026-05-08' })
+    expect(sortSoftwareProjectsByReleaseDate([old, recent, mid]).map(p => p.id)).toEqual([3, 2, 1])
+  })
+
+  it('sorts oldest first when asc requested', () => {
+    const old = makeProject({ id: 1, project_release_date: '2022-01-01' })
+    const recent = makeProject({ id: 2, project_release_date: '2026-05-08' })
+    expect(sortSoftwareProjectsByReleaseDate([recent, old], 'asc').map(p => p.id)).toEqual([1, 2])
+  })
+
+  it('places projects without a release date at the end (desc)', () => {
+    const dated = makeProject({ id: 1, project_release_date: '2025-01-01' })
+    const undated = makeProject({ id: 2, project_release_date: null })
+    expect(sortSoftwareProjectsByReleaseDate([undated, dated]).map(p => p.id)).toEqual([1, 2])
+  })
+
+  it('does not mutate the input array', () => {
+    const input = [
+      makeProject({ id: 1, project_release_date: '2022-01-01' }),
+      makeProject({ id: 2, project_release_date: '2026-01-01' }),
+    ]
+    const before = input.map(p => p.id)
+    sortSoftwareProjectsByReleaseDate(input)
+    expect(input.map(p => p.id)).toEqual(before)
   })
 })
