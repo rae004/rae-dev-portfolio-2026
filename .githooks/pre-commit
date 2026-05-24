@@ -1,22 +1,45 @@
 #!/usr/bin/env bash
 # Supply chain hardening — see documentation/supply_chain_hardening.md
 #
-# Refuse commits that change a lockfile without also touching its
-# package.json. Catches lockfile-only tampering — a common supply-chain
+# Refuse commits that change a lockfile without also touching a matching
+# intent file. Catches lockfile-only tampering — a common supply-chain
 # vector where an attacker mutates only the lockfile in a PR to swap
 # resolved versions without a visible intent change.
 #
+# For pnpm projects, intent can live in either package.json (range
+# changes, packageManager) or pnpm-workspace.yaml (overrides, allowBuilds,
+# patchedDependencies). Either one being staged alongside the lockfile
+# proves the change was deliberate.
+#
+# For npm projects (the lambda workspaces), only package.json applies.
+#
 # Bypass with `git commit --no-verify` only when you have audited the
-# lockfile diff and understand why package.json is untouched (e.g. a
-# Renovate-style transitive bump, peer-dep resolution change).
+# lockfile diff and understand why no intent file is changing
+# (e.g. `pnpm update` of transitive deps with no range change).
 
 set -euo pipefail
 
 staged=$(git diff --cached --name-only)
 fail=0
 
-check_pair() {
-  local lock="$1" pkg="$2"
+check_pnpm() {
+  local dir="$1"
+  local lock="${dir}/pnpm-lock.yaml"
+  local pkg="${dir}/package.json"
+  local ws="${dir}/pnpm-workspace.yaml"
+  if grep -qxF "$lock" <<<"$staged" \
+     && ! grep -qxF "$pkg" <<<"$staged" \
+     && ! grep -qxF "$ws" <<<"$staged"; then
+    echo "Refusing commit: $lock changed but neither $pkg nor $ws did." >&2
+    echo "Stage the matching intent file or use --no-verify if intentional." >&2
+    return 1
+  fi
+}
+
+check_npm() {
+  local dir="$1"
+  local lock="${dir}/package-lock.json"
+  local pkg="${dir}/package.json"
   if grep -qxF "$lock" <<<"$staged" && ! grep -qxF "$pkg" <<<"$staged"; then
     echo "Refusing commit: $lock changed but $pkg did not." >&2
     echo "Stage the matching package.json or use --no-verify if intentional." >&2
@@ -24,10 +47,10 @@ check_pair() {
   fi
 }
 
-check_pair frontend/pnpm-lock.yaml                                       frontend/package.json                                       || fail=1
-check_pair infrastructure/pnpm-lock.yaml                                 infrastructure/package.json                                 || fail=1
-check_pair infrastructure/lambda/contact-form/package-lock.json          infrastructure/lambda/contact-form/package.json             || fail=1
-check_pair infrastructure/lambda/lightsail-automation/package-lock.json  infrastructure/lambda/lightsail-automation/package.json     || fail=1
-check_pair infrastructure/lambda/wordpress-config/package-lock.json      infrastructure/lambda/wordpress-config/package.json         || fail=1
+check_pnpm frontend                                       || fail=1
+check_pnpm infrastructure                                 || fail=1
+check_npm  infrastructure/lambda/contact-form             || fail=1
+check_npm  infrastructure/lambda/lightsail-automation     || fail=1
+check_npm  infrastructure/lambda/wordpress-config         || fail=1
 
 exit $fail

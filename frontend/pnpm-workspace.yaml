@@ -10,3 +10,23 @@
 # that would have blocked the TanStack 2026-05-11 payload from executing.
 allowBuilds:
   esbuild: true
+
+# Transitive-dep security overrides.
+#
+# Each entry below patches a high-severity advisory in a transitive dep
+# that our top-level pins (or @tanstack/react-form's caret) would otherwise
+# anchor to the vulnerable version. All patched versions chosen here are
+# past our 7-day cooldown wall.
+#
+# seroval ^1.4.1 — patches three DoS advisories
+#   (GHSA-hj76-42vx-jwp4, GHSA-3j22-8qj3-26mx, GHSA-hx9m-jf43-8ffr).
+#   Anchored to vulnerable 1.4.0 via the exact pin on @tanstack/react-router.
+#   Patched in seroval@1.4.1+ (published 2025-12-19).
+#
+# devalue ^5.6.2 — patches two DoS advisories in devalue.parse
+#   (GHSA-vw5p-8cq8-m7mv and one related).
+#   Transitive via @tanstack/react-form. Patched in devalue@5.6.2+
+#   (published 2026-01-15).
+overrides:
+  seroval: "^1.4.1"
+  devalue: "^5.6.2"
