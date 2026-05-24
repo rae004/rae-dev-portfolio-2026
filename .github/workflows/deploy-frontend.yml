@@ -37,8 +37,8 @@ jobs:
       contents: read
     steps:
       # Supply chain hardening — all third-party Actions are pinned by SHA.
-      # The trailing comment is the human-readable version; Renovate will
-      # keep both the SHA and the comment in sync on update.
+      # The trailing comment is the human-readable version; Dependabot
+      # will keep both the SHA and the comment in sync on update.
       # See documentation/supply_chain_hardening.md.
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
