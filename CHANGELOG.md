@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.2](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.5.1...v0.5.2) (2026-05-24)
+
+
+### Bug Fixes
+
+* **security:** unblock PR [#31](https://github.com/rae004/rae-dev-portfolio-2026/issues/31) — extract RootComponent + ignore router family ([22c9d80](https://github.com/rae004/rae-dev-portfolio-2026/commit/22c9d805ca96adaaccbd75f9d7750ddbf797d73e))
+* **security:** unblock PR [#31](https://github.com/rae004/rae-dev-portfolio-2026/issues/31) — extract RootComponent + ignore router family in Dependabot ([760f425](https://github.com/rae004/rae-dev-portfolio-2026/commit/760f425d5a868b32c34328478fc09f1194dd0dc4))
+
 ## [0.5.1](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.5.0...v0.5.1) (2026-05-24)
 
 
