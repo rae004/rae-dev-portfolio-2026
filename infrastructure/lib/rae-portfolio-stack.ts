@@ -8,6 +8,7 @@ import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as lightsail from 'aws-cdk-lib/aws-lightsail';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as sns from 'aws-cdk-lib/aws-sns';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
@@ -394,7 +395,6 @@ HEALTHEOF
     // Custom resource to attach static IP automatically
     const staticIpAttachment = new cr.Provider(this, 'StaticIpAttachmentProvider', {
       onEventHandler: lightsailAutomationFunction,
-      logRetention: 14, // Keep logs for 14 days
     });
 
     const staticIpAttachmentResource = new cdk.CustomResource(this, 'StaticIpAttachment', {
@@ -434,7 +434,6 @@ HEALTHEOF
     // Custom resource provider for WordPress configuration
     const wordpressConfigProvider = new cr.Provider(this, 'WordPressConfigProvider', {
       onEventHandler: wordpressConfigFunction,
-      logRetention: 14,
     });
 
     // WordPress configuration custom resource (depends on static IP attachment)
@@ -498,6 +497,47 @@ HEALTHEOF
       retainOnDelete: envName === 'prod',
     });
 
+    // ===========================
+    // Contact Form Infrastructure
+    // ===========================
+
+    // SNS Topic for contact form notifications
+    const contactFormTopic = new sns.Topic(this, 'ContactFormTopic', {
+      topicName: `rae-portfolio-contact-${envName}`,
+      displayName: `RAE Portfolio Contact Form (${envName})`,
+    });
+
+    // Contact form Lambda function
+    const contactFormLambda = new lambda.Function(this, 'ContactFormLambda', {
+      runtime: lambda.Runtime.NODEJS_22_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset('./lambda/contact-handler'),
+      timeout: cdk.Duration.minutes(1),
+      environment: {
+        NODE_OPTIONS: '--enable-source-maps',
+        SNS_TOPIC_ARN: contactFormTopic.topicArn,
+        ENVIRONMENT: envName,
+      },
+    });
+
+    // Grant Lambda permissions to publish to SNS
+    contactFormTopic.grantPublish(contactFormLambda);
+
+    // API Gateway for Lambda function URL
+    const contactFormFunctionUrl = contactFormLambda.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.NONE,
+      cors: {
+        allowedOrigins: [
+          'http://localhost:5173',           // Local development
+          `https://${frontendFqdn}`,         // Frontend domain
+          'https://rae-dev.com'              // Production domain
+        ],
+        allowedMethods: [lambda.HttpMethod.POST, lambda.HttpMethod.OPTIONS],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
+        maxAge: cdk.Duration.hours(1),
+      },
+    });
+
     // Outputs
     new cdk.CfnOutput(this, 'WebsiteBucketName', {
       value: websiteBucket.bucketName,
@@ -555,5 +595,21 @@ HEALTHEOF
         description: 'WordPress API URL',
       });
     }
+
+    // Contact Form Outputs
+    new cdk.CfnOutput(this, 'ContactFormLambdaArn', {
+      value: contactFormLambda.functionArn,
+      description: 'Contact form Lambda function ARN',
+    });
+
+    new cdk.CfnOutput(this, 'ContactFormFunctionUrl', {
+      value: contactFormFunctionUrl.url,
+      description: 'Contact form Lambda function URL',
+    });
+
+    new cdk.CfnOutput(this, 'ContactFormTopicArn', {
+      value: contactFormTopic.topicArn,
+      description: 'Contact form SNS topic ARN',
+    });
   }
 }

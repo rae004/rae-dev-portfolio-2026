@@ -2,13 +2,14 @@ import React, { useState, useCallback } from 'react'
 import { useForm } from '@tanstack/react-form'
 import SocialLinks from '../components/SocialLinks'
 import { useReCaptchaForm } from '../hooks/useReCaptchaForm'
-
-interface ContactFormData {
-  name: string
-  email: string
-  subject: string
-  message: string
-}
+import { isReCaptchaEnabled } from '../config/environment'
+import {
+  submitContactForm,
+  ContactServiceError,
+  sanitizeContactFormData,
+  validateContactFormData,
+} from '../services/contact'
+import type { ContactFormData, ContactSubmissionStatus } from '../types/contact'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function FieldInfo({ field }: { field: any }) {
@@ -24,9 +25,9 @@ function FieldInfo({ field }: { field: any }) {
 }
 
 const ContactPage: React.FC = () => {
-  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error' | 'captcha_failed'>(
-    'idle'
-  )
+  const [submitStatus, setSubmitStatus] = useState<ContactSubmissionStatus>('idle')
+  const [errorMessage, setErrorMessage] = useState<string>('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSocialLinks, setShowSocialLinks] = useState(true)
 
   // reCAPTCHA integration for form submission (always fresh verification)
@@ -46,22 +47,37 @@ const ContactPage: React.FC = () => {
     } as ContactFormData,
     onSubmit: async ({ value }) => {
       setSubmitStatus('idle')
+      setErrorMessage('')
+      setIsSubmitting(true)
 
       try {
-        // Execute fresh reCAPTCHA verification for form submission
-        const recaptchaResult = await verifyReCaptcha()
+        let recaptchaToken = ''
 
-        if (!recaptchaResult.success) {
-          setSubmitStatus('captcha_failed')
-          console.error('reCAPTCHA verification failed:', recaptchaResult.error)
-          return
+        // Only verify reCAPTCHA if it's enabled in current environment
+        if (isReCaptchaEnabled()) {
+          const recaptchaResult = await verifyReCaptcha()
+
+          if (!recaptchaResult.success) {
+            setSubmitStatus('captcha_failed')
+            setErrorMessage('Security verification failed. Please try again later.')
+            console.error('reCAPTCHA verification failed:', recaptchaResult.error)
+            return
+          }
+
+          recaptchaToken = recaptchaResult.token!
+        } else {
+          console.log('[Contact] reCAPTCHA disabled for local development')
+          recaptchaToken = 'development-bypass'
         }
 
         // Proceed with form submission
-        await submitForm(value)
+        await submitForm(value, recaptchaToken)
       } catch (error) {
         console.error('Form submission error:', error)
         setSubmitStatus('error')
+        setErrorMessage('An unexpected error occurred. Please try again.')
+      } finally {
+        setIsSubmitting(false)
       }
     },
   })
@@ -69,19 +85,61 @@ const ContactPage: React.FC = () => {
   /**
    * Actual form submission logic
    */
-  const submitForm = async (formData: ContactFormData) => {
+  const submitForm = async (formData: ContactFormData, recaptchaToken: string) => {
     try {
-      // Simulate form submission (replace with actual API call)
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Client-side validation
+      const validationErrors = validateContactFormData({
+        ...formData,
+        recaptcha_token: recaptchaToken,
+      })
+      if (Object.keys(validationErrors).length > 0) {
+        setSubmitStatus('error')
+        setErrorMessage('Please check your form data and try again.')
+        return
+      }
 
-      console.log('Form submitted:', formData)
-      setSubmitStatus('success')
+      // Sanitize and prepare submission data
+      const submissionData = sanitizeContactFormData({
+        ...formData,
+        recaptcha_token: recaptchaToken,
+      })
 
-      // Reset form after successful submission
-      form.reset()
+      // Submit to WordPress API
+      const response = await submitContactForm(submissionData)
+
+      if (response.success) {
+        setSubmitStatus('success')
+        setErrorMessage('')
+        console.log('Contact form submitted successfully:', response.data?.submission_id)
+
+        // Reset form after successful submission
+        form.reset()
+      } else {
+        setSubmitStatus('error')
+        setErrorMessage(response.message || 'Failed to send message. Please try again.')
+      }
     } catch (error) {
       console.error('Form submission error:', error)
-      setSubmitStatus('error')
+
+      if (error instanceof ContactServiceError) {
+        setSubmitStatus('error')
+
+        // Handle specific error types
+        if (error.code === 'recaptcha_failed') {
+          setSubmitStatus('captcha_failed')
+          setErrorMessage('Security verification failed. Please try again.')
+        } else if (error.code === 'contact_disabled') {
+          setSubmitStatus('disabled')
+          setErrorMessage('Contact form is currently disabled. Please try again later.')
+        } else if (error.validationErrors) {
+          setErrorMessage('Please check your form data and try again.')
+        } else {
+          setErrorMessage(error.message)
+        }
+      } else {
+        setSubmitStatus('error')
+        setErrorMessage('An unexpected error occurred. Please try again later.')
+      }
     }
   }
 
@@ -115,8 +173,8 @@ const ContactPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Error Message */}
-              {submitStatus === 'error' && (
+              {/* Error Messages */}
+              {(submitStatus === 'error' || submitStatus === 'disabled') && (
                 <div className='alert alert-error mb-4'>
                   <svg
                     xmlns='http://www.w3.org/2000/svg'
@@ -131,7 +189,7 @@ const ContactPage: React.FC = () => {
                       d='M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z'
                     />
                   </svg>
-                  <span>Failed to send message. Please try again.</span>
+                  <span>{errorMessage || 'Failed to send message. Please try again.'}</span>
                 </div>
               )}
 
@@ -151,7 +209,9 @@ const ContactPage: React.FC = () => {
                       d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.728-.833-2.498 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z'
                     />
                   </svg>
-                  <span>Security verification failed. Please try again later.</span>
+                  <span>
+                    {errorMessage || 'Security verification failed. Please try again later.'}
+                  </span>
                 </div>
               )}
 
@@ -298,13 +358,13 @@ const ContactPage: React.FC = () => {
                 <div className='form-control mt-6'>
                   <form.Subscribe
                     selector={state => [state.canSubmit, state.isSubmitting]}
-                    children={([canSubmit, isSubmitting]) => (
+                    children={([canSubmit, isFormSubmitting]) => (
                       <button
                         type='submit'
-                        disabled={!canSubmit}
-                        className={`btn btn-primary ${isSubmitting ? 'loading' : ''}`}
+                        disabled={!canSubmit || isSubmitting || submitStatus === 'disabled'}
+                        className={`btn btn-primary ${isSubmitting || isFormSubmitting ? 'loading' : ''}`}
                       >
-                        {isSubmitting ? 'Sending...' : 'Send Message'}
+                        {isSubmitting || isFormSubmitting ? 'Sending...' : 'Send Message'}
                       </button>
                     )}
                   />

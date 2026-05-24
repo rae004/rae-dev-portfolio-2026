@@ -33,7 +33,7 @@ const ENVIRONMENT_CONFIGS: Record<
     name: 'local',
     wpApiBase: 'http://localhost:8080',
     recaptcha: {
-      enabled: true, // Enabled for local testing
+      enabled: false, // Disabled for local development
       threshold: 0.1,
       badgePosition: 'bottomright',
     },

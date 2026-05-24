@@ -111,6 +111,77 @@ const ReCaptchaGate: React.FC<ReCaptchaGateProps> = ({ children, cacheDuration =
   }, [])
 
   /**
+   * Re-render reCAPTCHA badge with new theme
+   */
+  const rerenderBadgeWithNewTheme = useCallback(
+    (newTheme: ThemeType): void => {
+      if (!isInitialized || clientId === null || !wpConfig) {
+        return
+      }
+
+      try {
+        // Reset the current widget
+        window.grecaptcha.reset(clientId)
+
+        // Remove existing badge elements to force fresh render
+        removeBadgeElements()
+
+        // Remove and recreate container
+        if (containerRef.current?.parentNode) {
+          containerRef.current.parentNode.removeChild(containerRef.current)
+        }
+        containerRef.current = createBadgeContainer()
+
+        console.log('[reCAPTCHA] Re-rendering badge with new theme:', newTheme)
+
+        // Re-render with new theme
+        const newClientId = window.grecaptcha.render(containerRef.current, {
+          sitekey: wpConfig.site_keys.v3!,
+          size: 'invisible',
+          badge: wpConfig.badge_position || 'bottomright',
+          theme: newTheme,
+        })
+
+        setClientId(newClientId)
+        console.log('[reCAPTCHA] Badge re-rendered with clientId:', newClientId, 'theme:', newTheme)
+      } catch (error) {
+        console.error('[reCAPTCHA] Failed to re-render badge with new theme:', error)
+      }
+    },
+    [isInitialized, clientId, wpConfig]
+  )
+
+  /**
+   * Start monitoring for theme changes
+   */
+  const startThemeMonitoring = useCallback((): void => {
+    if (themeObserverRef.current) {
+      return // Already monitoring
+    }
+
+    themeObserverRef.current = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
+          const newTheme = detectCurrentTheme()
+          if (newTheme !== currentTheme) {
+            console.log('[reCAPTCHA] Theme change detected:', currentTheme, '→', newTheme)
+            setCurrentTheme(newTheme)
+            rerenderBadgeWithNewTheme(newTheme)
+          }
+        }
+      })
+    })
+
+    // Start observing the html element for data-theme changes
+    themeObserverRef.current.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme'],
+    })
+
+    console.log('[reCAPTCHA] Started monitoring theme changes')
+  }, [currentTheme, rerenderBadgeWithNewTheme])
+
+  /**
    * Initialize reCAPTCHA service
    */
   const initializeReCaptcha = useCallback(async (): Promise<void> => {
@@ -153,7 +224,7 @@ const ReCaptchaGate: React.FC<ReCaptchaGateProps> = ({ children, cacheDuration =
       console.error('[reCAPTCHA] Initialization failed:', error)
       setError('Failed to initialize reCAPTCHA service')
     }
-  }, [wpConfig])
+  }, [wpConfig?.badge_position, wpConfig?.enabled, wpConfig?.site_keys.v3, startThemeMonitoring])
 
   /**
    * Execute page_view verification
@@ -218,77 +289,6 @@ const ReCaptchaGate: React.FC<ReCaptchaGateProps> = ({ children, cacheDuration =
       setError('reCAPTCHA verification failed')
     }
   }, [isInitialized, clientId, wpConfig, verification, isCacheValid, getThreshold])
-
-  /**
-   * Start monitoring for theme changes
-   */
-  const startThemeMonitoring = useCallback((): void => {
-    if (themeObserverRef.current) {
-      return // Already monitoring
-    }
-
-    themeObserverRef.current = new MutationObserver(mutations => {
-      mutations.forEach(mutation => {
-        if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
-          const newTheme = detectCurrentTheme()
-          if (newTheme !== currentTheme) {
-            console.log('[reCAPTCHA] Theme change detected:', currentTheme, '→', newTheme)
-            setCurrentTheme(newTheme)
-            rerenderBadgeWithNewTheme(newTheme)
-          }
-        }
-      })
-    })
-
-    // Start observing the html element for data-theme changes
-    themeObserverRef.current.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-theme'],
-    })
-
-    console.log('[reCAPTCHA] Started monitoring theme changes')
-  }, [currentTheme])
-
-  /**
-   * Re-render reCAPTCHA badge with new theme
-   */
-  const rerenderBadgeWithNewTheme = useCallback(
-    (newTheme: ThemeType): void => {
-      if (!isInitialized || clientId === null || !wpConfig) {
-        return
-      }
-
-      try {
-        // Reset the current widget
-        window.grecaptcha.reset(clientId)
-
-        // Remove existing badge elements to force fresh render
-        removeBadgeElements()
-
-        // Remove and recreate container
-        if (containerRef.current?.parentNode) {
-          containerRef.current.parentNode.removeChild(containerRef.current)
-        }
-        containerRef.current = createBadgeContainer()
-
-        console.log('[reCAPTCHA] Re-rendering badge with new theme:', newTheme)
-
-        // Re-render with new theme
-        const newClientId = window.grecaptcha.render(containerRef.current, {
-          sitekey: wpConfig.site_keys.v3!,
-          size: 'invisible',
-          badge: wpConfig.badge_position || 'bottomright',
-          theme: newTheme,
-        })
-
-        setClientId(newClientId)
-        console.log('[reCAPTCHA] Badge re-rendered with clientId:', newClientId, 'theme:', newTheme)
-      } catch (error) {
-        console.error('[reCAPTCHA] Failed to re-render badge with new theme:', error)
-      }
-    },
-    [isInitialized, clientId, wpConfig]
-  )
 
   /**
    * Initialize when config loads

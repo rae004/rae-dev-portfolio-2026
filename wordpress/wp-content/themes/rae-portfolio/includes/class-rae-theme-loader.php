@@ -75,11 +75,13 @@ class RAE_Theme_Loader {
 		$this->load_file( $includes_path . 'api/class-rae-software-projects-api.php' );
 		$this->load_file( $includes_path . 'api/class-rae-social-links-api.php' );
 		$this->load_file( $includes_path . 'api/class-rae-recaptcha-api.php' );
+		$this->load_file( $includes_path . 'api/class-rae-contact-api.php' );
 
 		// Load admin functionality
 		$this->load_file( $includes_path . 'admin/class-rae-meta-boxes.php' );
 		$this->load_file( $includes_path . 'admin/class-rae-social-links-options.php' );
 		$this->load_file( $includes_path . 'admin/class-rae-recaptcha-options.php' );
+		$this->load_file( $includes_path . 'admin/class-rae-contact-options.php' );
 		$this->load_file( $includes_path . 'admin/meta-boxes/class-rae-employment-dates-meta-box.php' );
 		$this->load_file( $includes_path . 'admin/meta-boxes/class-rae-resume-skills-meta-box.php' );
 		$this->load_file( $includes_path . 'admin/meta-boxes/class-rae-media-skills-meta-box.php' );
@@ -158,6 +160,10 @@ class RAE_Theme_Loader {
 			new RAE_ReCaptcha_API();
 		}
 
+		if ( class_exists( 'RAE_Contact_API' ) ) {
+			new RAE_Contact_API();
+		}
+
 		// Admin functionality
 		if ( class_exists( 'RAE_Meta_Boxes' ) ) {
 			new RAE_Meta_Boxes();
@@ -169,6 +175,10 @@ class RAE_Theme_Loader {
 
 		if ( class_exists( 'RAE_ReCaptcha_Options' ) ) {
 			new RAE_ReCaptcha_Options();
+		}
+
+		if ( class_exists( 'RAE_Contact_Options' ) ) {
+			new RAE_Contact_Options();
 		}
 
 		if ( class_exists( 'RAE_Employment_Dates_Meta_Box' ) ) {

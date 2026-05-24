@@ -156,6 +156,23 @@ class RAE_ReCaptcha_API extends RAE_API_Base {
 			$token  = $request->get_param( 'token' );
 			$action = $request->get_param( 'action' );
 
+			// Handle development bypass token
+			if ( 'development-bypass' === $token ) {
+				return new WP_REST_Response(
+					array(
+						'success'      => true,
+						'score'        => 1.0,
+						'threshold'    => 0.1,
+						'score_passed' => true,
+						'action'       => $action,
+						'hostname'     => 'localhost',
+						'timestamp'    => current_time( 'c' ),
+						'message'      => 'Development bypass token accepted',
+					),
+					200
+				);
+			}
+
 			// Get settings
 			$settings = RAE_ReCaptcha_Options::get_settings();
 
