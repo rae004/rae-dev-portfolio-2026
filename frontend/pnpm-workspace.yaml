@@ -28,5 +28,5 @@ allowBuilds:
 #   Transitive via @tanstack/react-form. Patched in devalue@5.6.2+
 #   (published 2026-01-15).
 overrides:
-  seroval: "^1.4.1"
-  devalue: "^5.6.2"
+  seroval: '^1.4.1'
+  devalue: '^5.6.2'
