@@ -35,12 +35,12 @@ intent is defense in depth — any single layer can fail without catastrophe.
 
 | Threat | Defensive layer | Tools |
 |---|---|---|
-| Be the first to install a poisoned version | Time | pnpm `minimum-release-age=7d`, Renovate `minimumReleaseAge`, pinned `packageManager` |
+| Be the first to install a poisoned version | Time | pnpm `minimum-release-age=7d`, Dependabot `cooldown:` block, pinned `packageManager` |
 | Silent drift onto a poisoned version that falls inside a caret range | Integrity | exact pins for router family, `--frozen-lockfile` everywhere, lockfile pre-commit guard |
 | Payload executes at install time even if a bad package lands on disk | Containment | pnpm `allowBuilds` allowlist in `pnpm-workspace.yaml`, npm `ignore-scripts=true` for lambdas |
 | Known-bad version slips in via PR | Detection | `actions/dependency-review-action`, `pnpm audit` gate, Dependabot alerts, secret scanning |
 | Our own CI gets compromised the way TanStack's was | Workflow | pin Actions by SHA, minimum-permission `permissions:` blocks, audit `pull_request_target` use |
-| Stale deps because cooldown blocks routine updates | Process | Renovate with matching cooldown + auto-merge for safe-listed patch bumps |
+| Stale deps because cooldown blocks routine updates | Process | Dependabot with matching cooldown + group-PR batching |
 
 ## Current State (2026-05-15)
 
@@ -86,7 +86,7 @@ ignore-scripts=true                # SDK clients + node-fetch have no legitimate
 fund=false
 ```
 
-Cooldown for the lambda workspaces is enforced via Renovate (Phase 4) instead of `.npmrc`.
+Cooldown for the lambda workspaces is enforced via Dependabot's `cooldown:` block (Phase 4) instead of `.npmrc`; npm itself has no `minimum-release-age` equivalent.
 
 **1.3 Postinstall script allowlist (pnpm 11)**
 
@@ -180,7 +180,7 @@ Single source of truth.
 
 Replace every `@v4` reference with the full commit SHA plus a `# v4.x.y`
 comment for readability. Tag references are mutable; a compromise of an
-upstream Action repo can flip a tag silently. Renovate (Phase 4) keeps these
+upstream Action repo can flip a tag silently. Dependabot (Phase 4) keeps these
 up to date. This is precisely the class of defense TanStack's own
 postmortem recommends — the incident started with a malicious Action.
 
@@ -257,44 +257,65 @@ eliminating the lambda npm install attack surface entirely.
 
 Flagged here so it is not forgotten; tracked separately.
 
-### Phase 4 — Automated update tooling (Renovate)
+### Phase 4 — Automated update tooling (Dependabot)
 
-Cooldown without an update tool means dep rot. Renovate solves both with one
-config. The committed config lives at `.github/renovate.json`.
+Cooldown without an update tool means dep rot. The committed config lives
+at `.github/dependabot.yml`.
+
+The original plan was Renovate. We switched to Dependabot after merging
+phase 1+2 and observing that Dependabot:
+
+- Was already firing immediately on Dependabot security alerts
+  (no separate config required for advisories).
+- Grouped four overlapping security PRs into a single batched PR (#23 in
+  history) on its own, matching the "one PR per cooldown window" design
+  we'd encoded into the Renovate config.
+- Now supports a `cooldown:` block per ecosystem (added 2025), making the
+  7-day install cooldown reachable without a third-party App install.
+
+Running both tools would mean duplicate PRs fighting each other.
+Dependabot is simpler, native, and adequate.
 
 Effective behavior:
 
-- **All deps wait 7 days before Renovate proposes an upgrade** (matches the
-  pnpm `.npmrc` cooldown, so PRs are never blocked at install time).
-- **Router family** (`@tanstack/react-router`, `@tanstack/router-*`):
-  exact-pinned via `rangeStrategy: pin`, 14-day cooldown. Locked down until
-  GHSA-g7cv-rxg3-hmpx's patched-version list is fully stable.
-- **GitHub Actions**: SHA-pinned digests (`pinDigests: true`), 14-day
-  cooldown. Renovate keeps the SHA and the version comment in sync on bump.
-- **Patch bumps of `devDependencies`**: auto-merge after CI passes
-  (`platformAutomerge: true`). Reduces toil; runtime deps still need manual
-  review. Trade-off discussion in the plan doc's Operational Notes.
-- **Lambda npm workspaces**: grouped into a single "lambda dependencies" PR
-  per cycle so we get one PR per cooldown window instead of three.
-- **CVE patches bypass cooldown** (`vulnerabilityAlerts.minimumReleaseAge: 0`).
-  This is the only acceptable bypass: it matches a real disclosed advisory,
-  not a freshly-published version.
-- **Weekly lockfile maintenance** (Mondays before 06:00): refreshes
-  transitive deps without raising any range. Manual review required —
-  no auto-merge here because lockfile-only changes are high-leverage.
-- **PR rate limits**: max 5 concurrent open Renovate PRs, max 2 new PRs per
-  hour. Keeps the review queue from drowning the developer.
+- **All deps wait 7 days before Dependabot opens a non-CVE PR**, matching
+  the pnpm `minimum-release-age=10080` in our `.npmrc` files. A PR with a
+  fresher version would otherwise fail CI at install time anyway —
+  this just stops the wasted PR.
+- **Semver-major bumps get a 14-day cooldown** for extra review time.
+- **GitHub Actions get a 14-day cooldown** for everything — Actions run
+  with workflow tokens, the same threat surface that compromised TanStack.
+- **Lambda npm workspaces**: batched into a single PR per cycle via the
+  newer `directories:` (plural) form plus a `lambda-deps` group.
+- **GitHub Actions**: similarly grouped so a single PR can update
+  multiple Actions in one review. Dependabot maintains both the SHA pin
+  and the version comment on update.
+- **CVE patches bypass cooldown automatically** — they ride the separate
+  Dependabot security-update channel, which fires on GitHub advisories
+  regardless of this file.
+- **Weekly schedule** (Mondays 06:00 America/Chicago) for non-CVE work.
+- **PR rate limits** per ecosystem to keep the review queue tractable.
 
-**Enabling Renovate on the repo (one-time, requires repo admin):**
+**Enabling Dependabot on the repo (one-time, requires repo admin):**
 
-1. Install the Renovate GitHub App from
-   <https://github.com/apps/renovate> on this repository.
-2. Renovate detects `.github/renovate.json` and opens an onboarding PR with
-   a preview of what it will do. Review and merge.
-3. Future runs follow the schedule embedded in the config.
+1. Settings → Code security and analysis → enable
+   "Dependabot alerts", "Dependabot security updates", and
+   "Dependabot version updates". (The first two were already enabled in
+   the Phase 5 work; "version updates" is what activates `.github/dependabot.yml`.)
+2. Dependabot starts running on the configured schedule. The first run
+   may surface a wave of older updates — review the first cycle carefully,
+   then steady state.
 
-If you would rather not use the hosted App, the same config works against
-self-hosted Renovate via the `renovatebot/github-action` GitHub Action.
+**What we lose vs Renovate (and why it's acceptable):**
+
+- *No native auto-merge of patch devDeps.* Dependabot supports auto-merge
+  only via a companion GitHub Actions workflow that calls `gh pr merge
+  --auto` after checking the update type via `dependabot/fetch-metadata`.
+  Add this as a follow-up if review toil becomes painful; with the 7-day
+  cooldown, manual review of weekly bumps is light.
+- *No lockfile-maintenance equivalent.* Renovate's weekly lockfile-only
+  refresh has no Dependabot analog. If transitive-dep drift becomes a
+  concern, a scheduled `pnpm update` in a GitHub Action can fill the gap.
 
 ### Phase 5 — Repo settings (one-time GitHub UI changes)
 
@@ -324,8 +345,8 @@ Not Claude-changeable; requires repo admin:
    work. Commit.
 3. Phase 1.5 pre-commit hook. Commit.
 4. Phase 2 CI changes on a branch. Open PR; observe CI runs green. Merge.
-5. Phase 4 Renovate config. Doesn't affect anything until Renovate runs
-   against the repo, which requires the GitHub App to be installed.
+5. Phase 4 Dependabot config. Activates as soon as "Dependabot version
+   updates" is enabled in Settings → Code security and analysis.
 6. Phase 5 repo settings — manual.
 7. Phase 6 docs.
 
@@ -360,17 +381,20 @@ If a real CVE drops and the 7-day cooldown blocks the patch:
 3. Run `pnpm install` and verify the lockfile change matches expectation.
 4. Remove the exclusion after the patched version is older than 7 days.
 
-Renovate handles this automatically via
-`vulnerabilityAlerts.minimumReleaseAge: 0` — the manual `.npmrc` exclusion
-is only for cases where you want to install ahead of a Renovate PR landing.
+Dependabot security updates handle this automatically — they fire on the
+GitHub advisory database regardless of the `cooldown:` setting in
+`dependabot.yml`. The manual `.npmrc` exclusion is only for cases where
+you want to install ahead of a Dependabot PR landing (e.g., patching
+locally before merge).
 
 ### Relaxing exact pins on the router family
 
 Once the GHSA-g7cv-rxg3-hmpx patched-version list is fully published and
-stable (no further amendments for ~30 days), and Renovate has been running
-against the repo for at least one update cycle, the router family pins can
-be relaxed back to caret. Update both `frontend/package.json` and the
-Renovate `packageRules` entry that pins this family.
+stable (no further amendments for ~30 days), and Dependabot has been
+running against the repo for at least one update cycle, the router family
+pins can be relaxed back to caret. Update `frontend/package.json` and (if
+applicable) add an `ignore:` entry to `dependabot.yml` for any version
+prefixes we still want to avoid.
 
 ## Out of Scope (for this pass)
 
@@ -378,9 +402,10 @@ Renovate `packageRules` entry that pins this family.
   safety once cooldown + frozen-lockfile are in place.
 - **Global `ignore-scripts=true` for pnpm**: too blunt — breaks esbuild and
   Vite. `pnpm-workspace.yaml`'s `allowBuilds` map is the right pnpm 11 tool.
-- **Paid SCA tools (socket.dev, Snyk)**: free GitHub tooling plus Renovate
-  gets us to a strong posture without a vendor relationship. Revisit if the
-  project starts handling customer data.
+- **Paid SCA tools (socket.dev, Snyk)**: free GitHub tooling (Dependabot,
+  Dependency review, secret scanning) gets us to a strong posture without
+  a vendor relationship. Revisit if the project starts handling customer
+  data.
 - **`NodejsFunction` migration for lambdas**: high-value follow-up; tracked
   separately.
 

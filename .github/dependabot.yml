@@ -1,0 +1,127 @@
+# Supply chain hardening — see documentation/supply_chain_hardening.md
+#
+# Dependabot config matching the install-time posture set up in phases
+# 1 and 2:
+#
+#   - 7-day cooldown for non-CVE updates (matches `minimum-release-age`
+#     in our pnpm .npmrc files; PRs Dependabot opens with a fresher
+#     version would otherwise fail CI at install time)
+#   - 14-day cooldown for semver-major bumps (extra review window)
+#   - CVE patches bypass cooldown automatically — they run through the
+#     separate Dependabot security-update channel, which fires on
+#     advisories regardless of this file
+#   - Lambda npm workspaces grouped into a single PR per cycle so we
+#     get one PR per cooldown window instead of three
+#   - GitHub Actions get a 14-day cooldown because a poisoned Action
+#     runs with workflow tokens (same reasoning as our manual SHA pins
+#     in phase 2)
+#
+# Renovate config was the original plan; we switched to Dependabot
+# after seeing it group-PR security patches correctly on its own
+# (see PR #23 in main history).
+version: 2
+
+updates:
+  # ---- Frontend (pnpm) ----
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Chicago"
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+      include:
+        - "*"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+    groups:
+      frontend-devdeps:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ---- Infrastructure / CDK (pnpm) ----
+  - package-ecosystem: "npm"
+    directory: "/infrastructure"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Chicago"
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+      include:
+        - "*"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+
+  # ---- Lambda workspaces (npm) — batched into one PR ----
+  - package-ecosystem: "npm"
+    directories:
+      - "/infrastructure/lambda/contact-form"
+      - "/infrastructure/lambda/lightsail-automation"
+      - "/infrastructure/lambda/wordpress-config"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Chicago"
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+      include:
+        - "*"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "lambdas"
+    groups:
+      lambda-deps:
+        patterns:
+          - "*"
+
+  # ---- GitHub Actions (SHA-pinned; Dependabot maintains SHA + comment) ----
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Chicago"
+    cooldown:
+      default-days: 14
+      include:
+        - "*"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "github-actions"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  # ---- Composer (WordPress theme dev tooling) ----
+  - package-ecosystem: "composer"
+    directory: "/wordpress/wp-content/themes/rae-portfolio"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Chicago"
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+      include:
+        - "*"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "wordpress"
