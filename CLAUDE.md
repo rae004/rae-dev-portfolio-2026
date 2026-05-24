@@ -108,6 +108,7 @@ Modern portfolio website for Robert Engel showcasing career journey from music i
 10. **🎨 JavaScript Standard**: ES6+ only (const/let, no var keyword usage) ✅
 11. **🧹 Code Quality**: Clean, simplified implementation with light theme only ✅
 12. **📋 PHPCS Compliance**: WordPress Coding Standards compliance achieved (335+ → ~75 violations) ✅
+13. **Supply chain hardening**: pnpm 11 + Corepack integrity pin + 7-day install cooldown + SHA-pinned GitHub Actions + `pnpm-workspace.yaml` `allowBuilds` allowlist (frontend: esbuild only) + lockfile-only commit guard via `.githooks/pre-commit`. Full posture in `documentation/supply_chain_hardening.md`. **Never introduce a workflow using `pull_request_target` without explicit security review** — that trigger was the vector for the TanStack 2026-05-11 npm compromise (it grants write tokens to workflows running unreviewed PR code).
 
 ## Key Configurations
 
@@ -248,6 +249,7 @@ curl -s "http://localhost:8080/?rest_route=/wp/v2/recaptcha/status" | jq
 - **🔗 Social Links**: Maximum 9 links, auto-detects platform icons, drag-and-drop reordering
 - **🛡️ reCAPTCHA**: v3-only scoring threshold configurable 0.1-0.9 (default 0.5), direct blocking for low scores, dynamic light/dark theming
 - **🧹 Code Quality**: Simplified implementation, removed ~100 lines of theme switching complexity
+- **Supply chain**: pnpm install requires 7-day cooldown (`minimum-release-age=10080` in `.npmrc`); first install of any new dep may print `ERR_PNPM_IGNORED_BUILDS` — review and only add to `allowBuilds` in `pnpm-workspace.yaml` if the package legitimately needs scripts. Bootstrap a new clone with `git config core.hooksPath .githooks` to enable the lockfile-only commit guard.
 
 ## Working Features
 - ✅ All WordPress REST API endpoints responding with JSON
