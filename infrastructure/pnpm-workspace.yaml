@@ -1,0 +1,24 @@
+# Supply chain hardening — see documentation/supply_chain_hardening.md
+#
+# Infrastructure (CDK) project. We are not using pnpm workspaces here —
+# this file exists solely to host the transitive-dep security overrides
+# for the infrastructure dependency graph.
+#
+# No allowBuilds entry: pnpm 11 surfaces no package in this tree that
+# requests install scripts (CDK + AWS SDK deps are pure JS).
+#
+# Each override below patches a high-severity advisory in a transitive
+# dep. All patched versions chosen here are well past our 7-day cooldown.
+#
+# minimatch@3 / minimatch@5 — patches GHSA-7r86-cg39-jmmj. Separate
+#   advisories on the 3.x and 5.x lines; both present in our tree via
+#   different ancestors (jest tooling pulls 3.x, others pull 5.x).
+#   Patched in 3.1.3+ (2026-02-22) and 5.1.8+ (2026-02-25).
+#
+# picomatch@2 ^2.3.2 — patches GHSA-3v7f-55p6-f55p. Scoped to 2.x; only
+#   the 2.x line is present in this tree.
+#   Patched in 2.3.2+ (published 2026-03-23).
+overrides:
+  'minimatch@3': '^3.1.3'
+  'minimatch@5': '^5.1.8'
+  'picomatch@2': '^2.3.2'
