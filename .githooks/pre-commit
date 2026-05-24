@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Supply chain hardening — see documentation/supply_chain_hardening.md
+#
+# Refuse commits that change a lockfile without also touching its
+# package.json. Catches lockfile-only tampering — a common supply-chain
+# vector where an attacker mutates only the lockfile in a PR to swap
+# resolved versions without a visible intent change.
+#
+# Bypass with `git commit --no-verify` only when you have audited the
+# lockfile diff and understand why package.json is untouched (e.g. a
+# Renovate-style transitive bump, peer-dep resolution change).
+
+set -euo pipefail
+
+staged=$(git diff --cached --name-only)
+fail=0
+
+check_pair() {
+  local lock="$1" pkg="$2"
+  if grep -qxF "$lock" <<<"$staged" && ! grep -qxF "$pkg" <<<"$staged"; then
+    echo "Refusing commit: $lock changed but $pkg did not." >&2
+    echo "Stage the matching package.json or use --no-verify if intentional." >&2
+    return 1
+  fi
+}
+
+check_pair frontend/pnpm-lock.yaml                                       frontend/package.json                                       || fail=1
+check_pair infrastructure/pnpm-lock.yaml                                 infrastructure/package.json                                 || fail=1
+check_pair infrastructure/lambda/contact-form/package-lock.json          infrastructure/lambda/contact-form/package.json             || fail=1
+check_pair infrastructure/lambda/lightsail-automation/package-lock.json  infrastructure/lambda/lightsail-automation/package.json     || fail=1
+check_pair infrastructure/lambda/wordpress-config/package-lock.json      infrastructure/lambda/wordpress-config/package.json         || fail=1
+
+exit $fail

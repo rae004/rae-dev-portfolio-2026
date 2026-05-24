@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "packageManager": "pnpm@11.3.0+sha512.2c403d6594527287672b1f7056343a1f7c3634036a67ffabfcc2b3d7595d843768f8787148d1b57cf7956c90606bbd192857c363af19e96d2d0ec9ec5741d215",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -25,7 +26,7 @@
   "dependencies": {
     "@tanstack/react-form": "^1.23.5",
     "@tanstack/react-query": "^5.90.2",
-    "@tanstack/react-router": "^1.132.41",
+    "@tanstack/react-router": "1.132.41",
     "autoprefixer": "^10.4.21",
     "daisyui": "4.12.10",
     "postcss": "^8.5.6",
@@ -36,8 +37,8 @@
     "@eslint/js": "^9.36.0",
     "@tailwindcss/typography": "^0.5.19",
     "@tanstack/react-query-devtools": "^5.90.2",
-    "@tanstack/router-cli": "^1.132.41",
-    "@tanstack/router-devtools": "^1.132.41",
+    "@tanstack/router-cli": "1.132.41",
+    "@tanstack/router-devtools": "1.132.41",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^24.6.0",
