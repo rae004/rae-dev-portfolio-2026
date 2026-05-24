@@ -260,52 +260,41 @@ Flagged here so it is not forgotten; tracked separately.
 ### Phase 4 — Automated update tooling (Renovate)
 
 Cooldown without an update tool means dep rot. Renovate solves both with one
-config. Create `.github/renovate.json`:
+config. The committed config lives at `.github/renovate.json`.
 
-```json
-{
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", ":semanticCommits"],
-  "minimumReleaseAge": "7 days",
-  "internalChecksFilter": "strict",
-  "dependencyDashboard": true,
-  "rangeStrategy": "bump",
-  "packageRules": [
-    {
-      "matchPackagePatterns": ["^@tanstack/(react-router|router-)"],
-      "rangeStrategy": "pin",
-      "minimumReleaseAge": "14 days"
-    },
-    {
-      "matchManagers": ["github-actions"],
-      "pinDigests": true,
-      "minimumReleaseAge": "14 days"
-    },
-    {
-      "matchUpdateTypes": ["patch"],
-      "matchDepTypes": ["devDependencies"],
-      "automerge": true,
-      "automergeType": "pr"
-    }
-  ],
-  "vulnerabilityAlerts": {
-    "minimumReleaseAge": "0",
-    "labels": ["security"]
-  }
-}
-```
+Effective behavior:
 
-Behavior:
-
-- All deps wait 7 days before Renovate proposes an upgrade (matches the pnpm
-  `.npmrc` cooldown, so PRs are never blocked at install time).
-- Router family and GitHub Actions get a 14-day cooldown and SHA-pinned
-  digests.
-- Patch bumps of devDependencies auto-merge after CI passes — reduces toil;
-  runtime deps still need manual review.
+- **All deps wait 7 days before Renovate proposes an upgrade** (matches the
+  pnpm `.npmrc` cooldown, so PRs are never blocked at install time).
+- **Router family** (`@tanstack/react-router`, `@tanstack/router-*`):
+  exact-pinned via `rangeStrategy: pin`, 14-day cooldown. Locked down until
+  GHSA-g7cv-rxg3-hmpx's patched-version list is fully stable.
+- **GitHub Actions**: SHA-pinned digests (`pinDigests: true`), 14-day
+  cooldown. Renovate keeps the SHA and the version comment in sync on bump.
+- **Patch bumps of `devDependencies`**: auto-merge after CI passes
+  (`platformAutomerge: true`). Reduces toil; runtime deps still need manual
+  review. Trade-off discussion in the plan doc's Operational Notes.
+- **Lambda npm workspaces**: grouped into a single "lambda dependencies" PR
+  per cycle so we get one PR per cooldown window instead of three.
 - **CVE patches bypass cooldown** (`vulnerabilityAlerts.minimumReleaseAge: 0`).
   This is the only acceptable bypass: it matches a real disclosed advisory,
   not a freshly-published version.
+- **Weekly lockfile maintenance** (Mondays before 06:00): refreshes
+  transitive deps without raising any range. Manual review required —
+  no auto-merge here because lockfile-only changes are high-leverage.
+- **PR rate limits**: max 5 concurrent open Renovate PRs, max 2 new PRs per
+  hour. Keeps the review queue from drowning the developer.
+
+**Enabling Renovate on the repo (one-time, requires repo admin):**
+
+1. Install the Renovate GitHub App from
+   <https://github.com/apps/renovate> on this repository.
+2. Renovate detects `.github/renovate.json` and opens an onboarding PR with
+   a preview of what it will do. Review and merge.
+3. Future runs follow the schedule embedded in the config.
+
+If you would rather not use the hosted App, the same config works against
+self-hosted Renovate via the `renovatebot/github-action` GitHub Action.
 
 ### Phase 5 — Repo settings (one-time GitHub UI changes)
 

@@ -1,0 +1,59 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits"
+  ],
+  "minimumReleaseAge": "7 days",
+  "internalChecksFilter": "strict",
+  "rangeStrategy": "bump",
+  "dependencyDashboard": true,
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "packageRules": [
+    {
+      "description": "Router family: was the target of the TanStack 2026-05-11 compromise. Keep exact-pinned and give it a longer cooldown until the GHSA-g7cv-rxg3-hmpx patched-version list is fully stable.",
+      "matchPackageNames": [
+        "/^@tanstack\\/(react-router|router-)/"
+      ],
+      "rangeStrategy": "pin",
+      "minimumReleaseAge": "14 days",
+      "labels": ["dependencies", "security-watch"]
+    },
+    {
+      "description": "GitHub Actions: pin by SHA digest, keep version comment in sync, longer cooldown because a poisoned Action runs with workflow tokens.",
+      "matchManagers": ["github-actions"],
+      "pinDigests": true,
+      "minimumReleaseAge": "14 days"
+    },
+    {
+      "description": "Auto-merge patch bumps of devDependencies after CI passes. Patch is semver-promise no-breaking, devDeps don't ship to production, and the 7-day cooldown plus allowBuilds containment cover the supply chain risk. See documentation/supply_chain_hardening.md.",
+      "matchUpdateTypes": ["patch"],
+      "matchDepTypes": ["devDependencies"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    },
+    {
+      "description": "Lambda npm workspaces use ignore-scripts=true so postinstall containment is already absolute. Group lambda updates so we get one PR per lambda rather than three.",
+      "matchFileNames": [
+        "infrastructure/lambda/contact-form/package.json",
+        "infrastructure/lambda/lightsail-automation/package.json",
+        "infrastructure/lambda/wordpress-config/package.json"
+      ],
+      "groupName": "lambda dependencies"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "description": "Disclosed CVEs bypass the 7-day cooldown — this matches a real advisory in the GitHub Advisory Database, not a freshly-published version. The only acceptable cooldown bypass.",
+    "minimumReleaseAge": "0",
+    "labels": ["dependencies", "security"]
+  },
+  "lockFileMaintenance": {
+    "description": "Weekly lockfile-only refresh to pick up transitive-dep movement without raising the package.json range. Manual review required — keeps Mondays predictable.",
+    "enabled": true,
+    "schedule": ["before 6am on monday"],
+    "automerge": false
+  }
+}
