@@ -64,6 +64,14 @@ updates:
       # severities; absorbs into a separate lint hygiene pass.
       - dependency-name: "eslint-plugin-react-hooks"
         update-types: ["version-update:semver-major"]
+      # @tanstack/router-cli + @tanstack/router-devtools — exact-pinned in
+      # package.json (1.132.41) as part of the post-2026-05-11 router-
+      # family lockdown. Block ALL Dependabot bumps (not just majors)
+      # until GHSA-g7cv-rxg3-hmpx's patched list is fully stable and we
+      # relax the @tanstack/react-router pin too.
+      - dependency-name: "@tanstack/router-cli"
+      - dependency-name: "@tanstack/router-devtools"
+      - dependency-name: "@tanstack/react-router"
 
   # ---- Infrastructure / CDK (pnpm) ----
   - package-ecosystem: "npm"
