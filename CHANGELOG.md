@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.1](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.5.0...v0.5.1) (2026-05-24)
+
+
+### Bug Fixes
+
+* **security:** patch 7 open Dependabot alerts via pnpm overrides ([728f860](https://github.com/rae004/rae-dev-portfolio-2026/commit/728f860779b611f6ccae8e82750610f2b63d2328))
+* **security:** patch 7 open Dependabot alerts via pnpm overrides ([300584e](https://github.com/rae004/rae-dev-portfolio-2026/commit/300584e36a686232f3c179b2b684f63355acf123))
+
 ## [0.5.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.4.0...v0.5.0) (2026-05-24)
 
 
