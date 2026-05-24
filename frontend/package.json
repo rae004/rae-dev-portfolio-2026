@@ -27,7 +27,7 @@
     "@tanstack/react-form": "^1.23.5",
     "@tanstack/react-query": "^5.90.2",
     "@tanstack/react-router": "1.132.41",
-    "autoprefixer": "^10.4.21",
+    "autoprefixer": "^10.5.0",
     "daisyui": "4.12.10",
     "postcss": "^8.5.10",
     "react": "^19.1.1",
