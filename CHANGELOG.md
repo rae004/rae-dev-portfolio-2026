@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.4.0...v0.5.0) (2026-05-24)
+
+
+### Features
+
+* **security:** add Renovate config for cooldown-aware dep updates (phase 4) ([d3d703f](https://github.com/rae004/rae-dev-portfolio-2026/commit/d3d703f1a540794730e14124669cc4c98e852ccd))
+* **security:** harden GitHub Actions workflows against supply chain attacks (phase 2) ([ffc0ce4](https://github.com/rae004/rae-dev-portfolio-2026/commit/ffc0ce42112319fb466163fb89b936a72dab1ac9))
+* **security:** harden supply chain against npm install-time attacks (phase 1) ([d9b2e1b](https://github.com/rae004/rae-dev-portfolio-2026/commit/d9b2e1b96210300342a16d9cdb09f8f0acd6fd9c))
+* **security:** supply chain hardening (phases 1, 2, 4) ([c19de97](https://github.com/rae004/rae-dev-portfolio-2026/commit/c19de9701a47455a7d2ef951da65b1baf0f25ad7))
+
+
+### Bug Fixes
+
+* **security:** allow pnpm-workspace.yaml as intent file in pre-commit hook ([5051630](https://github.com/rae004/rae-dev-portfolio-2026/commit/50516303a2b636748789b549a510345fc3939ab6))
+
 ## [0.4.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.3.0...v0.4.0) (2026-05-11)
 
 
