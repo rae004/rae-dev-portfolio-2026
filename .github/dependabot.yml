@@ -44,6 +44,26 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    # Block major bumps for packages where we have a deliberate version
+    # constraint. Removing an entry below means "we are ready to evaluate
+    # the next major" — at which point Dependabot will surface a PR.
+    ignore:
+      # daisyui — CLAUDE.md hard constraint: MUST stay on v4.x; v5 breaks
+      # the entire theme system. Exact-pinned in package.json too.
+      - dependency-name: "daisyui"
+        update-types: ["version-update:semver-major"]
+      # typescript — TS majors usually surface real type errors across
+      # the codebase. Treat as a coordinated upgrade, not a Monday bump.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      # @vitejs/plugin-react — couples to Vite + React major lines.
+      # Major bumps land here only when we deliberately upgrade Vite.
+      - dependency-name: "@vitejs/plugin-react"
+        update-types: ["version-update:semver-major"]
+      # eslint-plugin-react-hooks — major bumps reshape rule names and
+      # severities; absorbs into a separate lint hygiene pass.
+      - dependency-name: "eslint-plugin-react-hooks"
+        update-types: ["version-update:semver-major"]
 
   # ---- Infrastructure / CDK (pnpm) ----
   - package-ecosystem: "npm"
@@ -61,6 +81,16 @@ updates:
     open-pull-requests-limit: 3
     labels:
       - "dependencies"
+    ignore:
+      # @types/node — must track the Node runtime our Lambdas + CDK
+      # target. Currently Node 22 (per CLAUDE.md). Bump the types only
+      # when we decide to bump the runtime.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      # typescript — same as in /frontend: TS majors are a coordinated
+      # codebase upgrade, not a routine Dependabot bump.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   # ---- Lambda workspaces (npm) — batched into one PR ----
   - package-ecosystem: "npm"
