@@ -11,7 +11,7 @@
     "@aws-sdk/client-lightsail": "^3.1053.0"
   },
   "devDependencies": {
-    "@types/node": "^25.6.2",
+    "@types/node": "^25.9.0",
     "typescript": "^6.0.3"
   }
 }
