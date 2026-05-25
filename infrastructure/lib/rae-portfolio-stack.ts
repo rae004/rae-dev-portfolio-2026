@@ -490,6 +490,63 @@ HEALTHEOF
       });
     }
 
+    // ---------- Media library: S3 + CloudFront + IAM uploader ----------
+    //
+    // Offloads WordPress media uploads to S3 served through a dedicated
+    // CloudFront distribution at `media-${envName}.rae-dev.com` (or
+    // `media.rae-dev.com` for prod). The WP Offload Media plugin writes to
+    // the bucket via the dedicated IAM user; CloudFront serves via OAC so the
+    // bucket stays private.
+    const mediaFqdn = envName === 'prod' ? `media.${domainName}` : `media-${envName}.${domainName}`;
+
+    const mediaBucket = new s3.Bucket(this, 'MediaBucket', {
+      bucketName: `rae-portfolio-media-${envName}-${cdk.Aws.ACCOUNT_ID}`,
+      publicReadAccess: false,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      removalPolicy: envName === 'prod' ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: envName !== 'prod',
+    });
+
+    const mediaDistribution = new cloudfront.Distribution(this, 'MediaDistribution', {
+      defaultBehavior: {
+        origin: origins.S3BucketOrigin.withOriginAccessControl(mediaBucket),
+        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+        responseHeadersPolicy: cloudfront.ResponseHeadersPolicy.CORS_ALLOW_ALL_ORIGINS,
+        compress: true,
+      },
+      domainNames: certificate ? [mediaFqdn] : undefined,
+      certificate: certificate ?? undefined,
+      comment: `Media library CDN for ${mediaFqdn}`,
+      priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
+    });
+
+    if (certificate && hostedZone) {
+      new route53.ARecord(this, 'MediaAliasRecord', {
+        zone: hostedZone,
+        recordName: mediaFqdn,
+        target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(mediaDistribution)),
+      });
+    }
+
+    // IAM user for the WP Offload Media plugin. Scoped to s3:* on this bucket
+    // only. Access key must be created out-of-band after deploy with:
+    //   aws iam create-access-key --user-name rae-portfolio-media-uploader-${envName}
+    const mediaUploaderUser = new iam.User(this, 'MediaUploaderUser', {
+      userName: `rae-portfolio-media-uploader-${envName}`,
+    });
+
+    mediaUploaderUser.addToPolicy(new iam.PolicyStatement({
+      actions: ['s3:PutObject', 's3:GetObject', 's3:DeleteObject', 's3:PutObjectAcl'],
+      resources: [mediaBucket.arnForObjects('*')],
+    }));
+
+    mediaUploaderUser.addToPolicy(new iam.PolicyStatement({
+      actions: ['s3:ListBucket', 's3:GetBucketLocation'],
+      resources: [mediaBucket.bucketArn],
+    }));
+
     // GitHub Actions OIDC trust + per-environment deploy role.
     //
     // Trust is scoped to a specific GitHub Environment (`environment:<envName>`)
@@ -611,6 +668,26 @@ HEALTHEOF
     new cdk.CfnOutput(this, 'ContactApiUrl', {
       value: `${contactApi.apiEndpoint}/contact`,
       description: 'POST endpoint for the contact form Lambda',
+    });
+
+    new cdk.CfnOutput(this, 'MediaBucketName', {
+      value: mediaBucket.bucketName,
+      description: 'S3 bucket for WordPress media uploads (WP Offload Media plugin target)',
+    });
+
+    new cdk.CfnOutput(this, 'MediaCloudFrontDomain', {
+      value: mediaDistribution.distributionDomainName,
+      description: 'CloudFront distribution domain for media (use as fallback CDN URL if custom domain not yet propagated)',
+    });
+
+    new cdk.CfnOutput(this, 'MediaUrl', {
+      value: certificate ? `https://${mediaFqdn}` : `https://${mediaDistribution.distributionDomainName}`,
+      description: 'Public-facing URL for media — paste as Custom CDN URL in WP Offload Media plugin',
+    });
+
+    new cdk.CfnOutput(this, 'MediaUploaderUserName', {
+      value: mediaUploaderUser.userName,
+      description: 'IAM user for the WP Offload Media plugin. Create an access key after deploy with: aws iam create-access-key --user-name <this value>',
     });
 
     new cdk.CfnOutput(this, 'WebsiteBucketName', {

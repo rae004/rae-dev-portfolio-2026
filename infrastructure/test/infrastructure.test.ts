@@ -38,14 +38,14 @@ describe('RaePortfolioStack (dev with cert)', () => {
     });
   });
 
-  test('exactly two CloudFront distributions are created (frontend + WordPress)', () => {
-    template.resourceCountIs('AWS::CloudFront::Distribution', 2);
+  test('exactly three CloudFront distributions are created (frontend + WordPress + media)', () => {
+    template.resourceCountIs('AWS::CloudFront::Distribution', 3);
   });
 
   test('every CloudFront distribution redirects HTTP traffic to HTTPS', () => {
     const distributions = template.findResources('AWS::CloudFront::Distribution');
     const ids = Object.keys(distributions);
-    expect(ids).toHaveLength(2);
+    expect(ids).toHaveLength(3);
     for (const id of ids) {
       expect(
         distributions[id].Properties.DistributionConfig.DefaultCacheBehavior
@@ -237,6 +237,72 @@ describe('RaePortfolioStack (dev with cert)', () => {
       }),
     });
   });
+
+  test('media library: dedicated private S3 bucket exists and blocks public access', () => {
+    // BucketName resolves to Fn::Join with AWS::AccountId at synth, so we
+    // find by name pattern in the serialized Properties instead of literal.
+    const buckets = template.findResources('AWS::S3::Bucket');
+    const mediaBucket = Object.values(buckets).find(b =>
+      JSON.stringify(b.Properties.BucketName).includes('rae-portfolio-media-dev'),
+    );
+    expect(mediaBucket).toBeDefined();
+    expect(mediaBucket!.Properties.PublicAccessBlockConfiguration).toEqual({
+      BlockPublicAcls: true,
+      BlockPublicPolicy: true,
+      IgnorePublicAcls: true,
+      RestrictPublicBuckets: true,
+    });
+  });
+
+  test('media library: dedicated CloudFront distribution exists with HTTPS-only viewer policy', () => {
+    const distributions = template.findResources('AWS::CloudFront::Distribution');
+    const mediaDist = Object.values(distributions).find(d =>
+      String(d.Properties.DistributionConfig.Comment ?? '').includes('Media library CDN'),
+    );
+    expect(mediaDist).toBeDefined();
+    expect(mediaDist!.Properties.DistributionConfig.DefaultCacheBehavior.ViewerProtocolPolicy).toBe(
+      'redirect-to-https',
+    );
+    // Custom domain wired via Aliases
+    expect(mediaDist!.Properties.DistributionConfig.Aliases).toContain('media-dev.rae-dev.com');
+  });
+
+  test('media library: Route 53 alias for media-dev.rae-dev.com', () => {
+    template.hasResourceProperties('AWS::Route53::RecordSet', {
+      Name: 'media-dev.rae-dev.com.',
+      Type: 'A',
+    });
+  });
+
+  test('media library: dedicated IAM user for the WP Offload plugin, with no inline access key', () => {
+    template.hasResourceProperties('AWS::IAM::User', {
+      UserName: 'rae-portfolio-media-uploader-dev',
+    });
+    // Access keys must be created out-of-band — never inline in CFN.
+    const accessKeys = template.findResources('AWS::IAM::AccessKey');
+    expect(Object.keys(accessKeys)).toHaveLength(0);
+  });
+
+  test('media library: uploader IAM permissions scoped to the media bucket only', () => {
+    const policies = template.findResources('AWS::IAM::Policy');
+    const uploaderPolicies = Object.values(policies).filter(p => {
+      const refs = JSON.stringify(p.Properties.Users ?? []);
+      return refs.includes('MediaUploaderUser');
+    });
+    expect(uploaderPolicies.length).toBeGreaterThan(0);
+
+    const allStatements = uploaderPolicies.flatMap(
+      p => p.Properties.PolicyDocument.Statement as Array<{ Action: string | string[]; Resource: unknown }>,
+    );
+    // Every action listed must be S3, and every resource ARN must include the media bucket.
+    for (const stmt of allStatements) {
+      const actions = Array.isArray(stmt.Action) ? stmt.Action : [stmt.Action];
+      for (const action of actions) expect(action).toMatch(/^s3:/);
+      const resourceJson = JSON.stringify(stmt.Resource);
+      expect(resourceJson).toContain('MediaBucket');
+      expect(stmt.Resource).not.toBe('*');
+    }
+  });
 });
 
 describe('RaePortfolioStack (no cert)', () => {
@@ -251,6 +317,6 @@ describe('RaePortfolioStack (no cert)', () => {
     const template = Template.fromStack(stack);
     template.resourceCountIs('AWS::Route53::RecordSet', 0);
     // Distributions are still created without the alias records
-    template.resourceCountIs('AWS::CloudFront::Distribution', 2);
+    template.resourceCountIs('AWS::CloudFront::Distribution', 3);
   });
 });
