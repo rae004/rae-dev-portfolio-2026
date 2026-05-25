@@ -84,6 +84,16 @@ updates:
       # build-time behaviour, so absorb majors as a focused upgrade.
       - dependency-name: "vite"
         update-types: ["version-update:semver-major"]
+      # eslint — Core ESLint majors change default rule severities and
+      # flat-config behaviour. We already block @eslint/js majors; this
+      # closes the inconsistency (eslint + @eslint/js move together).
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      # globals — Environment-names dictionary used by ESLint flat config.
+      # Majors add/remove environment names; absorb alongside ESLint
+      # rather than independently.
+      - dependency-name: "globals"
+        update-types: ["version-update:semver-major"]
       # @tanstack/router-cli + @tanstack/router-devtools — exact-pinned in
       # package.json (1.132.41) as part of the post-2026-05-11 router-
       # family lockdown. Block ALL Dependabot bumps (not just majors)
