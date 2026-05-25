@@ -39,6 +39,16 @@ updates:
     labels:
       - "dependencies"
     groups:
+      # React + types must bump together — react refuses to load if
+      # react-dom is at a different version, even for patch drift.
+      # This group is listed first so it wins over frontend-devdeps for
+      # the @types packages (which are also devDeps).
+      react-family:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
       frontend-devdeps:
         dependency-type: "development"
         update-types:
@@ -63,6 +73,16 @@ updates:
       # eslint-plugin-react-hooks — major bumps reshape rule names and
       # severities; absorbs into a separate lint hygiene pass.
       - dependency-name: "eslint-plugin-react-hooks"
+        update-types: ["version-update:semver-major"]
+      # @eslint/js — ESLint core major bumps change default rule severities
+      # and sometimes flat-config behaviour. Same lint-hygiene-pass reasoning
+      # as eslint-plugin-react-hooks.
+      - dependency-name: "@eslint/js"
+        update-types: ["version-update:semver-major"]
+      # vite — Vite majors change plugin API + config shape. The project's
+      # Vite-define-based environment system (CLAUDE.md) is sensitive to
+      # build-time behaviour, so absorb majors as a focused upgrade.
+      - dependency-name: "vite"
         update-types: ["version-update:semver-major"]
       # @tanstack/router-cli + @tanstack/router-devtools — exact-pinned in
       # package.json (1.132.41) as part of the post-2026-05-11 router-
@@ -89,6 +109,16 @@ updates:
     open-pull-requests-limit: 3
     labels:
       - "dependencies"
+    groups:
+      # aws-cdk (CLI) and aws-cdk-lib (framework) must bump together —
+      # the lib emits cloud-assembly schemas that older CLIs cannot read,
+      # so a lib bump without a matching CLI bump fails `cdk synth` with
+      # "Cloud assembly schema version mismatch". Group them so Dependabot
+      # always proposes them as a pair.
+      aws-cdk-family:
+        patterns:
+          - "aws-cdk"
+          - "aws-cdk-lib"
     ignore:
       # @types/node — must track the Node runtime our Lambdas + CDK
       # target. Currently Node 22 (per CLAUDE.md). Bump the types only
