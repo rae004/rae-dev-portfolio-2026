@@ -8,12 +8,12 @@
     "test": "jest"
   },
   "dependencies": {
-    "@aws-sdk/client-ses": "^3.1048.0",
-    "@aws-sdk/client-ssm": "^3.1048.0"
+    "@aws-sdk/client-ses": "^3.1111.0",
+    "@aws-sdk/client-ssm": "^3.1111.0"
   },
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.140",
-    "@types/node": "^25.9.0",
-    "typescript": "^6.0.3"
+    "@types/aws-lambda": "^8.10.162",
+    "@types/node": "^26.2.0",
+    "typescript": "^7.0.2"
   }
 }
