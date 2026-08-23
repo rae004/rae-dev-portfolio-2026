@@ -62,6 +62,11 @@ updates:
       # the entire theme system. Exact-pinned in package.json too.
       - dependency-name: "daisyui"
         update-types: ["version-update:semver-major"]
+      # tailwindcss — daisyui 4.x requires Tailwind v3; a v4 bump breaks
+      # the theme system alongside daisyui. Absorb as a coordinated
+      # upgrade only when daisyui v5 is evaluated too.
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
       # typescript — TS majors usually surface real type errors across
       # the codebase. Treat as a coordinated upgrade, not a Monday bump.
       - dependency-name: "typescript"
