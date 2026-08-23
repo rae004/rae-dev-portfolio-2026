@@ -192,7 +192,7 @@ const SoftwareProjectDetailPage: React.FC = () => {
                 <div className='card-body'>
                   <h2 className='card-title text-2xl mb-4'>Technologies & Skills</h2>
                   <div className='space-y-6'>
-                    <SkillsGroup groupedSkills={groupedSkills} layout='grid' pillSize='md' />
+                    <SkillsGroup groupedSkills={groupedSkills} layout='grid' pillSize='md' className='flex-wrap' />
                   </div>
                 </div>
               </div>

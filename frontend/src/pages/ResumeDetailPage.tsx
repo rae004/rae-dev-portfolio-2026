@@ -100,7 +100,7 @@ const ResumeDetailPage: React.FC = () => {
           {Object.keys(groupedSkills).length > 0 && (
             <div className='mt-8'>
               <h2 className='text-2xl font-bold mb-4'>Related Skills</h2>
-              <SkillsGroup groupedSkills={groupedSkills} />
+              <SkillsGroup groupedSkills={groupedSkills} className='flex-wrap' />
             </div>
           )}
         </div>
