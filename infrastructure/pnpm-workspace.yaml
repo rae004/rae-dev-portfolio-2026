@@ -4,9 +4,16 @@
 # this file exists solely to host the transitive-dep security overrides
 # for the infrastructure dependency graph.
 #
-# No allowBuilds entry: pnpm 11 surfaces no package in this tree that
-# requests install scripts (CDK + AWS SDK deps are pure JS).
+# Allowed install-script packages.
 #
+# unrs-resolver — Rust-based module resolver used by jest 30's
+#   internals (via @jest/transform → jest-resolve). Ships a native
+#   binary and needs its install script to run. Published and widely
+#   used across the JS ecosystem (Nuxt, ESLint 9). Past our 7-day
+#   cooldown wall.
+allowBuilds:
+  unrs-resolver: true
+
 # Each override below patches a high-severity advisory in a transitive
 # dep. All patched versions chosen here are well past our 7-day cooldown.
 #
