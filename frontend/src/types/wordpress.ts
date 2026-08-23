@@ -206,14 +206,7 @@ export interface SocialLinksResponse {
 
 // Social link platform types
 export type SocialPlatform =
-  | 'linkedin'
-  | 'github'
-  | 'twitter'
-  | 'facebook'
-  | 'instagram'
-  | 'youtube'
-  | 'email'
-  | 'generic'
+  'linkedin' | 'github' | 'twitter' | 'facebook' | 'instagram' | 'youtube' | 'email' | 'generic'
 
 // Query parameters for social links API
 export interface SocialLinksQueryParams {
