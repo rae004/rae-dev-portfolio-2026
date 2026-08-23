@@ -24,7 +24,7 @@
     "routes:watch": "tsr watch"
   },
   "dependencies": {
-    "@tanstack/react-form": "^1.32.0",
+    "@tanstack/react-form": "^1.33.5",
     "@tanstack/react-query": "^5.101.0",
     "@tanstack/react-router": "1.132.41",
     "autoprefixer": "^10.5.0",
