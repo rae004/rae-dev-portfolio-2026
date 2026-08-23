@@ -49,6 +49,8 @@ logs
 !/wordpress/wp-content/themes/
 /wordpress/wp-content/themes/*
 !/wordpress/wp-content/themes/rae-portfolio/
+# Our project's must-use plugins (auto-loaded — no admin activation needed)
+!/wordpress/wp-content/mu-plugins/
 # And the project scripts (content seeder, etc.)
 !/wordpress/scripts/
 
