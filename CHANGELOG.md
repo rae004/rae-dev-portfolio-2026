@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.5.2...v0.6.0) (2026-08-24)
+
+
+### Features
+
+* **infra:** media library stack + portfolio content plan ([#61](https://github.com/rae004/rae-dev-portfolio-2026/issues/61)) ([45130af](https://github.com/rae004/rae-dev-portfolio-2026/commit/45130af6ce231c3529bf38c26b8ca3b34058dc33))
+
+
+### Bug Fixes
+
+* **ui:** wrap skill categories on detail pages ([#105](https://github.com/rae004/rae-dev-portfolio-2026/issues/105)) ([9b2fffd](https://github.com/rae004/rae-dev-portfolio-2026/commit/9b2fffdf8dc0c94f1b201c76a54a737e92039ce1))
+
 ## [0.5.2](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.5.1...v0.5.2) (2026-05-24)
 
 
