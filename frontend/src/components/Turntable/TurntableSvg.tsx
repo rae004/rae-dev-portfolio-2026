@@ -100,33 +100,34 @@ const TurntableSvg = ({ className = '' }: TurntableSvgProps) => {
 
       {/* Pitch fader */}
       <g data-part='pitch-fader'>
-        <rect x={345} y={140} width={10} height={110} rx={4} fill='#8c8d8f' />
-        <rect x={339} y={185} width={22} height={10} rx={2} fill='#e4e4e4' stroke='#555' />
+        <rect x={345} y={220} width={10} height={115} rx={4} fill='#8c8d8f' />
+        <rect x={339} y={272} width={22} height={10} rx={2} fill='#e4e4e4' stroke='#555' />
       </g>
 
       {/* Quartz pitch-reset knob + start/stop + speed selector cluster */}
-      <circle data-part='quartz-knob' cx={55} cy={300} r={16} fill='#222' stroke='#555' />
+      <circle data-part='quartz-knob' cx={45} cy={310} r={16} fill='#222' stroke='#555' />
       <rect
         data-part='start-stop-button'
         x={28}
-        y={330}
+        y={337}
         width={50}
-        height={24}
+        height={38}
         rx={3}
         fill='#cfcfcf'
         stroke='#555'
       />
+
       <rect
         data-part='speed-selector'
-        x={90}
-        y={330}
+        x={95}
+        y={365}
         width={44}
-        height={24}
+        height={10}
         rx={3}
         fill='#cfcfcf'
         stroke='#555'
       />
-      <line x1={112} y1={330} x2={112} y2={354} stroke='#888' />
+      <line x1={117} y1={365} x2={117} y2={375} stroke='#888' />
 
       {/* Tonearm assembly */}
       <g data-part='tonearm-assembly'>
