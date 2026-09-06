@@ -168,9 +168,9 @@ const Turntable = ({ songs }: TurntableProps) => {
   return (
     <div
       ref={rootRef}
-      className='relative flex flex-col items-center gap-8 w-full max-w-5xl mx-auto'
+      className='relative flex flex-col items-center gap-8 w-full max-w-3xl mx-auto'
     >
-      <div className='w-full max-w-xl aspect-square'>
+      <div className='w-full aspect-square'>
         <TurntableSvg className='w-full h-full drop-shadow-xl' />
       </div>
 
