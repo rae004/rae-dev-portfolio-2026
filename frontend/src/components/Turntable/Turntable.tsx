@@ -174,7 +174,7 @@ const Turntable = ({ songs }: TurntableProps) => {
         <TurntableSvg className='w-full h-full drop-shadow-xl' />
       </div>
 
-      <div className='flex flex-col gap-4 w-full max-w-sm'>
+      <div className='flex flex-col gap-4 w-full max-w-2xl'>
         <SongList
           songs={songs}
           selectedSongId={selectedSong?.id ?? null}

@@ -12,13 +12,13 @@ export interface Song {
 export const TURNTABLE_SONGS: Song[] = [
   {
     id: 'anthony-hamilton',
-    title: 'Back to Love',
+    title: 'Pass Me Over',
     artist: 'Anthony Hamilton',
     youtubeId: 'Dq-1L2ldQr0',
   },
   {
     id: 'cat-stevens-yusuf',
-    title: 'Roadsinger',
+    title: 'Everytime I Dream',
     artist: 'Cat Stevens / Yusuf',
     youtubeId: 'okpgpTp_zhI',
   },

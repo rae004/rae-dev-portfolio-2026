@@ -11,7 +11,7 @@ interface SongListProps {
 // for free — no hand-rolled roving-tabindex needed.
 const SongList = ({ songs, selectedSongId, disabled, onSelect }: SongListProps) => {
   return (
-    <fieldset className='flex flex-row flex-wrap gap-2' disabled={disabled}>
+    <fieldset className='flex flex-row flex-wrap gap-2 justify-center' disabled={disabled}>
       <legend className='sr-only'>Choose a song to play</legend>
       {songs.map(song => {
         const inputId = `turntable-song-${song.id}`
