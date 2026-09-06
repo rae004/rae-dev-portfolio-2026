@@ -1,0 +1,18 @@
+/* Turntable hero widget — reduced-motion / high-contrast support.
+   The actual animations are driven by anime.js in JS (useTurntableAnimation
+   checks prefers-reduced-motion itself and shortens/skips motion there);
+   this stylesheet is a belt-and-suspenders CSS-level backstop. */
+
+@media (prefers-reduced-motion: reduce) {
+  [data-part='platter'],
+  [data-part='record'],
+  [data-part='tonearm-pivot'] {
+    transition: none !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  [data-part='platter-rim-ticks'] line {
+    stroke: #ffffff;
+  }
+}
