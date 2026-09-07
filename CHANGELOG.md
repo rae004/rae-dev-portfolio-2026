@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.6.0...v0.7.0) (2026-09-07)
+
+
+### Features
+
+* **home:** Add animated turntable hero widget with real playback controls ([#118](https://github.com/rae004/rae-dev-portfolio-2026/issues/118)) ([65ccfb1](https://github.com/rae004/rae-dev-portfolio-2026/commit/65ccfb1b3d819a504ad2686d2ed2d1a2d3dacf25))
+
 ## [0.6.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.5.2...v0.6.0) (2026-08-24)
 
 
