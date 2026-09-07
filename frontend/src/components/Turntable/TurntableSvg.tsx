@@ -114,6 +114,33 @@ const TurntableSvgBase = ({ className = '' }: TurntableSvgProps) => {
         <rect x={355} y={272} width={22} height={10} rx={2} fill='#e4e4e4' stroke='#555' />
       </g>
 
+      {/* Brand plate — sits in the gap between the record's lower-right edge
+          and the pitch fader, matching the real SL-1200MK3's badge position. */}
+      <text
+        data-part='brand-plate'
+        x={255.5}
+        y={360}
+        fontFamily='sans-serif'
+        fontSize={6}
+        fill='#333'
+        textLength={64}
+        lengthAdjust='spacingAndGlyphs'
+      >
+        <tspan fontWeight='bold'>Technics</tspan> <tspan fontStyle='italic'>Quartz</tspan>
+      </text>
+      <text
+        data-part='brand-plate'
+        x={256}
+        y={365}
+        fontFamily='sans-serif'
+        fontSize={4}
+        fill='#333'
+        textLength={85}
+        lengthAdjust='spacingAndGlyphs'
+      >
+        Direct Drive Turntable System SL-1200MK3
+      </text>
+
       {/* Quartz pitch-reset knob + start/stop + speed selector cluster */}
       <circle data-part='quartz-knob' cx={45} cy={310} r={16} fill='#222' stroke='#555' />
       <rect
