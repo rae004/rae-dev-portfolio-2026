@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react'
 import TurntableSvg from './TurntableSvg'
 import SongList from './SongList'
+import TransportButton from './TransportButton'
 import { useYouTubePlayer } from './useYouTubePlayer'
 import { useTurntableAnimation } from './useTurntableAnimation'
 import { YT_PLAYER_STATE } from './youtubeTypes'
@@ -178,8 +179,18 @@ const Turntable = ({ songs }: TurntableProps) => {
       ref={rootRef}
       className='relative flex flex-col items-center gap-8 w-full max-w-3xl mx-auto'
     >
-      <div className='w-full aspect-square'>
+      <div className='relative w-full aspect-square'>
         <TurntableSvg className='w-full h-full drop-shadow-xl' />
+        <TransportButton
+          mode={state.status === 'playing' || state.status === 'paused' ? 'split' : 'single'}
+          isPlaying={state.status === 'playing'}
+          canPlay={canPlay}
+          canPause={canPause}
+          canStop={canStop}
+          onPlay={() => dispatch({ type: 'PLAY' })}
+          onPause={() => dispatch({ type: 'PAUSE' })}
+          onStop={() => dispatch({ type: 'STOP' })}
+        />
       </div>
 
       <div className='flex flex-col gap-4 w-full max-w-2xl'>
@@ -189,33 +200,6 @@ const Turntable = ({ songs }: TurntableProps) => {
           disabled={isListDisabled}
           onSelect={handleSelect}
         />
-
-        <div className='flex gap-2 justify-center'>
-          <button
-            type='button'
-            className='btn btn-primary'
-            disabled={!canPlay}
-            onClick={() => dispatch({ type: 'PLAY' })}
-          >
-            Play
-          </button>
-          <button
-            type='button'
-            className='btn btn-outline'
-            disabled={!canPause}
-            onClick={() => dispatch({ type: 'PAUSE' })}
-          >
-            Pause
-          </button>
-          <button
-            type='button'
-            className='btn btn-outline'
-            disabled={!canStop}
-            onClick={() => dispatch({ type: 'STOP' })}
-          >
-            Stop
-          </button>
-        </div>
 
         <div aria-live='polite' role='status' className='sr-only'>
           {statusMessage(state, songs)}
