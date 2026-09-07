@@ -32,6 +32,10 @@ export const TONEARM_CUE_ANGLE = -20
 export const TONEARM_END_ANGLE = 4
 
 // Choreography durations (ms).
+// Used only for the record lifting back off the platter on Stop — the
+// reveal itself is an instant plain-style swap (see useTurntableAnimation's
+// cueRecord) the moment useRecordDelivery's traveling record lands, not an
+// animated drop or fade.
 export const RECORD_DROP_DURATION_MS = 700
 export const TONEARM_CUE_DURATION_MS = 900
 export const TONEARM_RETURN_DURATION_MS = 600

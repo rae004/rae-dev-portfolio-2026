@@ -24,12 +24,23 @@ const animationMock = vi.hoisted(() => ({
 
 const useYouTubePlayerMock = vi.hoisted(() => vi.fn())
 
+// Lands the record instantly rather than waiting on a real anime.js
+// animation timeline, so tests can assert cueRecord's synchronous effects
+// without ticking real animation frames.
+const deliverRecordMock = vi.hoisted(() =>
+  vi.fn(({ onLanded }: { onLanded: () => void }) => onLanded())
+)
+
 vi.mock('./useYouTubePlayer', () => ({
   useYouTubePlayer: useYouTubePlayerMock,
 }))
 
 vi.mock('./useTurntableAnimation', () => ({
   useTurntableAnimation: () => animationMock,
+}))
+
+vi.mock('./useRecordDelivery', () => ({
+  useRecordDelivery: () => ({ deliverRecord: deliverRecordMock }),
 }))
 
 const songs: Song[] = [

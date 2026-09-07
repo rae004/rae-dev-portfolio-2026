@@ -2,8 +2,10 @@ import { useCallback, useEffect, useReducer, useRef } from 'react'
 import TurntableSvg from './TurntableSvg'
 import SongList from './SongList'
 import TransportButton from './TransportButton'
+import RecordDeliveryOverlay from './RecordDeliveryOverlay'
 import { useYouTubePlayer } from './useYouTubePlayer'
 import { useTurntableAnimation } from './useTurntableAnimation'
+import { useRecordDelivery } from './useRecordDelivery'
 import { YT_PLAYER_STATE } from './youtubeTypes'
 import type { Song } from './songs'
 
@@ -87,6 +89,8 @@ const Turntable = ({ songs }: TurntableProps) => {
   const rootRef = useRef<HTMLDivElement | null>(null)
   const progressFrameRef = useRef<number | null>(null)
   const spinStartedRef = useRef(false)
+  const sleeveRef = useRef<HTMLDivElement | null>(null)
+  const deliveryRecordRef = useRef<HTMLDivElement | null>(null)
 
   const handleYouTubeStateChange = useCallback((ytState: number) => {
     if (ytState === YT_PLAYER_STATE.ENDED) {
@@ -106,6 +110,7 @@ const Turntable = ({ songs }: TurntableProps) => {
 
   const youtube = useYouTubePlayer(handleYouTubeStateChange, handleYouTubeError)
   const animation = useTurntableAnimation(rootRef)
+  const { deliverRecord } = useRecordDelivery(sleeveRef, deliveryRecordRef)
 
   const selectedSong = 'songId' in state ? songs.find(s => s.id === state.songId) : undefined
 
@@ -141,7 +146,17 @@ const Turntable = ({ songs }: TurntableProps) => {
   useEffect(() => {
     if (state.status === 'cueing') {
       youtube.cue(songs.find(s => s.id === state.songId)?.youtubeId ?? '')
-      animation.cueRecord(() => dispatch({ type: 'CUE_COMPLETE' }))
+      const platter = rootRef.current?.querySelector('[data-part="platter"]')
+      const startCueRecord = () => animation.cueRecord(() => dispatch({ type: 'CUE_COMPLETE' }))
+      if (platter) {
+        // Deliver the record from the viewport corner first — the tonearm
+        // shouldn't swing toward the platter until there's actually a
+        // record on it. cueRecord (record reveal + tonearm cue-in) starts
+        // only once it lands.
+        deliverRecord({ targetRect: platter.getBoundingClientRect(), onLanded: startCueRecord })
+      } else {
+        startCueRecord()
+      }
     } else if (state.status === 'playing') {
       youtube.play()
       if (spinStartedRef.current) {
@@ -205,6 +220,8 @@ const Turntable = ({ songs }: TurntableProps) => {
           {statusMessage(state, songs)}
         </div>
       </div>
+
+      <RecordDeliveryOverlay sleeveRef={sleeveRef} recordRef={deliveryRecordRef} />
 
       {/* Hidden YouTube player — audio only, no visible chrome. */}
       <div

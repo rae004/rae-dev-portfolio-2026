@@ -83,17 +83,24 @@ export const useTurntableAnimation = (
       const PLATTER = '[data-part="platter"]'
 
       self.add('cueRecord', (onComplete: () => void) => {
-        // .revert() any still-running hide/reveal before starting a new one
-        // — same reasoning as the platter spin fix: two animate() calls
-        // racing on the same element+property can leave a stale WAAPI
-        // effect behind.
+        // .revert() any still-running hide animation first — same reasoning
+        // as the platter spin fix: an animate() call finishing normally
+        // leaves its WAAPI effect attached (fill persists), which could
+        // otherwise override the plain write below.
         recordAnimRef.current?.revert()
-        recordAnimRef.current = animate(RECORD, {
-          translateY: [-30, 0],
-          opacity: [0, 1],
-          duration: dropDuration,
-          ease: 'outQuad',
-        })
+        recordAnimRef.current = null
+        // An instant plain-style reveal, not a fade — useRecordDelivery's
+        // overlay record already performs the reveal by flying in from the
+        // viewport corner, and is exactly the same size/position/opacity as
+        // this SVG record at the moment it hands off. Even a short (200ms)
+        // crossfade between the two left a visible gap where the slip mat
+        // flashed through underneath both, since it depended on two
+        // independent animations (one portaled outside the SVG entirely)
+        // starting on the exact same frame. Swapping instantly between two
+        // identical-looking elements has no such window — there's nothing
+        // to visibly desync.
+        const record = rootRef.current?.querySelector<HTMLElement>(RECORD)
+        if (record) record.style.opacity = '1'
         const pivot = rootRef.current?.querySelector<HTMLElement>(TONEARM_PIVOT)
         cancelRotateTweenRef.current?.()
         if (pivot) {
@@ -137,8 +144,10 @@ export const useTurntableAnimation = (
         // speed on every play after the first.
         spinAnimRef.current?.revert()
         spinAnimRef.current = null
-        // Lift the record back off the platter, reversing cueRecord's
-        // reveal, so a stopped turntable shows only the slip mat again.
+        // Lift the record back off the platter (translateY + fade) so a
+        // stopped turntable shows only the slip mat again. Unlike the
+        // reveal, nothing else is animating the record at this point, so
+        // the drop motion still reads cleanly here.
         recordAnimRef.current?.revert()
         recordAnimRef.current = animate(RECORD, {
           translateY: [0, -30],
