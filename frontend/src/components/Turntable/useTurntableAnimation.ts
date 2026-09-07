@@ -142,12 +142,18 @@ export const useTurntableAnimation = (
       })
 
       self.add('seekTonearm', (progress: number) => {
-        // Plain style write, not a tween — this fires every animation frame
-        // during playback (potentially hundreds of times per song),
-        // scrubbing to a value derived from real playback progress rather
-        // than easing toward it.
+        // Not a tween — this fires every animation frame during playback
+        // (potentially hundreds of times per song), scrubbing to a value
+        // derived from real playback progress rather than easing toward it.
         cancelRotateTweenRef.current?.()
-        const angle = TONEARM_CUE_ANGLE + (TONEARM_END_ANGLE - TONEARM_CUE_ANGLE) * progress
+        const clamped = Math.min(Math.max(progress, 0), 1)
+        // Linear-in-time interpolation reaches a visually "near the end"
+        // pose partway through the song and then looks frozen there for the
+        // rest of playback. Easing the mapping so motion concentrates later
+        // keeps the needle visibly near the outer edge for most of the
+        // song, only sweeping in noticeably as it actually nears the end.
+        const eased = clamped * clamped
+        const angle = TONEARM_CUE_ANGLE + (TONEARM_END_ANGLE - TONEARM_CUE_ANGLE) * eased
         const pivot = rootRef.current?.querySelector<HTMLElement>(TONEARM_PIVOT)
         if (pivot) pivot.style.rotate = `${angle}deg`
       })

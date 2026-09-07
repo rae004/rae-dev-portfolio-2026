@@ -14,8 +14,10 @@ export const PLATTER_REVOLUTION_MS = (60 / PLATTER_RPM) * 1000
 // were tuned by eye rather than calculated:
 //   - REST parks the needle well outside the platter (radius 150), in the
 //     gap before the pitch fader — not hovering over the vinyl.
-//   - CUE drops the needle at the record's outer edge, closest to the pivot.
-//   - END sweeps it near the label, like a real tonearm playing inward.
+//   - CUE drops the needle at the record's outer edge, where a track
+//     actually starts.
+//   - END sweeps it in to the label's edge, like a real tonearm playing
+//     inward to the end of a song.
 // All three are only ever reached via useTurntableAnimation's manual
 // requestAnimationFrame tween (see tweenRotate) — never via anime.js's
 // animate(). anime.js v4 animates individual transform properties through
@@ -26,8 +28,8 @@ export const PLATTER_REVOLUTION_MS = (60 / PLATTER_RPM) * 1000
 // holding the compositor. Routing every rotate change through one plain
 // rAF-driven mechanism sidesteps that entirely.
 export const TONEARM_REST_ANGLE = -35
-export const TONEARM_CUE_ANGLE = 20
-export const TONEARM_END_ANGLE = 60
+export const TONEARM_CUE_ANGLE = -20
+export const TONEARM_END_ANGLE = 4
 
 // Choreography durations (ms).
 export const RECORD_DROP_DURATION_MS = 700
