@@ -83,7 +83,16 @@ export const useYouTubePlayer = (
       playerRef.current = new window.YT.Player(containerRef.current, {
         width: 200,
         height: 113,
-        playerVars: { controls: 0, disablekb: 1, modestbranding: 1 },
+        playerVars: {
+          controls: 0,
+          disablekb: 1,
+          modestbranding: 1,
+          // Without an explicit origin, the player's postMessage security
+          // check can fail and misreport a perfectly embeddable video as
+          // error 101/150 ("embedding disabled") — a well-known IFrame API
+          // gotcha, not a real restriction on the video itself.
+          origin: window.location.origin,
+        },
         events: {
           onReady: () => {
             isReadyRef.current = true

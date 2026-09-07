@@ -21,6 +21,39 @@ export interface UseTurntableAnimationReturn {
   seekTonearm: (progress: number) => void
 }
 
+const easeInOutQuad = (t: number): number => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2)
+
+// Plain requestAnimationFrame tween writing `rotate` directly — deliberately
+// never anime.js's animate(). anime.js v4 animates individual transform
+// properties via the Web Animations API, which can leave a finished effect
+// attached to the element (fill persists past completion) that silently
+// overrides later plain style writes to the same property. Mixing the two
+// mechanisms on `tonearm-pivot` caused the same nominal angle to render
+// differently depending on whether a stale WAAPI effect was still holding
+// the compositor. Using one plain-write mechanism for every rotate change
+// (cue, return, and per-frame seek) avoids that class of bug entirely.
+const tweenRotate = (
+  el: HTMLElement,
+  from: number,
+  to: number,
+  duration: number,
+  onComplete?: () => void
+): (() => void) => {
+  let raf = 0
+  const start = performance.now()
+  const step = (now: number) => {
+    const t = duration <= 0 ? 1 : Math.min((now - start) / duration, 1)
+    el.style.rotate = `${from + (to - from) * easeInOutQuad(t)}deg`
+    if (t < 1) {
+      raf = requestAnimationFrame(step)
+    } else {
+      onComplete?.()
+    }
+  }
+  raf = requestAnimationFrame(step)
+  return () => cancelAnimationFrame(raf)
+}
+
 // Wraps anime.js v4's createScope + self.add() React pattern:
 // https://animejs.com/documentation/getting-started/using-with-react
 export const useTurntableAnimation = (
@@ -28,6 +61,7 @@ export const useTurntableAnimation = (
 ): UseTurntableAnimationReturn => {
   const scopeRef = useRef<Scope | null>(null)
   const spinAnimRef = useRef<JSAnimation | null>(null)
+  const cancelRotateTweenRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -54,12 +88,19 @@ export const useTurntableAnimation = (
           duration: dropDuration,
           ease: 'outQuad',
         })
-        animate(TONEARM_PIVOT, {
-          rotate: [TONEARM_REST_ANGLE, TONEARM_CUE_ANGLE],
-          duration: cueDuration,
-          ease: 'inOutQuad',
-          onComplete: () => onComplete(),
-        })
+        const pivot = rootRef.current?.querySelector<HTMLElement>(TONEARM_PIVOT)
+        cancelRotateTweenRef.current?.()
+        if (pivot) {
+          cancelRotateTweenRef.current = tweenRotate(
+            pivot,
+            TONEARM_REST_ANGLE,
+            TONEARM_CUE_ANGLE,
+            cueDuration,
+            onComplete
+          )
+        } else {
+          onComplete()
+        }
       })
 
       self.add('spinStart', () => {
@@ -83,17 +124,32 @@ export const useTurntableAnimation = (
       self.add('returnTonearm', (onComplete: () => void) => {
         spinAnimRef.current?.pause()
         spinAnimRef.current = null
-        animate(TONEARM_PIVOT, {
-          rotate: TONEARM_REST_ANGLE,
-          duration: returnDuration,
-          ease: 'inOutQuad',
-          onComplete: () => onComplete(),
-        })
+        const pivot = rootRef.current?.querySelector<HTMLElement>(TONEARM_PIVOT)
+        cancelRotateTweenRef.current?.()
+        if (pivot) {
+          const parsedAngle = parseFloat(pivot.style.rotate)
+          const currentAngle = Number.isNaN(parsedAngle) ? TONEARM_CUE_ANGLE : parsedAngle
+          cancelRotateTweenRef.current = tweenRotate(
+            pivot,
+            currentAngle,
+            TONEARM_REST_ANGLE,
+            returnDuration,
+            onComplete
+          )
+        } else {
+          onComplete()
+        }
       })
 
       self.add('seekTonearm', (progress: number) => {
+        // Plain style write, not a tween — this fires every animation frame
+        // during playback (potentially hundreds of times per song),
+        // scrubbing to a value derived from real playback progress rather
+        // than easing toward it.
+        cancelRotateTweenRef.current?.()
         const angle = TONEARM_CUE_ANGLE + (TONEARM_END_ANGLE - TONEARM_CUE_ANGLE) * progress
-        animate(TONEARM_PIVOT, { rotate: angle, duration: 0 })
+        const pivot = rootRef.current?.querySelector<HTMLElement>(TONEARM_PIVOT)
+        if (pivot) pivot.style.rotate = `${angle}deg`
       })
     })
 

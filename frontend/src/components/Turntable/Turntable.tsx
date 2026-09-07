@@ -113,8 +113,15 @@ const Turntable = ({ songs }: TurntableProps) => {
   // single source of truth for a/v sync, anime.js just renders it.
   useEffect(() => {
     if (state.status !== 'playing') return
+    let cancelled = false
 
     const tick = () => {
+      // Defensive guard: cancelAnimationFrame should make this unreachable
+      // once we leave 'playing', but a stray/delayed callback here would
+      // otherwise fight returnTonearm's animation back to rest with a stale
+      // seekTonearm() call — never let this loop touch the tonearm once
+      // something else has taken over.
+      if (cancelled) return
       const progress = youtube.getProgress()
       if (progress && progress.duration > 0) {
         animation.seekTonearm(progress.currentTime / progress.duration)
@@ -124,6 +131,7 @@ const Turntable = ({ songs }: TurntableProps) => {
     progressFrameRef.current = requestAnimationFrame(tick)
 
     return () => {
+      cancelled = true
       if (progressFrameRef.current !== null) cancelAnimationFrame(progressFrameRef.current)
     }
   }, [state.status, youtube, animation])

@@ -1,3 +1,6 @@
+import { memo } from 'react'
+import { TONEARM_REST_ANGLE } from './turntableConfig'
+
 interface TurntableSvgProps {
   className?: string
 }
@@ -11,7 +14,14 @@ interface TurntableSvgProps {
 // tonearm pivot at (330, 90). Both the platter and record groups share the
 // platter's center as their rotation origin so the continuous spin and the
 // record drop-in animation can target either independently.
-const TurntableSvg = ({ className = '' }: TurntableSvgProps) => {
+//
+// memo() here isn't just a perf nicety — it's load-bearing. Once mounted,
+// anime.js owns this subtree's `rotate`/`translateY`/`opacity` styles via
+// direct DOM manipulation. `className` never actually changes, but without
+// memo, every reducer-driven re-render in Turntable.tsx would still cause
+// React to reconcile this component's JSX and reset the tonearm's inline
+// `rotate` back to TONEARM_REST_ANGLE mid-animation, fighting anime.js.
+const TurntableSvgBase = ({ className = '' }: TurntableSvgProps) => {
   const platterCenter = { x: 180, y: 200 }
   const platterRadius = 150
 
@@ -100,8 +110,8 @@ const TurntableSvg = ({ className = '' }: TurntableSvgProps) => {
 
       {/* Pitch fader */}
       <g data-part='pitch-fader'>
-        <rect x={345} y={220} width={10} height={115} rx={4} fill='#8c8d8f' />
-        <rect x={339} y={272} width={22} height={10} rx={2} fill='#e4e4e4' stroke='#555' />
+        <rect x={361} y={220} width={10} height={115} rx={4} fill='#8c8d8f' />
+        <rect x={355} y={272} width={22} height={10} rx={2} fill='#e4e4e4' stroke='#555' />
       </g>
 
       {/* Quartz pitch-reset knob + start/stop + speed selector cluster */}
@@ -132,7 +142,10 @@ const TurntableSvg = ({ className = '' }: TurntableSvgProps) => {
       {/* Tonearm assembly */}
       <g data-part='tonearm-assembly'>
         <circle data-part='tonearm-rest-peg' cx={300} cy={55} r={4} fill='#444' />
-        <g data-part='tonearm-pivot' style={{ transformOrigin: '330px 90px' }}>
+        <g
+          data-part='tonearm-pivot'
+          style={{ transformOrigin: '330px 90px', rotate: `${TONEARM_REST_ANGLE}deg` }}
+        >
           <circle cx={330} cy={90} r={28} fill='#2c2c2c' stroke='#555' strokeWidth={2} />
           <circle
             cx={330}
@@ -145,7 +158,7 @@ const TurntableSvg = ({ className = '' }: TurntableSvgProps) => {
           />
           <path
             data-part='tonearm-arm'
-            d='M 322,98 C 300,120 262,150 250,190 C 245,205 240,215 234,222'
+            d='M 320,100 C 293,127 247,164 232,213 C 226,231 220,243 212,252'
             stroke='#e0e0e0'
             strokeWidth={6}
             strokeLinecap='round'
@@ -153,18 +166,20 @@ const TurntableSvg = ({ className = '' }: TurntableSvgProps) => {
           />
           <rect
             data-part='headshell'
-            x={222}
-            y={216}
+            x={200}
+            y={245}
             width={20}
             height={11}
             rx={2}
             fill='#141414'
-            transform='rotate(20 232 221)'
+            transform='rotate(20 210 250)'
           />
         </g>
       </g>
     </svg>
   )
 }
+
+const TurntableSvg = memo(TurntableSvgBase)
 
 export default TurntableSvg
