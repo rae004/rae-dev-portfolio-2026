@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from '@tanstack/react-router'
 import { useBlogPosts, useSoftwareProjects, useMediaProjects } from '../hooks/useWordPress'
 import { decodeHtml } from '../utils/decodeHtml'
+import Turntable, { TURNTABLE_SONGS } from '../components/Turntable'
 
 const HomePage: React.FC = () => {
   // Get recent blog posts for featured content
@@ -28,13 +29,14 @@ const HomePage: React.FC = () => {
     <div className='min-h-screen'>
       {/* Hero Section */}
       <div className='hero min-h-screen bg-base-200'>
-        <div className='hero-content text-center'>
-          <div className='max-w-md'>
+        <div className='hero-content flex-col gap-10 text-center px-4 py-16'>
+          <Turntable songs={TURNTABLE_SONGS} />
+          <div className='max-w-3xl'>
             <h1 className='text-5xl font-bold'>Hello there</h1>
             <p className='py-6'>
               Welcome to Robert Engel's portfolio - showcasing a unique journey from music
-              production to cloud engineering, with expertise spanning multiple industries and
-              technologies.
+              production to cloud engineering. Pick a track from my engineering credits and hit
+              play.
             </p>
             <Link to='/resume' className='btn btn-primary'>
               View Resume
