@@ -61,6 +61,7 @@ export const useTurntableAnimation = (
 ): UseTurntableAnimationReturn => {
   const scopeRef = useRef<Scope | null>(null)
   const spinAnimRef = useRef<JSAnimation | null>(null)
+  const recordAnimRef = useRef<JSAnimation | null>(null)
   const cancelRotateTweenRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
@@ -82,7 +83,12 @@ export const useTurntableAnimation = (
       const PLATTER = '[data-part="platter"]'
 
       self.add('cueRecord', (onComplete: () => void) => {
-        animate(RECORD, {
+        // .revert() any still-running hide/reveal before starting a new one
+        // — same reasoning as the platter spin fix: two animate() calls
+        // racing on the same element+property can leave a stale WAAPI
+        // effect behind.
+        recordAnimRef.current?.revert()
+        recordAnimRef.current = animate(RECORD, {
           translateY: [-30, 0],
           opacity: [0, 1],
           duration: dropDuration,
@@ -131,6 +137,15 @@ export const useTurntableAnimation = (
         // speed on every play after the first.
         spinAnimRef.current?.revert()
         spinAnimRef.current = null
+        // Lift the record back off the platter, reversing cueRecord's
+        // reveal, so a stopped turntable shows only the slip mat again.
+        recordAnimRef.current?.revert()
+        recordAnimRef.current = animate(RECORD, {
+          translateY: [0, -30],
+          opacity: [1, 0],
+          duration: dropDuration,
+          ease: 'inQuad',
+        })
         const pivot = rootRef.current?.querySelector<HTMLElement>(TONEARM_PIVOT)
         cancelRotateTweenRef.current?.()
         if (pivot) {

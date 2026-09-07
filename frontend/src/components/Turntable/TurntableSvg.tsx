@@ -85,10 +85,58 @@ const TurntableSvgBase = ({ className = '' }: TurntableSvgProps) => {
         <g data-part='platter-rim-ticks'>{rimTicks}</g>
       </g>
 
-      {/* Record — drop-in target; rotates alongside the platter while playing */}
+      {/* Slip mat — always visible under the record, printed with two
+          mirrored "Technics" logos (real slipmats are symmetric so they read
+          correctly from either side) matching the reference mat. */}
+      <g data-part='slip-mat'>
+        {/* Matches the record's own radius (132) so it never encroaches on
+            the platter-rim-ticks band (136-144) — that gap is what makes
+            the platter's spin visible/realistic while the record covers it. */}
+        <circle cx={platterCenter.x} cy={platterCenter.y} r={132} fill='#161616' />
+        <circle
+          cx={platterCenter.x}
+          cy={platterCenter.y}
+          r={122}
+          fill='none'
+          stroke='#4a4a4a'
+          strokeWidth={1}
+        />
+        <text
+          x={platterCenter.x}
+          y={platterCenter.y - 10}
+          textAnchor='middle'
+          fontFamily='sans-serif'
+          fontWeight='bold'
+          fontSize={22}
+          textLength={160}
+          lengthAdjust='spacingAndGlyphs'
+          fill='#c7cbd0'
+          transform={`rotate(-40 ${platterCenter.x} ${platterCenter.y})`}
+        >
+          Technics
+        </text>
+        <text
+          x={platterCenter.x}
+          y={platterCenter.y - 10}
+          textAnchor='middle'
+          fontFamily='sans-serif'
+          fontWeight='bold'
+          fontSize={22}
+          textLength={160}
+          lengthAdjust='spacingAndGlyphs'
+          fill='#8a83ab'
+          transform={`rotate(140 ${platterCenter.x} ${platterCenter.y})`}
+        >
+          Technics
+        </text>
+        <circle cx={platterCenter.x} cy={platterCenter.y} r={2.5} fill='#f2f0e9' />
+      </g>
+
+      {/* Record — drop-in target; hidden until a song is cued, revealing the
+          slip mat above at rest. Rotates alongside the platter while playing. */}
       <g
         data-part='record'
-        style={{ transformOrigin: `${platterCenter.x}px ${platterCenter.y}px` }}
+        style={{ transformOrigin: `${platterCenter.x}px ${platterCenter.y}px`, opacity: 0 }}
       >
         <circle cx={platterCenter.x} cy={platterCenter.y} r={132} fill='#161616' />
         <circle
