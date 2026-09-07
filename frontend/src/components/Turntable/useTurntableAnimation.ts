@@ -122,7 +122,14 @@ export const useTurntableAnimation = (
       })
 
       self.add('returnTonearm', (onComplete: () => void) => {
-        spinAnimRef.current?.pause()
+        // .revert() (not .pause()) so the platter/record rotation resets to
+        // its pre-spin baseline instead of freezing mid-turn. Without this,
+        // the next song's spinStart() would animate from that leftover
+        // angle toward a literal '360deg' target — covering less than a
+        // full revolution in the same PLATTER_REVOLUTION_MS duration, which
+        // reads as the platter spinning at reduced (and inconsistent)
+        // speed on every play after the first.
+        spinAnimRef.current?.revert()
         spinAnimRef.current = null
         const pivot = rootRef.current?.querySelector<HTMLElement>(TONEARM_PIVOT)
         cancelRotateTweenRef.current?.()
