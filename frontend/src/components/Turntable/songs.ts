@@ -52,4 +52,10 @@ export const TURNTABLE_SONGS: Song[] = [
     artist: 'Anthony Hamilton (ft. David Banner)',
     youtubeId: 'Y54W0HQ5qss',
   },
+  {
+    id: 'city-wolf',
+    title: 'Where is my mind',
+    artist: 'City Wolf',
+    youtubeId: 'EM1Q0eUZipc',
+  },
 ]

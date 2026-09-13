@@ -3,6 +3,7 @@ import TurntableSvg from './TurntableSvg'
 import SongList from './SongList'
 import TransportButton from './TransportButton'
 import RecordDeliveryOverlay from './RecordDeliveryOverlay'
+import OnboardingTour from './OnboardingTour'
 import { useYouTubePlayer } from './useYouTubePlayer'
 import { useTurntableAnimation } from './useTurntableAnimation'
 import { useRecordDelivery } from './useRecordDelivery'
@@ -20,6 +21,8 @@ type TurntableState =
   | { status: 'playing'; songId: string }
   | { status: 'paused'; songId: string }
   | { status: 'stopping'; songId: string }
+
+export type TurntableStatus = TurntableState['status']
 
 type TurntableAction =
   | { type: 'SELECT_SONG'; songId: string }
@@ -231,6 +234,7 @@ const Turntable = ({ songs }: TurntableProps) => {
       </div>
 
       <RecordDeliveryOverlay sleeveRef={sleeveRef} recordRef={deliveryRecordRef} />
+      <OnboardingTour status={state.status} rootRef={rootRef} firstSongId={songs[0]?.id} />
 
       {/* Hidden YouTube player — audio only, no visible chrome. */}
       <div

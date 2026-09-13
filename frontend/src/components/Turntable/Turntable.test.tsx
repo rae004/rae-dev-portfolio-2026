@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import Turntable from './Turntable'
+import { resetOnboardingVisitDecision } from './useOnboardingEligibility'
 import type { Song } from './songs'
 
 const youtubeMock = vi.hoisted(() => ({
@@ -48,9 +49,15 @@ const songs: Song[] = [
   { id: 'b', title: 'Song B', artist: 'Artist B', youtubeId: 'bbb' },
 ]
 
+const selectSongA = () => act(() => fireEvent.click(screen.getByRole('radio', { name: /Song A/ })))
+const completeCue = () => act(() => (animationMock.cueRecord.mock.calls[0][0] as () => void)())
+const pressPlay = () => act(() => fireEvent.click(screen.getByRole('button', { name: 'Play' })))
+
 describe('Turntable', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    window.localStorage.clear()
+    resetOnboardingVisitDecision()
     youtubeMock.getProgress.mockReturnValue({ currentTime: 0, duration: 100 })
     useYouTubePlayerMock.mockReturnValue(youtubeMock)
   })
@@ -125,5 +132,64 @@ describe('Turntable', () => {
 
     expect(youtubeMock.cue).toHaveBeenLastCalledWith('bbb')
     expect(screen.getByRole('status')).toHaveTextContent(/Cueing Song B/)
+  })
+
+  describe('onboarding tour', () => {
+    it('walks a first-time visitor through select → play, then clears', () => {
+      render(<Turntable songs={songs} />)
+
+      // Step 1 on load.
+      expect(screen.getByText('Select a song')).toBeInTheDocument()
+      expect(screen.queryByText('Now click play')).not.toBeInTheDocument()
+
+      // Selecting hides step 1 immediately; step 2 waits for the cue to
+      // finish (Play is disabled until then, and the record delivery
+      // animation passes through where the bubble would be).
+      selectSongA()
+      expect(screen.queryByText('Select a song')).not.toBeInTheDocument()
+      expect(screen.queryByText('Now click play')).not.toBeInTheDocument()
+
+      completeCue()
+      expect(screen.getByText('Now click play')).toBeInTheDocument()
+
+      // Pressing Play ends the tour for good.
+      pressPlay()
+      expect(screen.queryByText('Now click play')).not.toBeInTheDocument()
+      expect(screen.queryByText('Select a song')).not.toBeInTheDocument()
+
+      // Even after stopping back to idle it stays gone this session.
+      act(() => fireEvent.click(screen.getByRole('button', { name: 'Stop' })))
+      act(() => (animationMock.returnTonearm.mock.calls[0][0] as () => void)())
+      expect(screen.getByRole('status')).toHaveTextContent(/No song selected/)
+      expect(screen.queryByText('Select a song')).not.toBeInTheDocument()
+    })
+
+    it('falls back to step 1 if the cued video errors before it ever plays', () => {
+      render(<Turntable songs={songs} />)
+      selectSongA()
+      completeCue()
+      expect(screen.getByText('Now click play')).toBeInTheDocument()
+
+      // e.g. embedding disabled on the video — the widget resets to idle,
+      // so the tour should point back at the song list, not at Play.
+      const onError = useYouTubePlayerMock.mock.calls[0][1] as (code: number) => void
+      act(() => onError(150))
+      act(() => (animationMock.returnTonearm.mock.calls[0][0] as () => void)())
+      expect(screen.getByRole('status')).toHaveTextContent(/No song selected/)
+      expect(screen.getByText('Select a song')).toBeInTheDocument()
+      expect(screen.queryByText('Now click play')).not.toBeInTheDocument()
+    })
+
+    it('does not run for a visitor seen within the last 7 days', () => {
+      window.localStorage.setItem(
+        'rae-turntable-onboarding-last-visit',
+        String(Date.now() - 24 * 60 * 60 * 1000)
+      )
+      render(<Turntable songs={songs} />)
+      expect(screen.queryByText('Select a song')).not.toBeInTheDocument()
+      selectSongA()
+      completeCue()
+      expect(screen.queryByText('Now click play')).not.toBeInTheDocument()
+    })
   })
 })
