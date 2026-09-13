@@ -257,6 +257,24 @@ const TurntableSvgBase = ({ className = '' }: TurntableSvgProps) => {
             height={11}
             rx={2}
             fill='#141414'
+            stroke='#f2f0e9'
+            strokeWidth={0.75}
+            strokeOpacity={0.6}
+            transform='rotate(20 210 250)'
+          />
+          {/* Stylus tip — the headshell (#141414) is nearly the same color
+              as the record (#161616), so it all but vanishes once it's over
+              the vinyl. A small light dot at the leading edge, with a dark
+              outline so it also reads against the light chassis at rest,
+              stays visible in both contexts without changing the
+              headshell's own realistic dark color. */}
+          <circle
+            cx={200}
+            cy={250.5}
+            r={2}
+            fill='#f2f0e9'
+            stroke='#333'
+            strokeWidth={0.5}
             transform='rotate(20 210 250)'
           />
         </g>
