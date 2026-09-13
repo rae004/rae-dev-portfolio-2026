@@ -144,6 +144,15 @@ const Turntable = ({ songs }: TurntableProps) => {
 
   // React to state transitions by driving the animation + YouTube player.
   useEffect(() => {
+    // Plain style write, not a React prop — TurntableSvg is memoized so
+    // anime.js's imperative DOM mutations elsewhere (tonearm rotate, record
+    // opacity) survive reducer-driven re-renders; a prop that changes with
+    // playback state would force it to re-render and reset those.
+    const strobe = rootRef.current?.querySelector<HTMLElement>('[data-part="strobe-light"]')
+    if (strobe) {
+      strobe.style.opacity = state.status === 'playing' || state.status === 'paused' ? '1' : '0'
+    }
+
     if (state.status === 'cueing') {
       youtube.cue(songs.find(s => s.id === state.songId)?.youtubeId ?? '')
       const platter = rootRef.current?.querySelector('[data-part="platter"]')
