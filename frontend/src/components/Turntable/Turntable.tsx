@@ -214,6 +214,7 @@ const Turntable = ({ songs }: TurntableProps) => {
           canPlay={canPlay}
           canPause={canPause}
           canStop={canStop}
+          attention={state.status === 'cued'}
           onPlay={() => dispatch({ type: 'PLAY' })}
           onPause={() => dispatch({ type: 'PAUSE' })}
           onStop={() => dispatch({ type: 'STOP' })}

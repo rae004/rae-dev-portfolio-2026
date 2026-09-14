@@ -22,6 +22,38 @@ describe('TransportButton', () => {
     expect(screen.queryByRole('button', { name: 'Stop' })).not.toBeInTheDocument()
   })
 
+  it('shows the attention ring only when asked', () => {
+    const { rerender } = render(
+      <TransportButton
+        mode='single'
+        isPlaying={false}
+        canPlay
+        canPause={false}
+        canStop={false}
+        attention
+        onPlay={vi.fn()}
+        onPause={vi.fn()}
+        onStop={vi.fn()}
+      />
+    )
+    const wrapper = screen.getByRole('button', { name: 'Play' }).parentElement
+    expect(wrapper).toHaveClass('turntable-play-attention')
+
+    rerender(
+      <TransportButton
+        mode='single'
+        isPlaying={false}
+        canPlay
+        canPause={false}
+        canStop={false}
+        onPlay={vi.fn()}
+        onPause={vi.fn()}
+        onStop={vi.fn()}
+      />
+    )
+    expect(wrapper).not.toHaveClass('turntable-play-attention')
+  })
+
   it('calls onPlay when the Play button is clicked', () => {
     const onPlay = vi.fn()
     render(

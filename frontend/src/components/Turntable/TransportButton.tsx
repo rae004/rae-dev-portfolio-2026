@@ -9,6 +9,10 @@ interface TransportButtonProps {
   canPlay: boolean
   canPause: boolean
   canStop: boolean
+  // Red ring + glow that draws the eye to Play once a song is cued and
+  // waiting. Off again the moment playback starts — it only ever exists in
+  // the gap between picking a song and pressing Play.
+  attention?: boolean
   onPlay: () => void
   onPause: () => void
   onStop: () => void
@@ -52,12 +56,17 @@ const TransportButton = ({
   canPlay,
   canPause,
   canStop,
+  attention = false,
   onPlay,
   onPause,
   onStop,
 }: TransportButtonProps) => {
   return (
-    <div className='absolute rounded-sm overflow-hidden' style={BUTTON_BOUNDS}>
+    <div
+      className={`absolute rounded-sm overflow-hidden ${attention ? 'turntable-play-attention' : ''}`}
+      data-attention={attention || undefined}
+      style={BUTTON_BOUNDS}
+    >
       {mode === 'split' ? (
         <div className='relative flex w-full h-full'>
           {isPlaying ? (

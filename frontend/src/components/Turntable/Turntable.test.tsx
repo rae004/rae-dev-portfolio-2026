@@ -134,6 +134,23 @@ describe('Turntable', () => {
     expect(screen.getByRole('status')).toHaveTextContent(/Cueing Song B/)
   })
 
+  it('highlights Play only between cueing a song and pressing it', () => {
+    render(<Turntable songs={songs} />)
+    const attention = () => document.querySelector('[data-attention]')
+
+    expect(attention()).toBeNull()
+    selectSongA()
+    expect(attention()).toBeNull() // still cueing — Play isn't pressable yet
+    completeCue()
+    expect(attention()).not.toBeNull()
+    pressPlay()
+    expect(attention()).toBeNull()
+
+    // Pausing re-enables Play, but the highlight is only for the first press.
+    act(() => fireEvent.click(screen.getByRole('button', { name: 'Pause' })))
+    expect(attention()).toBeNull()
+  })
+
   describe('onboarding tour', () => {
     it('walks a first-time visitor through select → play, then clears', () => {
       render(<Turntable songs={songs} />)
