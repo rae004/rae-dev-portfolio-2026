@@ -3,6 +3,7 @@ import TurntableSvg from './TurntableSvg'
 import SongList from './SongList'
 import TransportButton from './TransportButton'
 import RecordDeliveryOverlay from './RecordDeliveryOverlay'
+import OnboardingTour from './OnboardingTour'
 import { useYouTubePlayer } from './useYouTubePlayer'
 import { useTurntableAnimation } from './useTurntableAnimation'
 import { useRecordDelivery } from './useRecordDelivery'
@@ -20,6 +21,8 @@ type TurntableState =
   | { status: 'playing'; songId: string }
   | { status: 'paused'; songId: string }
   | { status: 'stopping'; songId: string }
+
+export type TurntableStatus = TurntableState['status']
 
 type TurntableAction =
   | { type: 'SELECT_SONG'; songId: string }
@@ -144,6 +147,15 @@ const Turntable = ({ songs }: TurntableProps) => {
 
   // React to state transitions by driving the animation + YouTube player.
   useEffect(() => {
+    // Plain style write, not a React prop — TurntableSvg is memoized so
+    // anime.js's imperative DOM mutations elsewhere (tonearm rotate, record
+    // opacity) survive reducer-driven re-renders; a prop that changes with
+    // playback state would force it to re-render and reset those.
+    const strobe = rootRef.current?.querySelector<HTMLElement>('[data-part="strobe-light"]')
+    if (strobe) {
+      strobe.style.opacity = state.status === 'playing' || state.status === 'paused' ? '1' : '0'
+    }
+
     if (state.status === 'cueing') {
       youtube.cue(songs.find(s => s.id === state.songId)?.youtubeId ?? '')
       const platter = rootRef.current?.querySelector('[data-part="platter"]')
@@ -202,6 +214,7 @@ const Turntable = ({ songs }: TurntableProps) => {
           canPlay={canPlay}
           canPause={canPause}
           canStop={canStop}
+          attention={state.status === 'cued'}
           onPlay={() => dispatch({ type: 'PLAY' })}
           onPause={() => dispatch({ type: 'PAUSE' })}
           onStop={() => dispatch({ type: 'STOP' })}
@@ -222,6 +235,7 @@ const Turntable = ({ songs }: TurntableProps) => {
       </div>
 
       <RecordDeliveryOverlay sleeveRef={sleeveRef} recordRef={deliveryRecordRef} />
+      <OnboardingTour status={state.status} rootRef={rootRef} firstSongId={songs[0]?.id} />
 
       {/* Hidden YouTube player — audio only, no visible chrome. */}
       <div

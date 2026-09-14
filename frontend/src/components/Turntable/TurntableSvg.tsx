@@ -53,6 +53,18 @@ const TurntableSvgBase = ({ className = '' }: TurntableSvgProps) => {
       role='img'
       aria-label='Illustration of a Technics turntable'
     >
+      <defs>
+        {/* stopOpacity alone controls fade — previously the color also
+            carried an alpha channel (#ff3b3089) on top of it, so the two
+            multiplied together into an effective ~0.48/~0.24/0 fade. These
+            values reproduce that same look through one control. */}
+        <radialGradient id='strobeGlow' cx='50%' cy='50%' r='50%'>
+          <stop offset='0%' stopColor='#ff3b30' stopOpacity={0.48} />
+          <stop offset='60%' stopColor='#ff3b30' stopOpacity={0.24} />
+          <stop offset='100%' stopColor='#ff3b30' stopOpacity={0} />
+        </radialGradient>
+      </defs>
+
       {/* Base / chassis */}
       <rect
         data-part='base'
@@ -189,8 +201,6 @@ const TurntableSvgBase = ({ className = '' }: TurntableSvgProps) => {
         Direct Drive Turntable System SL-1200MK3
       </text>
 
-      {/* Quartz pitch-reset knob + start/stop + speed selector cluster */}
-      <circle data-part='quartz-knob' cx={45} cy={310} r={16} fill='#222' stroke='#555' />
       <rect
         data-part='start-stop-button'
         x={28}
@@ -247,10 +257,56 @@ const TurntableSvgBase = ({ className = '' }: TurntableSvgProps) => {
             height={11}
             rx={2}
             fill='#141414'
+            stroke='#f2f0e9'
+            strokeWidth={0.75}
+            strokeOpacity={0.6}
+            transform='rotate(20 210 250)'
+          />
+          {/* Stylus tip — the headshell (#141414) is nearly the same color
+              as the record (#161616), so it all but vanishes once it's over
+              the vinyl. A small light dot at the leading edge, with a dark
+              outline so it also reads against the light chassis at rest,
+              stays visible in both contexts without changing the
+              headshell's own realistic dark color. */}
+          <circle
+            cx={200}
+            cy={250.5}
+            r={2}
+            fill='#f2f0e9'
+            stroke='#333'
+            strokeWidth={0.5}
             transform='rotate(20 210 250)'
           />
         </g>
       </g>
+      {/* Strobe light — real SL-1200s illuminate the platter's edge dots so
+      you can visually check rotational speed; ours just glows red
+      while the platter's actually spinning (playing) or paused
+      mid-song, off at rest. A small lamp near the quartz knob (its real
+      position) plus a soft glow projected onto the nearest tick marks,
+      rather than an animated beam — the effect reads fine as a static
+      glow, and this stays a plain opacity toggle Turntable.tsx can
+      drive imperatively like everything else, with no re-render risk.
+      Default opacity here is 0 (off) — Turntable.tsx overrides it to 1
+      while playing/paused, but this element must default to *off*, not
+      rely solely on that effect running, so a future refactor that ever
+      failed to find it fails safe (dark) instead of stuck visibly glowing. */}
+      <g data-part='strobe-light' style={{ opacity: 0 }}>
+        <defs>
+          {/* Defines a wedge/cone pointing up and slightly right toward the platter */}
+          {/* Origin starts near the lamp center (55, 299) and widens outward */}
+          <clipPath id='strobe-cone'>
+            <polygon points='50,302 60,260 130,285' />
+          </clipPath>
+        </defs>
+
+        {/* The soft glow is constrained to only shine toward the platter */}
+        <g clip-path='url(#strobe-cone)'>
+          <circle cx={60} cy={295} r={15} fill='url(#strobeGlow)' />
+        </g>
+      </g>
+      {/* Quartz pitch-reset knob + start/stop + speed selector cluster */}
+      <circle data-part='quartz-knob' cx={45} cy={310} r={16} fill='#222' stroke='#555' />
     </svg>
   )
 }

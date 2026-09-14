@@ -34,9 +34,8 @@ const HomePage: React.FC = () => {
           <div className='max-w-3xl'>
             <h1 className='text-5xl font-bold'>Hello there</h1>
             <p className='py-6'>
-              Welcome to Robert Engel's portfolio - showcasing a unique journey from music
-              production to cloud engineering. Pick a track from my engineering credits and hit
-              play.
+              Welcome my portfolio! Showcasing a unique journey from music production to cloud
+              engineering. Pick a track from my engineering credits and hit play.
             </p>
             <Link to='/resume' className='btn btn-primary'>
               View Resume
