@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.7.0...v0.8.0) (2026-09-14)
+
+
+### Features
+
+* **turntable:** post-launch polish — strobe light, stylus visibility, onboarding tour, Play glow ([#120](https://github.com/rae004/rae-dev-portfolio-2026/issues/120)) ([883331b](https://github.com/rae004/rae-dev-portfolio-2026/commit/883331b4595c1f3006e835bb7bb6a4918d3fa43c))
+
 ## [0.7.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.6.0...v0.7.0) (2026-09-07)
 
 
