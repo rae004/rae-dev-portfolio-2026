@@ -1,4 +1,10 @@
-import { LightsailClient, AttachStaticIpCommand, GetInstanceCommand, GetStaticIpCommand } from '@aws-sdk/client-lightsail';
+import {
+  LightsailClient,
+  AttachStaticIpCommand,
+  DetachStaticIpCommand,
+  GetInstanceCommand,
+  GetStaticIpCommand,
+} from '@aws-sdk/client-lightsail';
 
 interface CustomResourceEvent {
   RequestType: 'Create' | 'Update' | 'Delete';
@@ -14,60 +20,33 @@ interface CustomResourceEvent {
   };
 }
 
-interface CustomResourceResponse {
-  Status: 'SUCCESS' | 'FAILED';
-  Reason?: string;
-  PhysicalResourceId: string;
-  StackId: string;
-  RequestId: string;
-  LogicalResourceId: string;
-  Data?: Record<string, any>;
-}
-
 const lightsailClient = new LightsailClient({});
 
-export const handler = async (event: CustomResourceEvent): Promise<void> => {
+// Provider-framework contract (aws-cdk-lib custom-resources `Provider`):
+// return on success, throw on failure. The framework sends the
+// CloudFormation response — this handler must NOT send its own. It used
+// to: a self-sent FAILED followed by the framework's SUCCESS (last write
+// wins) let a failed validation register as a successful deploy.
+export const handler = async (
+  event: CustomResourceEvent
+): Promise<{ PhysicalResourceId: string; Data?: Record<string, unknown> }> => {
   console.log('Received event:', JSON.stringify(event, null, 2));
+  const { RequestType, ResourceProperties } = event;
+  const { InstanceName, StaticIpName } = ResourceProperties;
+  const PhysicalResourceId = `${InstanceName}-${StaticIpName}-attachment`;
 
-  const { RequestType, ResourceProperties, ResponseURL, StackId, RequestId, LogicalResourceId } = event;
-  const { InstanceName, StaticIpName, Region } = ResourceProperties;
-
-  let response: CustomResourceResponse = {
-    Status: 'SUCCESS',
-    PhysicalResourceId: `${InstanceName}-${StaticIpName}-attachment`,
-    StackId,
-    RequestId,
-    LogicalResourceId,
-  };
-
-  try {
-    switch (RequestType) {
-      case 'Create':
-      case 'Update':
-        await attachStaticIpWithRetry(InstanceName, StaticIpName);
-        response.Data = {
-          InstanceName,
-          StaticIpName,
-          AttachmentStatus: 'Attached',
-        };
-        break;
-
-      case 'Delete':
-        // For deletion, we don't need to do anything as deleting the stack
-        // will automatically detach the static IP
-        console.log('Delete operation - no action needed');
-        break;
-
-      default:
-        throw new Error(`Unknown request type: ${RequestType}`);
-    }
-  } catch (error) {
-    console.error('Error processing request:', error);
-    response.Status = 'FAILED';
-    response.Reason = error instanceof Error ? error.message : 'Unknown error occurred';
+  switch (RequestType) {
+    case 'Create':
+    case 'Update':
+      await attachStaticIpWithRetry(InstanceName, StaticIpName);
+      return { PhysicalResourceId, Data: { InstanceName, StaticIpName, AttachmentStatus: 'Attached' } };
+    case 'Delete':
+      // Deleting the stack detaches the static IP with the instance.
+      console.log('Delete operation - no action needed');
+      return { PhysicalResourceId };
+    default:
+      throw new Error(`Unknown request type: ${RequestType}`);
   }
-
-  await sendResponse(ResponseURL, response);
 };
 
 async function attachStaticIpWithRetry(instanceName: string, staticIpName: string, maxRetries = 10): Promise<void> {
@@ -114,9 +93,13 @@ async function attachStaticIpWithRetry(instanceName: string, staticIpName: strin
         return;
       }
 
-      // If attached to a different instance, this is an error
+      // Attached to a different instance: this is an instance *replacement*
+      // (CloudFormation creates the new instance before deleting the old
+      // one), so move the IP rather than refusing. DNS/CloudFront keep
+      // pointing at the same address throughout.
       if (staticIp.isAttached && staticIp.attachedTo !== instanceName) {
-        throw new Error(`Static IP ${staticIpName} is already attached to instance ${staticIp.attachedTo}`);
+        console.log(`Static IP ${staticIpName} is attached to ${staticIp.attachedTo}; moving it to ${instanceName}...`);
+        await lightsailClient.send(new DetachStaticIpCommand({ staticIpName }));
       }
 
       // Attach the static IP
@@ -148,27 +131,4 @@ async function attachStaticIpWithRetry(instanceName: string, staticIpName: strin
 
 async function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function sendResponse(responseURL: string, response: CustomResourceResponse): Promise<void> {
-  const responseBody = JSON.stringify(response);
-  console.log('Sending response:', responseBody);
-
-  try {
-    // Native fetch (Node.js 18+) — same as wordpress-config. The previous
-    // dynamic import('node-fetch') was never bundled and failed at runtime.
-    const result = await fetch(responseURL, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': '',
-        'Content-Length': responseBody.length.toString(),
-      },
-      body: responseBody,
-    });
-
-    console.log('Response sent successfully:', result.status);
-  } catch (error) {
-    console.error('Failed to send response:', error);
-    throw error;
-  }
 }

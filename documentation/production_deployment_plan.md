@@ -133,10 +133,68 @@ branch.
 - ✅ GitHub Environment `dev`: variables set.
 - ✅ `production.contactApiUrl` ← `ContactApiUrl` output.
 
+### Phase 1b — Bitnami blueprint deprecation (found 2026-09-27)
+
+Bitnami-packaged Lightsail blueprints stopped receiving updates on
+2026-05-19 and can't be used to create instances after **2026-11-19**
+(existing instances keep running; snapshots of them can still be restored).
+The CDK pinned `blueprintId: 'wordpress'` (Bitnami), so any future prod
+instance replacement would have failed after that date — and its user-data
+setup script was Bitnami-shaped throughout.
+
+Also discovered: that script never ran on the prod instance. Lightsail wraps
+user-data in a `#!/bin/sh` prelude, so it executed under dash and died on
+`set -o pipefail` (exit 2, 0.6 s in). Prod's `wp-config.php` was untouched.
+
+- ✅ Probed a throwaway `wordpress_ls_1_0` instance (deleted after) to learn
+  the layout: Debian 12, user `admin`, WordPress at `/var/www/html` with
+  `wp-config.php` at `/var/www/` (`admin:www-data`, 0440), systemd
+  `apache2` + `mariadb`, wp-cli 2.12 at `/usr/local/bin/wp`, credentials in
+  `~/application_credentials`, **IMDSv2 only**, **port 22 restricted to
+  Lightsail ranges by default**.
+- ✅ Stack: `wordpressBlueprintId` prop (default `wordpress_ls_1_0`; dev
+  explicitly pinned to `wordpress`). Explicit firewall (22/80/443). Setup
+  script rewritten: written to disk and run with `bash`; detects both
+  layouts; waits on `wp core is-installed` instead of a blind sleep; IMDSv2;
+  removes the image's HTTP_HOST-derived `WP_HOME`/`WP_SITEURL` before
+  defining the canonical HTTPS ones; `php -l` validates the result.
+- ✅ `seed.sh prod` target (`PROD_SSH_HOST=admin@<ip>`, `sudo -u admin wp`).
+- ✅ Redeploy prod → instance replaced (`rae-portfolio-wp-prod-ls10`), static
+  IP moved, old Bitnami instance deleted. Verified via CloudFront:
+  `health-check.php` → `urls_correctly_configured: true`, REST 200,
+  `/wp-admin/` → 302 to the https login.
+
+  Replacing the instance surfaced four more prod-only defects, all fixed in
+  code (the first replacement needed the setup script re-run by hand):
+  - CloudFormation can't replace a custom-named resource → the instance
+    name now carries the blueprint generation (`-ls10`).
+  - The static-IP Lambda refused an IP "already attached" (to the old
+    instance) → it now moves it.
+  - The setup script died twice on the new image: `wp` missing from
+    cloud-init's PATH, then `systemctl reload apache2` before Apache was up.
+    Both fixed; the image's HTTP→HTTPS vhost redirect is disabled (CloudFront
+    terminates TLS and reaches the origin over HTTP).
+  - **Custom resources could never fail a deploy**: the handlers sent their
+    own CloudFormation response and swallowed errors, so the CDK Provider
+    framework's SUCCESS overwrote their FAILED. Both handlers now follow the
+    framework contract (return / throw). A failed health check now fails the
+    stack, as it should.
+- ⬜ Fresh-boot verification: throwaway instance launched with the exact
+  synthesized user-data must reach a healthy `health-check.php` unattended.
+- ⬜ **Dev migration (before 2026-11-19):** snapshot dev; drop the
+  `wordpressBlueprintId: 'wordpress'` pin in `bin/infrastructure.ts`;
+  deploy (instance + DB replaced); re-run first-run setup, `seed.sh dev`,
+  media re-upload, plugin/options config; update `seed.sh` dev defaults and
+  TROUBLESHOOTING_QUICK_REFERENCE.md to the new layout.
+
 ## Phase 2 — populate prod WordPress
 
-- ⬜ First-run WordPress setup on the prod instance (admin user, permalinks
-  as required by the API's `?rest_route=` convention, theme active).
+- ⬜ First-run WordPress setup on the prod instance: default admin is
+  `user`, password in `~/application_credentials` (SSH as `admin`). Create
+  the real admin, drop/rotate `user`; permalinks as required by the API's
+  `?rest_route=` convention; deploy + activate the `rae-portfolio` theme
+  (rsync from the repo — see AWS_DEPLOYMENT_GUIDE "WordPress Theme Deploys")
+  and the `rewrite-uploads-to-cdn.php` mu-plugin.
 - ⬜ Settings: reCAPTCHA keys (+ add `rae-dev.com` to the key's domains),
   social links, any options the dev site carries.
 - ⬜ Content: extend `seed.sh` with a `prod` target (same SSH mechanism) and

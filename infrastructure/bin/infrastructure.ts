@@ -30,6 +30,11 @@ new RaePortfolioStack(app, 'RaePortfolioDev', {
   envName: 'dev',
   domainName: process.env.DEV_DOMAIN || 'rae-dev.com',
   certificateArn: devCertificateArn,
+  // Dev still runs the deprecated Bitnami blueprint. Do NOT drop this line
+  // casually — changing the blueprint replaces the instance and its
+  // database. Migrate deliberately (snapshot, reseed, re-upload media) before
+  // 2026-11-19; see documentation/production_deployment_plan.md.
+  wordpressBlueprintId: 'wordpress',
 });
 
 // Production environment stack.

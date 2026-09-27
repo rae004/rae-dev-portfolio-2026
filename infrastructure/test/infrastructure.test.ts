@@ -13,6 +13,8 @@ describe('RaePortfolioStack (dev with cert)', () => {
       domainName: 'rae-dev.com',
       certificateArn:
         'arn:aws:acm:us-east-1:233416806179:certificate/da62c8c8-1aa9-4e36-8995-735e93c827f6',
+      // Mirrors bin/infrastructure.ts: dev is pinned to the legacy Bitnami blueprint.
+      wordpressBlueprintId: 'wordpress',
     });
     template = Template.fromStack(stack);
   });
@@ -332,6 +334,40 @@ describe('RaePortfolioStack (prod)', () => {
     });
   });
 
+  test('uses the Lightsail-packaged WordPress blueprint, a bash-run setup script and an explicit firewall', () => {
+    const app = new cdk.App();
+    const template = Template.fromStack(new RaePortfolioStack(app, 'RaePortfolioProd', prodProps));
+    const instance = Object.values(template.findResources('AWS::Lightsail::Instance'))[0] as {
+      Properties: {
+        InstanceName: string;
+        BlueprintId: string;
+        UserData: string;
+        Networking: { Ports: Array<{ FromPort: number; Cidrs: string[] }> };
+      };
+    };
+    expect(instance.Properties.BlueprintId).toBe('wordpress_ls_1_0');
+    // Name carries the blueprint generation so a blueprint change can be a
+    // CloudFormation replacement (custom-named resources can't be replaced
+    // in place). Dev's legacy Bitnami instance keeps the bare name.
+    expect(instance.Properties.InstanceName).toBe('rae-portfolio-wp-prod-ls10');
+    // Lightsail runs user-data under /bin/sh; the real script must be handed to bash.
+    expect(instance.Properties.UserData).toMatch(/^#!\/bin\/sh\n/);
+    expect(instance.Properties.UserData).toContain('bash /root/rae-wp-setup.sh');
+    expect(instance.Properties.UserData).toContain("cat > /root/rae-wp-setup.sh <<'RAE_SETUP_EOF'");
+    // The script must handle both layouts and never use IMDSv1.
+    expect(instance.Properties.UserData).toContain('/var/www/html/wp-load.php');
+    expect(instance.Properties.UserData).toContain('/opt/bitnami/wordpress');
+    expect(instance.Properties.UserData).toContain('X-aws-ec2-metadata-token');
+    // wp-cli lives in /usr/local/bin, which cloud-init's PATH omits.
+    expect(instance.Properties.UserData).toContain('export PATH=/usr/local/sbin:/usr/local/bin');
+    // The Lightsail image's HTTP→HTTPS vhost redirect must be disabled for CloudFront.
+    expect(instance.Properties.UserData).toContain('000-default.conf');
+    expect(instance.Properties.UserData).toContain('api.rae-dev.com');
+    // SSH + HTTP must stay reachable (Lightsail images restrict 22 by default).
+    const ports = instance.Properties.Networking.Ports.map(p => p.FromPort).sort((a, b) => a - b);
+    expect(ports).toEqual([22, 80, 443]);
+  });
+
   test('CORS policy lists each origin once (CloudFront rejects duplicates) and allows www', () => {
     const app = new cdk.App();
     const template = Template.fromStack(new RaePortfolioStack(app, 'RaePortfolioProd', prodProps));
@@ -397,6 +433,7 @@ describe('RaePortfolioStack (no cert)', () => {
       envName: 'dev',
       domainName: 'rae-dev.com',
       // certificateArn intentionally omitted
+      wordpressBlueprintId: 'wordpress',
     });
     const template = Template.fromStack(stack);
     template.resourceCountIs('AWS::Route53::RecordSet', 0);
