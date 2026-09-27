@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.9.0...v0.10.0) (2026-09-27)
+
+
+### Features
+
+* **turntable:** fill in real label credits and tighten the label layout ([#139](https://github.com/rae004/rae-dev-portfolio-2026/issues/139)) ([e6b2e45](https://github.com/rae004/rae-dev-portfolio-2026/commit/e6b2e45864ddf8d19b54dd7049c8973480b814a2))
+
 ## [0.9.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.8.0...v0.9.0) (2026-09-27)
 
 
