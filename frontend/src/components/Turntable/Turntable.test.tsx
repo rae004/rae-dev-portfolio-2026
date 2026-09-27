@@ -2,6 +2,7 @@ import { render, screen, fireEvent, act } from '@testing-library/react'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import Turntable from './Turntable'
 import { resetOnboardingVisitDecision } from './useOnboardingEligibility'
+import { BRAND_RING_TEXT } from './recordLabel'
 import type { Song } from './songs'
 
 const youtubeMock = vi.hoisted(() => ({
@@ -187,7 +188,7 @@ describe('Turntable', () => {
     // Idle: brand ring only, no song facts, on both discs.
     expect(labelText()).toHaveLength(2)
     for (const t of labelText()) {
-      expect(t).toContain('RAE DEV · ENGINEERING CREDITS')
+      expect(t).toContain(BRAND_RING_TEXT)
       expect(t).not.toContain('Song A')
     }
 

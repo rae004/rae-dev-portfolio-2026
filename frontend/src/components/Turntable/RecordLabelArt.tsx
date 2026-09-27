@@ -82,7 +82,7 @@ const RecordLabelArt = ({ cx, cy, r, song, catalogNumber }: RecordLabelArtProps)
         <>
           <text
             x={cx}
-            y={cy - 9 * s}
+            y={cy - 10 * s}
             textAnchor='middle'
             fontFamily='sans-serif'
             fontSize={6 * s}
@@ -94,7 +94,7 @@ const RecordLabelArt = ({ cx, cy, r, song, catalogNumber }: RecordLabelArtProps)
           </text>
           <text
             x={cx}
-            y={cy - 3.5 * s}
+            y={cy - 4.5 * s}
             textAnchor='middle'
             fontFamily='sans-serif'
             fontSize={4.2 * s}
@@ -120,7 +120,7 @@ const RecordLabelArt = ({ cx, cy, r, song, catalogNumber }: RecordLabelArtProps)
           {catalogNumber && (
             <text
               x={cx - r + 14 * s}
-              y={cy + 18 * s}
+              y={cy + 16 * s}
               fontFamily='sans-serif'
               fontSize={3 * s}
               fill={ink}
@@ -131,7 +131,7 @@ const RecordLabelArt = ({ cx, cy, r, song, catalogNumber }: RecordLabelArtProps)
           )}
           <text
             x={cx + r - 14 * s}
-            y={cy + 18 * s}
+            y={cy + 16 * s}
             textAnchor='end'
             fontFamily='sans-serif'
             fontSize={3 * s}

@@ -1,7 +1,7 @@
 // House identity on the ring; the song's own facts in the middle. Deliberately
 // a *credit* sheet, not an imprint: the only ℗ on the disc belongs to the
 // real rights holder on the bottom arc, and our ring never claims one.
-export const BRAND_RING_TEXT = 'RAE DEV · ENGINEERING CREDITS'
+export const BRAND_RING_TEXT = 'RAE DEV · CREDITS'
 
 // Relative luminance (sRGB) → pick dark or light ink for a given base colour
 // so song data only ever has to specify the colour itself.

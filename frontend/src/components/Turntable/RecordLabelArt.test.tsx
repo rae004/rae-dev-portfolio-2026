@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import RecordLabelArt from './RecordLabelArt'
-import { labelInkColor } from './recordLabel'
+import { BRAND_RING_TEXT, labelInkColor } from './recordLabel'
 import { catalogNumberFor, TURNTABLE_SONGS } from './songs'
 import type { Song } from './songs'
 
@@ -34,7 +34,7 @@ describe('RecordLabelArt', () => {
       </svg>
     )
     const text = container.textContent
-    expect(text).toContain('RAE DEV · ENGINEERING CREDITS')
+    expect(text).toContain(BRAND_RING_TEXT)
     expect(text).toContain(song.title)
     expect(text).toContain('Artist')
     expect(text).toContain('Engineer')
@@ -65,7 +65,7 @@ describe('RecordLabelArt', () => {
         <RecordLabelArt cx={50} cy={50} r={38} />
       </svg>
     )
-    expect(container.textContent).toBe('RAE DEV · ENGINEERING CREDITS')
+    expect(container.textContent).toBe(BRAND_RING_TEXT)
     expect(container.querySelector('[data-part="spindle-hole"]')).not.toBeNull()
   })
 })
