@@ -35,6 +35,9 @@ fi
 # An empty wp-user means "use the image's own `sudo wp` wrapper" (Bitnami).
 seed_remote() {
 	local prefix="$1" default_path="$2" default_user="$3"
+	# tr, not ${prefix,,}: macOS ships bash 3.2, which lacks case expansion.
+	local env_label
+	env_label="$(printf '%s' "$prefix" | tr '[:upper:]' '[:lower:]')"
 	local host_var="${prefix}_SSH_HOST" key_var="${prefix}_SSH_KEY"
 	local path_var="${prefix}_WP_PATH" user_var="${prefix}_WP_USER"
 	local host="${!host_var:-}"
@@ -45,7 +48,7 @@ seed_remote() {
 	if [[ -z "$host" ]]; then
 		cat >&2 <<-EOF
 			Error: $host_var is not set. Example:
-			  $host_var=<user>@<lightsail-ip> $0 ${prefix,,}
+			  $host_var=<user>@<lightsail-ip> $0 $env_label
 			Optional overrides: $key_var, $path_var, $user_var
 		EOF
 		exit 1
@@ -62,7 +65,7 @@ seed_remote() {
 		wp_cmd="sudo wp --path=$wp_path eval-file -"
 	fi
 
-	echo "→ Seeding ${prefix,,} WordPress at $host ($wp_path)..."
+	echo "→ Seeding $env_label WordPress at $host ($wp_path)..."
 	ssh -i "$key" "$host" "$wp_cmd" < "$SEED_FILE"
 }
 

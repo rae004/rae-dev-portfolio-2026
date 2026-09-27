@@ -195,15 +195,24 @@ user-data in a `#!/bin/sh` prelude, so it executed under dash and died on
   `?rest_route=` convention; deploy + activate the `rae-portfolio` theme
   (rsync from the repo — see AWS_DEPLOYMENT_GUIDE "WordPress Theme Deploys")
   and the `rewrite-uploads-to-cdn.php` mu-plugin.
-- ⬜ Settings: reCAPTCHA keys (+ add `rae-dev.com` to the key's domains),
-  social links, any options the dev site carries.
-- ⬜ Content: extend `seed.sh` with a `prod` target (same SSH mechanism) and
-  run it; verify resume / skills / software / media endpoints.
-- ⬜ Media: copy `wp-content/uploads/2026/09/*.webp` dev → prod and register
-  with `wp media import --skip-copy` so the URLs match dev's paths exactly
-  (`songs.ts` relies on the same `/wp-content/uploads/2026/09/` path).
-- ⬜ Health: `curl -I https://api.rae-dev.com/wp-admin/`, REST endpoints
-  return JSON, CORS headers present for `https://rae-dev.com`.
+- ✅ Theme `rae-portfolio` + `rewrite-uploads-to-cdn` mu-plugin deployed and
+  active; the image's bundled plugins (Jetpack etc.) removed; WP Offload
+  Media + WPS Hide Login installed to match dev.
+- ✅ Settings copied dev → prod: `rae_recaptcha_settings` (machine to
+  machine), `whl_page`, site name, permalink structure.
+  ⬜ Still to confirm: `rae-dev.com` is listed on the reCAPTCHA key's
+  domains (Google admin console). WP Offload Media is installed but — as on
+  dev — not configured with credentials; media is served from the
+  instance. Social links: none on dev either.
+- ✅ Content: `seed.sh prod` → 10 resume, 119 skills, 12 software
+  projects, 24 media projects (matches dev).
+- ✅ Media: 8 covers (+ thumbnails) copied to the same
+  `/wp-content/uploads/2026/09/` path and registered.
+- ✅ Health: every REST endpoint returns the same counts as dev; cover URL
+  200 `image/webp`; `Access-Control-Allow-Origin: https://rae-dev.com`.
+- ⬜ Admin login (you): `ssh -i ~/.ssh/lightsail-rae-dev.pem admin@100.52.156.202 cat application_credentials`
+  → log in at `https://api.rae-dev.com/<whl_page>` as `user`, create your
+  own admin, change/remove `user`.
 
 ## Phase 3 — verify prod without touching public DNS
 
