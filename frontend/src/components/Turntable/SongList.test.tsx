@@ -4,8 +4,20 @@ import SongList from './SongList'
 import type { Song } from './songs'
 
 const songs: Song[] = [
-  { id: 'a', title: 'Song A', artist: 'Artist A', youtubeId: 'aaa' },
-  { id: 'b', title: 'Song B', artist: 'Artist B', youtubeId: 'bbb' },
+  {
+    id: 'a',
+    title: 'Song A',
+    artist: 'Artist A',
+    youtubeId: 'aaa',
+    label: { color: '#c8102e', recordLabel: 'Label A', year: 2001 },
+  },
+  {
+    id: 'b',
+    title: 'Song B',
+    artist: 'Artist B',
+    youtubeId: 'bbb',
+    label: { color: '#1f5fa8', recordLabel: 'Label B', year: 2002 },
+  },
 ]
 
 describe('SongList', () => {

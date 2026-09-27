@@ -8,6 +8,7 @@ import { useYouTubePlayer } from './useYouTubePlayer'
 import { useTurntableAnimation } from './useTurntableAnimation'
 import { useRecordDelivery } from './useRecordDelivery'
 import { YT_PLAYER_STATE } from './youtubeTypes'
+import { catalogNumberFor } from './songs'
 import type { Song } from './songs'
 
 interface TurntableProps {
@@ -116,6 +117,7 @@ const Turntable = ({ songs }: TurntableProps) => {
   const { deliverRecord } = useRecordDelivery(sleeveRef, deliveryRecordRef)
 
   const selectedSong = 'songId' in state ? songs.find(s => s.id === state.songId) : undefined
+  const catalogNumber = selectedSong ? catalogNumberFor(songs, selectedSong.id) : undefined
 
   // Drive the tonearm's inward creep purely as a function of YouTube's own
   // playback progress (currentTime / duration) — YouTube's clock is the
@@ -207,7 +209,11 @@ const Turntable = ({ songs }: TurntableProps) => {
       className='relative flex flex-col items-center gap-8 w-full max-w-3xl mx-auto'
     >
       <div className='relative w-full aspect-square'>
-        <TurntableSvg className='w-full h-full drop-shadow-xl' />
+        <TurntableSvg
+          className='w-full h-full drop-shadow-xl'
+          song={selectedSong}
+          catalogNumber={catalogNumber}
+        />
         <TransportButton
           mode={state.status === 'playing' || state.status === 'paused' ? 'split' : 'single'}
           isPlaying={state.status === 'playing'}
@@ -234,7 +240,12 @@ const Turntable = ({ songs }: TurntableProps) => {
         </div>
       </div>
 
-      <RecordDeliveryOverlay sleeveRef={sleeveRef} recordRef={deliveryRecordRef} />
+      <RecordDeliveryOverlay
+        sleeveRef={sleeveRef}
+        recordRef={deliveryRecordRef}
+        song={selectedSong}
+        catalogNumber={catalogNumber}
+      />
       <OnboardingTour status={state.status} rootRef={rootRef} firstSongId={songs[0]?.id} />
 
       {/* Hidden YouTube player — audio only, no visible chrome. */}

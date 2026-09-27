@@ -45,8 +45,20 @@ vi.mock('./useRecordDelivery', () => ({
 }))
 
 const songs: Song[] = [
-  { id: 'a', title: 'Song A', artist: 'Artist A', youtubeId: 'aaa' },
-  { id: 'b', title: 'Song B', artist: 'Artist B', youtubeId: 'bbb' },
+  {
+    id: 'a',
+    title: 'Song A',
+    artist: 'Artist A',
+    youtubeId: 'aaa',
+    label: { color: '#c8102e', recordLabel: 'Label A', year: 2001, credit: 'Mixing Engineer' },
+  },
+  {
+    id: 'b',
+    title: 'Song B',
+    artist: 'Artist B',
+    youtubeId: 'bbb',
+    label: { color: '#1f5fa8', recordLabel: 'Label B', year: 2002 },
+  },
 ]
 
 const selectSongA = () => act(() => fireEvent.click(screen.getByRole('radio', { name: /Song A/ })))
@@ -132,6 +144,36 @@ describe('Turntable', () => {
 
     expect(youtubeMock.cue).toHaveBeenLastCalledWith('bbb')
     expect(screen.getByRole('status')).toHaveTextContent(/Cueing Song B/)
+  })
+
+  it('prints the selected song on the record label (platter and delivery disc alike)', () => {
+    render(<Turntable songs={songs} />)
+    const labelText = () =>
+      [...document.querySelectorAll('[data-part="record-label-art"]')].map(g => g.textContent)
+
+    // Idle: brand ring only, no song facts, on both discs.
+    expect(labelText()).toHaveLength(2)
+    for (const t of labelText()) {
+      expect(t).toContain('RAE DEV · ENGINEERING CREDITS')
+      expect(t).not.toContain('Song A')
+    }
+
+    selectSongA()
+    for (const t of labelText()) {
+      expect(t).toContain('Song A')
+      expect(t).toContain('Artist A')
+      expect(t).toContain('Mixing Engineer')
+      expect(t).toContain('℗ 2001 LABEL A')
+      expect(t).toContain('RD-001')
+    }
+
+    // Switching songs re-prints the label; song B has no credit line.
+    act(() => fireEvent.click(screen.getByRole('radio', { name: /Song B/ })))
+    for (const t of labelText()) {
+      expect(t).toContain('Song B')
+      expect(t).toContain('RD-002')
+      expect(t).not.toContain('Mixing Engineer')
+    }
   })
 
   it('highlights Play only between cueing a song and pressing it', () => {

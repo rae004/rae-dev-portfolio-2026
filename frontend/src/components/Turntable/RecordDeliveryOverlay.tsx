@@ -1,9 +1,19 @@
 import { createPortal } from 'react-dom'
+import RecordLabelArt from './RecordLabelArt'
+import type { Song } from './songs'
 
 interface RecordDeliveryOverlayProps {
   sleeveRef: React.RefObject<HTMLDivElement | null>
   recordRef: React.RefObject<HTMLDivElement | null>
+  song?: Song
+  catalogNumber?: string
 }
+
+// Matches TurntableSvg's record: radius 132 with a radius-38 label, so the
+// traveling disc and the one that appears on the platter are pixel-identical
+// at the moment of hand-off.
+const RECORD_R = 132
+const LABEL_R = 38
 
 // Rendered via a portal straight onto <body>. The sleeve and record need to
 // travel in from the actual viewport corner, which is impossible to reach
@@ -12,7 +22,12 @@ interface RecordDeliveryOverlayProps {
 // page. Living outside that subtree (and outside any ancestor that might
 // set a CSS transform, which would otherwise break `position: fixed`) is
 // what lets these travel across the real screen.
-const RecordDeliveryOverlay = ({ sleeveRef, recordRef }: RecordDeliveryOverlayProps) => {
+const RecordDeliveryOverlay = ({
+  sleeveRef,
+  recordRef,
+  song,
+  catalogNumber,
+}: RecordDeliveryOverlayProps) => {
   return createPortal(
     <div aria-hidden='true' className='fixed inset-0 pointer-events-none z-50'>
       <div
@@ -48,30 +63,20 @@ const RecordDeliveryOverlay = ({ sleeveRef, recordRef }: RecordDeliveryOverlayPr
           boxShadow: '0 6px 16px rgba(0,0,0,0.4)',
         }}
       >
-        <div
-          className='absolute rounded-full'
-          style={{
-            top: '35.5%',
-            left: '35.5%',
-            width: '29%',
-            height: '29%',
-            backgroundColor: '#f2f0e9',
-            border: '1px solid #cfcabb',
-          }}
-        />
-        {/* Spindle hole — matches the SVG record's, so it doesn't visibly
-            appear only once the traveling record fades into the real one. */}
-        <div
-          className='absolute rounded-full'
-          style={{
-            top: '50%',
-            left: '50%',
-            width: '2.3%',
-            height: '2.3%',
-            transform: 'translate(-50%, -50%)',
-            backgroundColor: '#111',
-          }}
-        />
+        {/* Same label art as the on-platter record, in the same proportions,
+            so nothing visibly changes when the SVG's record takes over. */}
+        <svg
+          viewBox={`0 0 ${RECORD_R * 2} ${RECORD_R * 2}`}
+          className='absolute inset-0 w-full h-full'
+        >
+          <RecordLabelArt
+            cx={RECORD_R}
+            cy={RECORD_R}
+            r={LABEL_R}
+            song={song}
+            catalogNumber={catalogNumber}
+          />
+        </svg>
       </div>
     </div>,
     document.body
