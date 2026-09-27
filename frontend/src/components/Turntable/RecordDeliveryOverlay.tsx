@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import RecordLabelArt from './RecordLabelArt'
+import { labelInkColor } from './recordLabel'
 import type { Song } from './songs'
 
 interface RecordDeliveryOverlayProps {
@@ -14,6 +16,51 @@ interface RecordDeliveryOverlayProps {
 // at the moment of hand-off.
 const RECORD_R = 132
 const LABEL_R = 38
+
+// The sleeve is the album cover. It's sized and positioned imperatively by
+// useRecordDelivery (slightly larger than the record, centred on it), and
+// rendered *after* the record so it stays in front: the disc is hidden
+// inside the jacket until the delivery path carries it out from behind.
+// Songs without artwork — or a cover that fails to load — get a plain jacket
+// in the song's label colour so the flow never shows a blank square.
+const Sleeve = ({ song }: { song?: Song }) => {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null)
+  const art = song?.albumArt
+  const showArt = art && failedUrl !== art.url
+
+  // A new song gets a fresh chance even if a previous cover failed.
+  useEffect(() => setFailedUrl(null), [song?.id])
+
+  const base = song?.label.color ?? '#3b2f2f'
+  const ink = song ? labelInkColor(base) : '#f2f0e9'
+
+  return (
+    <>
+      <div
+        data-part='sleeve-jacket'
+        className='absolute inset-0 flex flex-col items-center justify-center text-center'
+        style={{ backgroundColor: base, color: ink, padding: '8%' }}
+      >
+        {song && (
+          <>
+            <div style={{ fontSize: '9cqw', fontWeight: 700, lineHeight: 1.1 }}>{song.title}</div>
+            <div style={{ fontSize: '5.5cqw', opacity: 0.85, marginTop: '3%' }}>{song.artist}</div>
+          </>
+        )}
+      </div>
+      {showArt && (
+        <img
+          data-part='sleeve-cover'
+          src={art.url}
+          alt={art.alt}
+          draggable={false}
+          onError={() => setFailedUrl(art.url)}
+          className='absolute inset-0 w-full h-full object-cover'
+        />
+      )}
+    </>
+  )
+}
 
 // Rendered via a portal straight onto <body>. The sleeve and record need to
 // travel in from the actual viewport corner, which is impossible to reach
@@ -30,28 +77,6 @@ const RecordDeliveryOverlay = ({
 }: RecordDeliveryOverlayProps) => {
   return createPortal(
     <div aria-hidden='true' className='fixed inset-0 pointer-events-none z-50'>
-      <div
-        ref={sleeveRef}
-        className='absolute top-0 left-0'
-        style={{
-          width: 140,
-          height: 140,
-          opacity: 0,
-          backgroundColor: '#3b2f2f',
-          border: '3px solid #6b5b56',
-          borderRadius: 6,
-          boxShadow: '0 6px 16px rgba(0,0,0,0.4)',
-        }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            inset: 10,
-            border: '1px solid #55433f',
-            borderRadius: 3,
-          }}
-        />
-      </div>
       <div
         ref={recordRef}
         className='absolute top-0 left-0 rounded-full'
@@ -77,6 +102,22 @@ const RecordDeliveryOverlay = ({
             catalogNumber={catalogNumber}
           />
         </svg>
+      </div>
+      {/* After the record in DOM order = in front of it. */}
+      <div
+        ref={sleeveRef}
+        data-part='sleeve'
+        className='absolute top-0 left-0 overflow-hidden'
+        style={{
+          width: 140,
+          height: 140,
+          opacity: 0,
+          borderRadius: 3,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+          containerType: 'inline-size',
+        }}
+      >
+        <Sleeve song={song} />
       </div>
     </div>,
     document.body

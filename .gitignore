@@ -10,6 +10,10 @@ vendor/
 /frontend/dist/
 /frontend/build/
 
+# Album cover source files — the WordPress media library is their home;
+# they're kept here only as a local staging area for conversion/upload.
+/frontend/public/cover-art/
+
 # Environment files
 .env
 .env.local
