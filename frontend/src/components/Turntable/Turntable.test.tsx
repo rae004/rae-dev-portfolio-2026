@@ -45,8 +45,20 @@ vi.mock('./useRecordDelivery', () => ({
 }))
 
 const songs: Song[] = [
-  { id: 'a', title: 'Song A', artist: 'Artist A', youtubeId: 'aaa' },
-  { id: 'b', title: 'Song B', artist: 'Artist B', youtubeId: 'bbb' },
+  {
+    id: 'a',
+    title: 'Song A',
+    artist: 'Artist A',
+    youtubeId: 'aaa',
+    label: { color: '#c8102e', recordLabel: 'Label A', year: 2001, credit: 'Mixing Engineer' },
+  },
+  {
+    id: 'b',
+    title: 'Song B',
+    artist: 'Artist B',
+    youtubeId: 'bbb',
+    label: { color: '#1f5fa8', recordLabel: 'Label B', year: 2002 },
+  },
 ]
 
 const selectSongA = () => act(() => fireEvent.click(screen.getByRole('radio', { name: /Song A/ })))
@@ -121,17 +133,80 @@ describe('Turntable', () => {
     expect(screen.getByRole('status')).toHaveTextContent(/Stopping Song A/)
   })
 
-  it('switching songs mid-play implicitly re-cues for the new song', () => {
+  it('switching songs mid-play stops first, then re-cues the new song', () => {
     render(<Turntable songs={songs} />)
 
-    act(() => fireEvent.click(screen.getByRole('radio', { name: /Song A/ })))
-    act(() => (animationMock.cueRecord.mock.calls[0][0] as () => void)())
-    act(() => fireEvent.click(screen.getByRole('button', { name: 'Play' })))
+    selectSongA()
+    completeCue()
+    pressPlay()
 
     act(() => fireEvent.click(screen.getByRole('radio', { name: /Song B/ })))
 
+    // Old record lifts off and the arm returns before anything new arrives.
+    expect(youtubeMock.stop).toHaveBeenCalledTimes(1)
+    expect(animationMock.returnTonearm).toHaveBeenCalledTimes(1)
+    expect(youtubeMock.cue).toHaveBeenCalledTimes(1) // still only 'aaa'
+    expect(screen.getByRole('status')).toHaveTextContent(/Switching to Song B/)
+
+    act(() => (animationMock.returnTonearm.mock.calls[0][0] as () => void)())
     expect(youtubeMock.cue).toHaveBeenLastCalledWith('bbb')
     expect(screen.getByRole('status')).toHaveTextContent(/Cueing Song B/)
+  })
+
+  it('switching songs while cued (never played) lifts the old record before delivering the new one', () => {
+    render(<Turntable songs={songs} />)
+
+    selectSongA()
+    completeCue()
+    expect(deliverRecordMock).toHaveBeenCalledTimes(1)
+
+    act(() => fireEvent.click(screen.getByRole('radio', { name: /Song B/ })))
+
+    // No second delivery yet — the old record is still lifting off, and the
+    // label on it must still be song A's.
+    expect(deliverRecordMock).toHaveBeenCalledTimes(1)
+    expect(animationMock.returnTonearm).toHaveBeenCalledTimes(1)
+    const labelText = document.querySelector(
+      '[data-part="record"] [data-part="record-label-art"]'
+    )?.textContent
+    expect(labelText).toContain('Song A')
+    expect(labelText).not.toContain('Song B')
+
+    act(() => (animationMock.returnTonearm.mock.calls[0][0] as () => void)())
+    expect(deliverRecordMock).toHaveBeenCalledTimes(2)
+    expect(
+      document.querySelector('[data-part="record"] [data-part="record-label-art"]')?.textContent
+    ).toContain('Song B')
+  })
+
+  it('prints the selected song on the record label (platter and delivery disc alike)', () => {
+    render(<Turntable songs={songs} />)
+    const labelText = () =>
+      [...document.querySelectorAll('[data-part="record-label-art"]')].map(g => g.textContent)
+
+    // Idle: brand ring only, no song facts, on both discs.
+    expect(labelText()).toHaveLength(2)
+    for (const t of labelText()) {
+      expect(t).toContain('RAE DEV · ENGINEERING CREDITS')
+      expect(t).not.toContain('Song A')
+    }
+
+    selectSongA()
+    for (const t of labelText()) {
+      expect(t).toContain('Song A')
+      expect(t).toContain('Artist A')
+      expect(t).toContain('Mixing Engineer')
+      expect(t).toContain('℗ 2001 LABEL A')
+      expect(t).toContain('RD-001')
+    }
+
+    // Switching songs re-prints the label; song B has no credit line.
+    act(() => fireEvent.click(screen.getByRole('radio', { name: /Song B/ })))
+    for (const t of labelText()) {
+      expect(t).toContain('Song B')
+      expect(t).toContain('RD-002')
+      expect(t).not.toContain('Mixing Engineer')
+    }
   })
 
   it('highlights Play only between cueing a song and pressing it', () => {

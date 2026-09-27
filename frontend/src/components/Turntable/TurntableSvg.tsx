@@ -1,8 +1,15 @@
 import { memo } from 'react'
 import { TONEARM_REST_ANGLE } from './turntableConfig'
+import RecordLabelArt from './RecordLabelArt'
+import type { Song } from './songs'
 
 interface TurntableSvgProps {
   className?: string
+  // The song currently on the platter — drives the record label art. Only
+  // changes on song selection, never on play/pause/stop, so the memo below
+  // still shields the anime.js-owned styles from routine re-renders.
+  song?: Song
+  catalogNumber?: string
 }
 
 // Pure presentational top-down turntable illustration, modeled on a
@@ -17,11 +24,13 @@ interface TurntableSvgProps {
 //
 // memo() here isn't just a perf nicety — it's load-bearing. Once mounted,
 // anime.js owns this subtree's `rotate`/`translateY`/`opacity` styles via
-// direct DOM manipulation. `className` never actually changes, but without
-// memo, every reducer-driven re-render in Turntable.tsx would still cause
-// React to reconcile this component's JSX and reset the tonearm's inline
-// `rotate` back to TONEARM_REST_ANGLE mid-animation, fighting anime.js.
-const TurntableSvgBase = ({ className = '' }: TurntableSvgProps) => {
+// direct DOM manipulation. Without memo, every reducer-driven re-render in
+// Turntable.tsx would cause React to reconcile this component's JSX mid-
+// animation. The `song` prop does change (on selection), and that re-render
+// is safe: React diffs `style` per key and only writes keys whose *values*
+// changed, so the tonearm's `rotate` / record's `opacity` (constant in JSX)
+// are left alone — only the label subtree actually updates.
+const TurntableSvgBase = ({ className = '', song, catalogNumber }: TurntableSvgProps) => {
   const platterCenter = { x: 180, y: 200 }
   const platterRadius = 150
 
@@ -151,20 +160,12 @@ const TurntableSvgBase = ({ className = '' }: TurntableSvgProps) => {
         style={{ transformOrigin: `${platterCenter.x}px ${platterCenter.y}px`, opacity: 0 }}
       >
         <circle cx={platterCenter.x} cy={platterCenter.y} r={132} fill='#161616' />
-        <circle
-          data-part='record-label'
+        <RecordLabelArt
           cx={platterCenter.x}
           cy={platterCenter.y}
           r={38}
-          fill='#f2f0e9'
-          stroke='#cfcabb'
-        />
-        <circle
-          data-part='spindle-hole'
-          cx={platterCenter.x}
-          cy={platterCenter.y}
-          r={3}
-          fill='#111'
+          song={song}
+          catalogNumber={catalogNumber}
         />
       </g>
 
