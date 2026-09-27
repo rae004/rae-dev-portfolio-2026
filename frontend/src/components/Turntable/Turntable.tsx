@@ -7,6 +7,7 @@ import OnboardingTour from './OnboardingTour'
 import { useYouTubePlayer } from './useYouTubePlayer'
 import { useTurntableAnimation } from './useTurntableAnimation'
 import { useRecordDelivery } from './useRecordDelivery'
+import { useAlbumArtPreload } from './useAlbumArtPreload'
 import { YT_PLAYER_STATE } from './youtubeTypes'
 import { catalogNumberFor } from './songs'
 import type { Song } from './songs'
@@ -133,6 +134,7 @@ const Turntable = ({ songs }: TurntableProps) => {
   const youtube = useYouTubePlayer(handleYouTubeStateChange, handleYouTubeError)
   const animation = useTurntableAnimation(rootRef)
   const { deliverRecord } = useRecordDelivery(sleeveRef, deliveryRecordRef)
+  useAlbumArtPreload(songs)
 
   const selectedSong = 'songId' in state ? songs.find(s => s.id === state.songId) : undefined
   const catalogNumber = selectedSong ? catalogNumberFor(songs, selectedSong.id) : undefined
