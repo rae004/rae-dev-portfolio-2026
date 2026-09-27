@@ -21,7 +21,10 @@ type TurntableState =
   | { status: 'cued'; songId: string }
   | { status: 'playing'; songId: string }
   | { status: 'paused'; songId: string }
-  | { status: 'stopping'; songId: string }
+  // `nextSongId` is set when the stop is the first half of a song switch:
+  // once the old record has lifted off and the arm is back at rest, we
+  // re-cue that song instead of settling at idle.
+  | { status: 'stopping'; songId: string; nextSongId?: string }
 
 export type TurntableStatus = TurntableState['status']
 
@@ -36,12 +39,24 @@ type TurntableAction =
 const reducer = (state: TurntableState, action: TurntableAction): TurntableState => {
   switch (action.type) {
     case 'SELECT_SONG':
-      // Selecting a different song while non-idle is treated as an implicit
-      // stop-then-recue for this prototype — no dedicated "switch" state.
-      if (state.status === 'idle' || state.songId !== action.songId) {
+      if (state.status === 'idle') {
         return { status: 'cueing', songId: action.songId }
       }
-      return state
+      if (state.songId === action.songId) return state
+      // A different song while a record is already on the platter: stop
+      // first (record lifts off, arm returns), *then* cue the new one.
+      // Jumping straight to `cueing` left the old record visible on the
+      // platter — instantly re-labelled as the new song — while a duplicate
+      // flew in from the corner. Mid-cue the record hasn't landed yet, so
+      // there's nothing to lift; re-cue directly (the list is disabled
+      // during cueing anyway, so this is only reachable programmatically).
+      if (state.status === 'cueing') {
+        return { status: 'cueing', songId: action.songId }
+      }
+      if (state.status === 'stopping') {
+        return { ...state, nextSongId: action.songId }
+      }
+      return { status: 'stopping', songId: state.songId, nextSongId: action.songId }
     case 'CUE_COMPLETE':
       return state.status === 'cueing' ? { status: 'cued', songId: state.songId } : state
     case 'PLAY':
@@ -61,7 +76,8 @@ const reducer = (state: TurntableState, action: TurntableAction): TurntableState
         ? { status: 'stopping', songId: state.songId }
         : state
     case 'STOP_COMPLETE':
-      return state.status === 'stopping' ? { status: 'idle' } : state
+      if (state.status !== 'stopping') return state
+      return state.nextSongId ? { status: 'cueing', songId: state.nextSongId } : { status: 'idle' }
     default:
       return state
   }
@@ -81,8 +97,10 @@ const statusMessage = (state: TurntableState, songs: Song[]): string => {
       return `Now playing ${label}`
     case 'paused':
       return `Paused — ${label}`
-    case 'stopping':
-      return `Stopping ${label}…`
+    case 'stopping': {
+      const next = state.nextSongId ? songs.find(s => s.id === state.nextSongId) : undefined
+      return next ? `Switching to ${next.title} by ${next.artist}…` : `Stopping ${label}…`
+    }
     default:
       return ''
   }

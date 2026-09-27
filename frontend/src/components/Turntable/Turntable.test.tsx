@@ -133,17 +133,50 @@ describe('Turntable', () => {
     expect(screen.getByRole('status')).toHaveTextContent(/Stopping Song A/)
   })
 
-  it('switching songs mid-play implicitly re-cues for the new song', () => {
+  it('switching songs mid-play stops first, then re-cues the new song', () => {
     render(<Turntable songs={songs} />)
 
-    act(() => fireEvent.click(screen.getByRole('radio', { name: /Song A/ })))
-    act(() => (animationMock.cueRecord.mock.calls[0][0] as () => void)())
-    act(() => fireEvent.click(screen.getByRole('button', { name: 'Play' })))
+    selectSongA()
+    completeCue()
+    pressPlay()
 
     act(() => fireEvent.click(screen.getByRole('radio', { name: /Song B/ })))
 
+    // Old record lifts off and the arm returns before anything new arrives.
+    expect(youtubeMock.stop).toHaveBeenCalledTimes(1)
+    expect(animationMock.returnTonearm).toHaveBeenCalledTimes(1)
+    expect(youtubeMock.cue).toHaveBeenCalledTimes(1) // still only 'aaa'
+    expect(screen.getByRole('status')).toHaveTextContent(/Switching to Song B/)
+
+    act(() => (animationMock.returnTonearm.mock.calls[0][0] as () => void)())
     expect(youtubeMock.cue).toHaveBeenLastCalledWith('bbb')
     expect(screen.getByRole('status')).toHaveTextContent(/Cueing Song B/)
+  })
+
+  it('switching songs while cued (never played) lifts the old record before delivering the new one', () => {
+    render(<Turntable songs={songs} />)
+
+    selectSongA()
+    completeCue()
+    expect(deliverRecordMock).toHaveBeenCalledTimes(1)
+
+    act(() => fireEvent.click(screen.getByRole('radio', { name: /Song B/ })))
+
+    // No second delivery yet — the old record is still lifting off, and the
+    // label on it must still be song A's.
+    expect(deliverRecordMock).toHaveBeenCalledTimes(1)
+    expect(animationMock.returnTonearm).toHaveBeenCalledTimes(1)
+    const labelText = document.querySelector(
+      '[data-part="record"] [data-part="record-label-art"]'
+    )?.textContent
+    expect(labelText).toContain('Song A')
+    expect(labelText).not.toContain('Song B')
+
+    act(() => (animationMock.returnTonearm.mock.calls[0][0] as () => void)())
+    expect(deliverRecordMock).toHaveBeenCalledTimes(2)
+    expect(
+      document.querySelector('[data-part="record"] [data-part="record-label-art"]')?.textContent
+    ).toContain('Song B')
   })
 
   it('prints the selected song on the record label (platter and delivery disc alike)', () => {
