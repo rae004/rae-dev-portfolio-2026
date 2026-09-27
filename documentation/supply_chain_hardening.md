@@ -275,13 +275,19 @@ This means whatever `node_modules` is on local disk gets baked into the
 Lambda. Currently the CI `cdk-synth` job runs `pnpm install` only in
 `infrastructure/`, not in each lambda subdirectory.
 
-**Follow-up recommendation** (not strictly part of this hardening pass):
-migrate the three lambdas to `aws-cdk-lib/aws-lambda-nodejs` `NodejsFunction`,
-which bundles via esbuild from source. The lambda's `package.json` deps
-become bundling input only — no npm install happens at deploy time,
-eliminating the lambda npm install attack surface entirely.
+**Done (2026-09-27)** — the three lambdas are now
+`aws-cdk-lib/aws-lambda-nodejs` `NodejsFunction`s bundled from `index.ts` by
+esbuild at synth time (`esbuild` is an infrastructure devDependency, pinned
+and listed in `allowBuilds`). Each lambda imports only `@aws-sdk/*`, which
+the Node 22 runtime provides and `NodejsFunction` leaves external by default,
+so nothing from a lambda's `node_modules` is ever packaged — the lambda npm
+install attack surface is gone. The lambda `package.json` files remain as
+dependency intent for Dependabot and local type-checking only.
 
-Flagged here so it is not forgotten; tracked separately.
+This also fixed a latent deploy bug: `Code.fromAsset` zipped the directory
+as-is and depended on compiled `.js` happening to exist on the deploying
+machine (it's gitignored), which surfaced as `Cannot find module 'index'` on
+the first prod deploy from a clean checkout.
 
 ### Phase 4 — Automated update tooling (Dependabot)
 

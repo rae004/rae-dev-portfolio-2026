@@ -101,19 +101,37 @@ branch.
 
 ## Phase 1 — stand up prod (needs `aws sso login --profile rae_dev`)
 
-- ⬜ Confirm ACM cert SANs include `rae-dev.com` and `*.rae-dev.com`; set
-  `PROD_CERTIFICATE_ARN`.
-- ⬜ `cdk deploy RaePortfolioProd` with `PROD_DOMAIN=rae-dev.com` and
-  `PROD_MANAGE_APEX_DNS=false`.
-- ⬜ Record stack outputs: `GithubDeployRoleArn`, `WebsiteBucketName`,
-  `FrontendDistributionId`, `FrontendDistributionDomainName`, `ContactApiUrl`,
-  `WordPressPublicIP`, `WordPressAdminURL`.
-- ⬜ GitHub Environment `prod`: required reviewer (repo owner); secret
-  `AWS_DEPLOY_ROLE_ARN`; variables `S3_BUCKET`, `CLOUDFRONT_DISTRIBUTION_ID`,
-  `SITE_URL=https://rae-dev.com`, `BUILD_TARGET=prod`.
-- ⬜ GitHub Environment `dev`: same variables filled with dev values (moves
-  them out of the workflow file).
-- ⬜ `production.contactApiUrl` ← `ContactApiUrl` output; commit.
+- ✅ ACM cert `da62c8c8-…` SANs: `rae-dev.com`, `*.rae-dev.com` (same cert as
+  dev). `infrastructure/.env` created locally (gitignored). CDK bootstrap
+  upgraded v25 → v32 so change-set validation errors are readable.
+- ✅ `cdk deploy RaePortfolioProd` with `PROD_DOMAIN=rae-dev.com` and
+  `PROD_MANAGE_APEX_DNS=false` — succeeded on the 6th attempt after the
+  prod-only fixes listed under "Open items / risks".
+- ✅ Stack outputs (2026-09-27):
+
+  | Output | Value |
+  |---|---|
+  | `GithubDeployRoleArn` | `arn:aws:iam::233416806179:role/rae-portfolio-github-deploy-prod` |
+  | `WebsiteBucketName` | `rae-portfolio-prod-233416806179` |
+  | `FrontendDistributionId` | `E3T2EFYDWBXP0` |
+  | `FrontendDistributionDomainName` | `d5d2mv203pdq9.cloudfront.net` |
+  | `ContactApiUrl` | `https://9h15swpj41.execute-api.us-east-1.amazonaws.com/contact` |
+  | `WordPressPublicIP` | `100.52.156.202` |
+  | `WordPressInstanceName` | `rae-portfolio-wp-prod` |
+  | `WordPressDistributionId` | `EGRZJN8Q3MIWO` |
+  | `MediaBucketName` | `rae-portfolio-media-prod-233416806179` |
+  | `MediaUploaderUserName` | `rae-portfolio-media-uploader-prod` |
+
+- ✅ GitHub Environment `prod` (required reviewer set): secret
+  `AWS_DEPLOY_ROLE_ARN` = `GithubDeployRoleArn` above; variables
+  `S3_BUCKET=rae-portfolio-prod-233416806179`,
+  `CLOUDFRONT_DISTRIBUTION_ID=E3T2EFYDWBXP0`, `SITE_URL=https://rae-dev.com`,
+  `BUILD_TARGET=prod`. **Note for Phase 3:** `SITE_URL` drives the smoke
+  test and still points at Vercel until cutover — set it temporarily to
+  `https://d5d2mv203pdq9.cloudfront.net` for the first prod frontend deploy,
+  then back to `https://rae-dev.com` at Phase 4.
+- ✅ GitHub Environment `dev`: variables set.
+- ✅ `production.contactApiUrl` ← `ContactApiUrl` output.
 
 ## Phase 2 — populate prod WordPress
 
@@ -157,6 +175,19 @@ branch.
 - Dependabot: never touches dev or prod on its own. CI only.
 
 ## Open items / risks
+
+- **Prod-only bugs found on first deploy (all fixed in code)**: duplicate
+  CORS origin when `frontendFqdn` equals the apex; `github-deploy-prod` role
+  name already taken by another project; lambdas zipped from source without
+  compiled JS (now esbuild-bundled `NodejsFunction`s). Dev never hit these
+  because its names differ and it was deployed from a machine that had the
+  compiled lambda output lying around.
+- **Deploy role naming**: the account also hosts `rae004/ai-security-digest`,
+  which owns the bare `github-deploy-prod` role. This project's prod role is
+  therefore `rae-portfolio-github-deploy-prod`. Dev still uses the legacy
+  `github-deploy-dev`; renaming it to `rae-portfolio-github-deploy-dev` is a
+  deliberate follow-up (deploy dev stack → update the `dev` Environment's
+  `AWS_DEPLOY_ROLE_ARN` → verify a dev deploy) so it can't break releases.
 
 - **DNS conflict at cutover** is the one step that can't be rehearsed; the
   `manageApexDns` flag keeps everything else deployable ahead of time.

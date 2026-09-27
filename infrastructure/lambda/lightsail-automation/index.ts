@@ -155,7 +155,8 @@ async function sendResponse(responseURL: string, response: CustomResourceRespons
   console.log('Sending response:', responseBody);
 
   try {
-    const fetch = (await import('node-fetch')).default;
+    // Native fetch (Node.js 18+) — same as wordpress-config. The previous
+    // dynamic import('node-fetch') was never bundled and failed at runtime.
     const result = await fetch(responseURL, {
       method: 'PUT',
       headers: {

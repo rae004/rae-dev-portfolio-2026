@@ -7,6 +7,8 @@ import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as lightsail from 'aws-cdk-lib/aws-lightsail';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as nodejs from 'aws-cdk-lib/aws-lambda-nodejs';
+import * as path from 'node:path';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
@@ -335,10 +337,15 @@ HEALTHEOF
         accessControlAllowCredentials: true,
         accessControlAllowHeaders: ['Content-Type', 'Authorization', 'X-WP-Nonce', 'X-Requested-With'],
         accessControlAllowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'],
+        // De-duplicated: for prod `frontendFqdn` IS the apex, and CloudFront
+        // rejects a policy with the same origin listed twice.
         accessControlAllowOrigins: [
-          'http://localhost:5173',           // Local development
-          `https://${frontendFqdn}`,         // Frontend domain (dev.rae-dev.com or rae-dev.com)
-          'https://rae-dev.com'              // Production domain
+          ...new Set([
+            'http://localhost:5173',           // Local development
+            `https://${frontendFqdn}`,         // Frontend domain (dev.rae-dev.com or rae-dev.com)
+            `https://${domainName}`,           // Apex (prod frontend; also allowed from dev)
+            ...(envName === 'prod' ? [`https://www.${domainName}`] : []),
+          ]),
         ],
         accessControlExposeHeaders: ['X-WP-Total', 'X-WP-TotalPages'],
         accessControlMaxAge: cdk.Duration.hours(24),
@@ -373,11 +380,28 @@ HEALTHEOF
     });
 
 
+    // Lambdas are bundled from their TypeScript source by esbuild at synth
+    // time (aws-lambda-nodejs). They only import @aws-sdk/*, which the Node
+    // 22 runtime provides and NodejsFunction leaves external by default, so
+    // nothing from a lambda's node_modules ever ships — there is no
+    // install-time attack surface (supply_chain_hardening.md, Phase 3).
+    // Previously Code.fromAsset zipped the directory as-is and relied on
+    // compiled .js happening to exist on the deploying machine; with *.js
+    // gitignored that broke on any fresh checkout ("Cannot find module
+    // 'index'").
+    const lambdaEntry = (name: string) => path.join(__dirname, '..', 'lambda', name, 'index.ts');
+    const lambdaBundling: nodejs.BundlingOptions = {
+      minify: true,
+      sourceMap: true,
+      target: 'node22',
+    };
+
     // Lambda function for LightSail automation
-    const lightsailAutomationFunction = new lambda.Function(this, 'LightsailAutomationFunction', {
+    const lightsailAutomationFunction = new nodejs.NodejsFunction(this, 'LightsailAutomationFunction', {
       runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'index.handler',
-      code: lambda.Code.fromAsset('./lambda/lightsail-automation'),
+      entry: lambdaEntry('lightsail-automation'),
+      handler: 'handler',
+      bundling: lambdaBundling,
       timeout: cdk.Duration.minutes(15),
       environment: {
         NODE_OPTIONS: '--enable-source-maps',
@@ -414,10 +438,11 @@ HEALTHEOF
     });
 
     // Lambda function for WordPress configuration validation
-    const wordpressConfigFunction = new lambda.Function(this, 'WordPressConfigFunction', {
+    const wordpressConfigFunction = new nodejs.NodejsFunction(this, 'WordPressConfigFunction', {
       runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'index.handler',
-      code: lambda.Code.fromAsset('./lambda/wordpress-config'),
+      entry: lambdaEntry('wordpress-config'),
+      handler: 'handler',
+      bundling: lambdaBundling,
       timeout: cdk.Duration.minutes(5), // Reduced timeout
       environment: {
         NODE_OPTIONS: '--enable-source-maps',
@@ -575,8 +600,17 @@ HEALTHEOF
           `arn:aws:iam::${this.account}:oidc-provider/token.actions.githubusercontent.com`,
         );
 
+    // Role names are account-global and this account hosts other projects:
+    // `github-deploy-prod` already belongs to rae004/ai-security-digest. New
+    // roles are therefore project-prefixed. Dev keeps its original unprefixed
+    // name because it's live and referenced by the `dev` GitHub Environment
+    // secret — renaming it replaces the role (new ARN) and would break dev
+    // deploys until that secret is updated. Align it in a deliberate step.
+    const githubDeployRoleName =
+      envName === 'dev' ? 'github-deploy-dev' : `rae-portfolio-github-deploy-${envName}`;
+
     const githubDeployRole = new iam.Role(this, 'GithubDeployRole', {
-      roleName: `github-deploy-${envName}`,
+      roleName: githubDeployRoleName,
       description: `Assumed by GitHub Actions to deploy the frontend SPA to ${envName}`,
       assumedBy: new iam.FederatedPrincipal(
         githubOidcProvider.openIdConnectProviderArn,
@@ -611,10 +645,11 @@ HEALTHEOF
       stringListValue: ['rae004dev@gmail.com'],
     });
 
-    const contactFormFunction = new lambda.Function(this, 'ContactFormFunction', {
+    const contactFormFunction = new nodejs.NodejsFunction(this, 'ContactFormFunction', {
       runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'index.handler',
-      code: lambda.Code.fromAsset('./lambda/contact-form'),
+      entry: lambdaEntry('contact-form'),
+      handler: 'handler',
+      bundling: lambdaBundling,
       timeout: cdk.Duration.seconds(15),
       memorySize: 256,
       // Cap blast radius if reCAPTCHA is somehow bypassed: at most 5

@@ -8,8 +8,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@aws-sdk/client-lightsail": "^3.1116.0",
-    "node-fetch": "^3.3.2"
+    "@aws-sdk/client-lightsail": "^3.1116.0"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

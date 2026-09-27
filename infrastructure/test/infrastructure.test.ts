@@ -332,6 +332,22 @@ describe('RaePortfolioStack (prod)', () => {
     });
   });
 
+  test('CORS policy lists each origin once (CloudFront rejects duplicates) and allows www', () => {
+    const app = new cdk.App();
+    const template = Template.fromStack(new RaePortfolioStack(app, 'RaePortfolioProd', prodProps));
+    const policies = Object.values(template.findResources('AWS::CloudFront::ResponseHeadersPolicy'));
+    const origins = (
+      policies[0] as {
+        Properties: {
+          ResponseHeadersPolicyConfig: { CorsConfig: { AccessControlAllowOrigins: { Items: string[] } } };
+        };
+      }
+    ).Properties.ResponseHeadersPolicyConfig.CorsConfig.AccessControlAllowOrigins.Items;
+    expect(new Set(origins).size).toBe(origins.length);
+    expect(origins).toContain('https://rae-dev.com');
+    expect(origins).toContain('https://www.rae-dev.com');
+  });
+
   test('manageApexDns=false holds back only the apex and www records (cutover window)', () => {
     const app = new cdk.App();
     const template = Template.fromStack(
@@ -353,8 +369,10 @@ describe('RaePortfolioStack (prod)', () => {
     const template = Template.fromStack(new RaePortfolioStack(app, 'RaePortfolioProd', prodProps));
     // The OIDC provider is an account singleton owned by the dev stack.
     template.resourceCountIs('Custom::AWSCDKOpenIdConnectProvider', 0);
+    // Project-prefixed: the bare `github-deploy-prod` name is taken by
+    // another project in the same account.
     template.hasResourceProperties('AWS::IAM::Role', {
-      RoleName: 'github-deploy-prod',
+      RoleName: 'rae-portfolio-github-deploy-prod',
       AssumeRolePolicyDocument: {
         Statement: [
           {
