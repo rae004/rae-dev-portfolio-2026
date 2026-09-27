@@ -18,13 +18,18 @@ export interface RaePortfolioStackProps extends cdk.StackProps {
   envName: string;
   domainName: string;
   certificateArn?: string;
+  // Prod only. When false, the stack skips the apex (`domainName`) and
+  // `www.` records so it can be deployed while another host still owns
+  // those names in Route 53 (the Vercel → AWS cutover window). Every other
+  // record (api., media.) is still created. Defaults to true.
+  manageApexDns?: boolean;
 }
 
 export class RaePortfolioStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: RaePortfolioStackProps) {
     super(scope, id, props);
 
-    const { envName, domainName, certificateArn } = props;
+    const { envName, domainName, certificateArn, manageApexDns = true } = props;
 
     // S3 Bucket for hosting static website
     const websiteBucket = new s3.Bucket(this, 'WebsiteBucket', {
@@ -462,22 +467,26 @@ HEALTHEOF
         domainName: domainName,
       });
 
-      // A Record for frontend domain
-      new route53.ARecord(this, 'FrontendAliasRecord', {
-        zone: hostedZone,
-        recordName: frontendFqdn,
-        target: route53.RecordTarget.fromAlias(
-          new targets.CloudFrontTarget(frontendDistribution)
-        ),
-      });
-
-      if (envName === 'prod') {
-        // CNAME for www subdomain
-        new route53.CnameRecord(this, 'WwwRecord', {
+      // Frontend records. For prod these are the apex + www — held back
+      // during cutover via `manageApexDns` (see the prop's comment); dev's
+      // `dev.` record is always managed here.
+      if (envName !== 'prod' || manageApexDns) {
+        new route53.ARecord(this, 'FrontendAliasRecord', {
           zone: hostedZone,
-          recordName: `www.${frontendFqdn}`,
-          domainName: frontendDistribution.distributionDomainName,
+          recordName: frontendFqdn,
+          target: route53.RecordTarget.fromAlias(
+            new targets.CloudFrontTarget(frontendDistribution)
+          ),
         });
+
+        if (envName === 'prod') {
+          // CNAME for www subdomain
+          new route53.CnameRecord(this, 'WwwRecord', {
+            zone: hostedZone,
+            recordName: `www.${frontendFqdn}`,
+            domainName: frontendDistribution.distributionDomainName,
+          });
+        }
       }
 
       // A Record for API subdomain pointing to WordPress CloudFront

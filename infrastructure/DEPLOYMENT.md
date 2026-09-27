@@ -15,11 +15,12 @@ Edit `.env` with your actual values:
 ```bash
 # Development Environment
 DEV_CERTIFICATE_ARN=arn:aws:acm:us-east-1:123456789012:certificate/your-dev-cert-id
-DEV_DOMAIN=dev.rae-dev.com
+DEV_DOMAIN=rae-dev.com   # the stack prefixes the env itself (dev.rae-dev.com)
 
 # Production Environment  
 PROD_CERTIFICATE_ARN=arn:aws:acm:us-east-1:123456789012:certificate/your-prod-cert-id
-PROD_DOMAIN=raeengel.dev
+PROD_DOMAIN=rae-dev.com
+# PROD_MANAGE_APEX_DNS=false   # cutover window only — see documentation/production_deployment_plan.md
 
 # AWS Configuration
 AWS_REGION=us-east-1

@@ -241,6 +241,32 @@ that this trigger requires explicit security review before being introduced,
 since it grants write tokens to workflows running unreviewed PR code — the
 exact vector that compromised TanStack.
 
+**2.7 Deploys from pull requests (`preview.yml`, added 2026-09)**
+
+`preview.yml` builds a release candidate from a PR and deploys it to the
+**dev** environment. It is deliberately on `pull_request`, not
+`pull_request_target`: the PR's own code runs with a read-only
+`GITHUB_TOKEN`, and secrets are only available to same-repo PRs (forks get
+none and simply cannot deploy). Guardrails:
+
+- Bots never mint an RC: the job is skipped for `dependabot/**` and
+  `release-please--**` branches and for `dependabot[bot]` /
+  `github-actions[bot]` actors, and only when `frontend/**` changed.
+- The only write it performs on GitHub is a sticky PR comment, via `gh`
+  with the default token and a per-job `pull-requests: write` — no
+  third-party comment Action.
+- Deploy credentials come from the `dev` GitHub Environment's OIDC role
+  (`github-deploy-dev`), whose IAM trust is scoped to
+  `repo:…:environment:dev`. Prod is a separate Environment with its own
+  role (`github-deploy-prod`) and a required-reviewer rule, so no workflow
+  path — PR, tag, or manual dispatch — can reach prod without a human
+  approving that specific run.
+
+`deploy-frontend.yml` reads bucket / distribution / site URL / build target
+from Environment **variables** rather than hard-coding them, so the same
+reusable workflow serves both environments and the environment name is the
+single thing that selects credentials and targets.
+
 ### Phase 3 — Lambda packaging follow-up
 
 `infrastructure/lib/rae-portfolio-stack.ts` uses

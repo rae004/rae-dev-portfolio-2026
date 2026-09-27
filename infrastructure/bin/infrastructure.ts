@@ -32,10 +32,17 @@ new RaePortfolioStack(app, 'RaePortfolioDev', {
   certificateArn: devCertificateArn,
 });
 
-// Production environment stack  
+// Production environment stack.
+//
+// PROD_MANAGE_APEX_DNS=false lets the stack deploy while the apex and www
+// records are still owned by the previous host (Vercel) — everything else
+// (api., media., the distributions) comes up, and the apex/www ALIAS records
+// are added on a later deploy once those manual records have been removed.
+// See documentation/production_deployment_plan.md, Phase 1 and Phase 4.
 new RaePortfolioStack(app, 'RaePortfolioProd', {
   env,
   envName: 'prod',
-  domainName: process.env.PROD_DOMAIN || 'raeengel.dev',
+  domainName: process.env.PROD_DOMAIN || 'rae-dev.com',
   certificateArn: prodCertificateArn,
+  manageApexDns: process.env.PROD_MANAGE_APEX_DNS !== 'false',
 });

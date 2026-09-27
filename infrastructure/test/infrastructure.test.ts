@@ -305,6 +305,72 @@ describe('RaePortfolioStack (dev with cert)', () => {
   });
 });
 
+describe('RaePortfolioStack (prod)', () => {
+  const prodProps = {
+    env: { account: '233416806179', region: 'us-east-1' },
+    envName: 'prod',
+    domainName: 'rae-dev.com',
+    certificateArn:
+      'arn:aws:acm:us-east-1:233416806179:certificate/00000000-0000-0000-0000-000000000000',
+  };
+
+  test('manages apex, www, api and media records by default', () => {
+    const app = new cdk.App();
+    const template = Template.fromStack(new RaePortfolioStack(app, 'RaePortfolioProd', prodProps));
+    template.hasResourceProperties('AWS::Route53::RecordSet', { Name: 'rae-dev.com.', Type: 'A' });
+    template.hasResourceProperties('AWS::Route53::RecordSet', {
+      Name: 'www.rae-dev.com.',
+      Type: 'CNAME',
+    });
+    template.hasResourceProperties('AWS::Route53::RecordSet', {
+      Name: 'api.rae-dev.com.',
+      Type: 'A',
+    });
+    template.hasResourceProperties('AWS::Route53::RecordSet', {
+      Name: 'media.rae-dev.com.',
+      Type: 'A',
+    });
+  });
+
+  test('manageApexDns=false holds back only the apex and www records (cutover window)', () => {
+    const app = new cdk.App();
+    const template = Template.fromStack(
+      new RaePortfolioStack(app, 'RaePortfolioProd', { ...prodProps, manageApexDns: false })
+    );
+    const records = Object.values(template.findResources('AWS::Route53::RecordSet')).map(
+      r => (r as { Properties: { Name: string } }).Properties.Name
+    );
+    expect(records).not.toContain('rae-dev.com.');
+    expect(records).not.toContain('www.rae-dev.com.');
+    expect(records).toContain('api.rae-dev.com.');
+    expect(records).toContain('media.rae-dev.com.');
+    // Distributions still exist — only the two DNS records are deferred.
+    template.resourceCountIs('AWS::CloudFront::Distribution', 3);
+  });
+
+  test('deploy role trusts only the GitHub `prod` environment and imports the OIDC provider', () => {
+    const app = new cdk.App();
+    const template = Template.fromStack(new RaePortfolioStack(app, 'RaePortfolioProd', prodProps));
+    // The OIDC provider is an account singleton owned by the dev stack.
+    template.resourceCountIs('Custom::AWSCDKOpenIdConnectProvider', 0);
+    template.hasResourceProperties('AWS::IAM::Role', {
+      RoleName: 'github-deploy-prod',
+      AssumeRolePolicyDocument: {
+        Statement: [
+          {
+            Condition: {
+              StringEquals: {
+                'token.actions.githubusercontent.com:sub':
+                  'repo:rae004/rae-dev-portfolio-2026:environment:prod',
+              },
+            },
+          },
+        ],
+      },
+    });
+  });
+});
+
 describe('RaePortfolioStack (no cert)', () => {
   test('skips Route 53 record creation when no certificate is provided', () => {
     const app = new cdk.App();

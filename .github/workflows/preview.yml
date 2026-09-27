@@ -1,0 +1,93 @@
+name: Preview (release candidate → dev)
+
+# Builds a release candidate from a pull request and deploys it to the dev
+# environment, so a change runs on real AWS + real WordPress BEFORE merge.
+#
+# Only real changes mint an RC. All of the following must hold:
+#   - the PR is not a draft
+#   - the head branch is not dependabot/** or release-please--**
+#   - the actor is not a bot (dependabot / github-actions)
+#   - the diff touches frontend/**  (nothing to preview otherwise)
+#
+# Security (documentation/supply_chain_hardening.md): this uses
+# `pull_request`, never `pull_request_target`. The job runs the PR's own
+# code with a read-only token. Same-repo PRs may use the `dev` Environment's
+# OIDC role; PRs from forks receive no secrets and simply cannot deploy.
+#
+# Dev is a single shared environment: the most recent push across all open
+# PRs is what's live. The sticky PR comment says which RC is up.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "frontend/**"
+
+# A new push to any PR supersedes an RC build still in flight.
+concurrency:
+  group: preview-dev
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: Real change?
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.pull_request.draft == false &&
+      !startsWith(github.head_ref, 'dependabot/') &&
+      !startsWith(github.head_ref, 'release-please--') &&
+      github.actor != 'dependabot[bot]' &&
+      github.actor != 'github-actions[bot]'
+    outputs:
+      version_suffix: ${{ steps.rc.outputs.version_suffix }}
+    steps:
+      - id: rc
+        run: |
+          sha7="${HEAD_SHA:0:7}"
+          echo "version_suffix=-rc.${PR_NUMBER}.${sha7}" >> "$GITHUB_OUTPUT"
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+
+  deploy-rc:
+    needs: gate
+    permissions:
+      id-token: write
+      contents: read
+    uses: ./.github/workflows/deploy-frontend.yml
+    with:
+      environment: dev
+      ref: ${{ github.event.pull_request.head.sha }}
+      version_suffix: ${{ needs.gate.outputs.version_suffix }}
+    secrets: inherit
+
+  comment:
+    name: Note the RC on the PR
+    needs: [gate, deploy-rc]
+    if: always() && needs.gate.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Post / update sticky comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULT: ${{ needs.deploy-rc.result }}
+          SUFFIX: ${{ needs.gate.outputs.version_suffix }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ "$RESULT" = "success" ]; then
+            body="🎧 **Release candidate \`${SUFFIX#-}\` is live on dev** — https://dev.rae-dev.com
+          Built from \`${SHA:0:7}\`. The footer badge shows this version. ([run]($RUN_URL))"
+          else
+            body="⚠️ **Release candidate \`${SUFFIX#-}\` failed to deploy** (result: \`$RESULT\`). ([run]($RUN_URL))"
+          fi
+          # --edit-last keeps one comment per PR instead of one per push.
+          gh pr comment "$PR" --repo "$REPO" --edit-last --body "$body" \
+            || gh pr comment "$PR" --repo "$REPO" --body "$body"
