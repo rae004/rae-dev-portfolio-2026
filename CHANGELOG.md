@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.10.0...v0.11.0) (2026-09-27)
+
+
+### Features
+
+* **turntable:** deliver the record in its album cover ([#141](https://github.com/rae004/rae-dev-portfolio-2026/issues/141)) ([49ac6c9](https://github.com/rae004/rae-dev-portfolio-2026/commit/49ac6c9bfed15d87e68602c3bf808e6322c771c8))
+
 ## [0.10.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.9.0...v0.10.0) (2026-09-27)
 
 
