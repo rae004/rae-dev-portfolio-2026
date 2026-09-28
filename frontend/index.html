@@ -28,8 +28,8 @@
           'coffee',
         ]
         const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches
-          ? 'black'
-          : 'corporate'
+          ? 'dracula'
+          : 'acid'
         const saved = localStorage.getItem('theme')
         const theme = saved && validThemes.indexOf(saved) !== -1 ? saved : preferred
         document.documentElement.setAttribute('data-theme', theme)
