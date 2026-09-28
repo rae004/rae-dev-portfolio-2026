@@ -80,9 +80,7 @@ describe('ThemeSwitcher', () => {
   it('uses acid as the default for prefers-color-scheme: light', () => {
     mockMatchMedia(false)
     render(<ThemeSwitcher />)
-    expect(screen.getByRole('button', { name: 'Switch to Acid theme' })).toHaveClass(
-      'btn-primary'
-    )
+    expect(screen.getByRole('button', { name: 'Switch to Acid theme' })).toHaveClass('btn-primary')
   })
 
   it('uses black as the default for prefers-color-scheme: dark', () => {
