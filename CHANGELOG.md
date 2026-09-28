@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.11.0...v0.12.0) (2026-09-28)
+
+
+### Features
+
+* **infra:** production environment, release pipeline, and Lightsail blueprint migration ([#143](https://github.com/rae004/rae-dev-portfolio-2026/issues/143)) ([ebd0a21](https://github.com/rae004/rae-dev-portfolio-2026/commit/ebd0a21121df009028d34d73423508b15b3da6f3))
+
 ## [0.11.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.10.0...v0.11.0) (2026-09-27)
 
 
