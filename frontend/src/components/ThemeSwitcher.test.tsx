@@ -77,32 +77,32 @@ describe('ThemeSwitcher', () => {
     expect(document.documentElement.getAttribute('data-theme')).toBe('synthwave')
   })
 
-  it('uses corporate as the default for prefers-color-scheme: light', () => {
+  it('uses acid as the default for prefers-color-scheme: light', () => {
     mockMatchMedia(false)
     render(<ThemeSwitcher />)
-    expect(screen.getByRole('button', { name: 'Switch to Corporate theme' })).toHaveClass(
-      'btn-primary'
-    )
+    expect(screen.getByRole('button', { name: 'Switch to Acid theme' })).toHaveClass('btn-primary')
   })
 
   it('uses black as the default for prefers-color-scheme: dark', () => {
     mockMatchMedia(true)
     render(<ThemeSwitcher />)
-    expect(screen.getByRole('button', { name: 'Switch to Black theme' })).toHaveClass('btn-primary')
+    expect(screen.getByRole('button', { name: 'Switch to Dracula theme' })).toHaveClass(
+      'btn-primary'
+    )
   })
 
   it('migrates a stale saved theme onto the OS-preferred default', () => {
     localStorage.setItem('theme', 'pastel') // removed from the curated list
     mockMatchMedia(false)
     render(<ThemeSwitcher />)
-    expect(localStorage.getItem('theme')).toBe('corporate')
-    expect(document.documentElement.getAttribute('data-theme')).toBe('corporate')
+    expect(localStorage.getItem('theme')).toBe('acid')
+    expect(document.documentElement.getAttribute('data-theme')).toBe('acid')
   })
 
-  it('migrates stale saved theme to black under prefers-color-scheme: dark', () => {
+  it('migrates stale saved theme to Dracula under prefers-color-scheme: dark', () => {
     localStorage.setItem('theme', 'pastel')
     mockMatchMedia(true)
     render(<ThemeSwitcher />)
-    expect(localStorage.getItem('theme')).toBe('black')
+    expect(localStorage.getItem('theme')).toBe('dracula')
   })
 })
