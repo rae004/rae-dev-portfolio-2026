@@ -225,7 +225,35 @@ user-data in a `#!/bin/sh` prelude, so it executed under dash and died on
 
 ## Phase 4 — cutover
 
-- ⬜ Lower TTLs on the Vercel-pointing records a day ahead.
+Pre-cutover:
+
+- ✅ `www.<domain>` added to the prod frontend distribution's alternate
+  domain names (the stack creates the `www` CNAME; CloudFront 403s
+  hostnames it doesn't list). Verified with `--resolve` pinned to
+  CloudFront: both `rae-dev.com` and `www.rae-dev.com` serve the site.
+- ✅ `unattended-upgrades` installed and enabled on the prod instance
+  (Debian security origin; daily). PHP stays on Debian 12's packaged 8.2,
+  which Debian patches past PHP's own Dec-2026 upstream date. **Not** added
+  to the CDK user-data script yet: changing `UserData` on
+  `AWS::Lightsail::Instance` forces a replacement, which would wipe the
+  seeded content. Add it to the script with the dev migration, when a
+  replacement is planned.
+- ✅ `rae-dev.com` confirmed on the reCAPTCHA key's allowed domains.
+
+Cutover — **done 2026-09-27 ~21:00 UTC**:
+
+- ✅ Vercel apex A (`76.76.21.21`) and `www` CNAME deleted from Route 53
+  (backup of the records kept locally for rollback).
+- ✅ Prod redeployed with `PROD_MANAGE_APEX_DNS=true` → `FrontendAliasRecord`
+  + `WwwRecord` created. Public resolvers answer CloudFront within minutes.
+- ✅ `prod` Environment `SITE_URL` restored to `https://rae-dev.com`.
+- ✅ Verified externally: `https://rae-dev.com` and `https://www.rae-dev.com`
+  → 200 from CloudFront/S3, `http://` → 301 to https, ACM cert
+  `CN=rae-dev.com` valid to 2027-01-25.
+- ⬜ Keep the Vercel project alive but unlinked for ~1 week; then delete it.
+
+Original step list:
+
 - ⬜ Delete the manual apex A and `www` CNAME records in Route 53.
 - ⬜ Redeploy prod with `PROD_MANAGE_APEX_DNS=true` → Route 53 ALIAS records
   to CloudFront.

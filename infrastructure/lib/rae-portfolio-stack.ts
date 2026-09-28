@@ -80,7 +80,13 @@ export class RaePortfolioStack extends cdk.Stack {
         cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD,
         compress: true,
       },
-      domainNames: certificate ? [frontendFqdn] : undefined,
+      // Prod also answers on www.: the stack creates that CNAME, and
+      // CloudFront 403s any hostname not listed here.
+      domainNames: certificate
+        ? envName === 'prod'
+          ? [frontendFqdn, `www.${frontendFqdn}`]
+          : [frontendFqdn]
+        : undefined,
       certificate,
       defaultRootObject: 'index.html',
       errorResponses: [{
