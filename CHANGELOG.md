@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.1](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.12.0...v0.12.1) (2026-09-28)
+
+
+### Bug Fixes
+
+* **infra:** serve www on the prod distribution; coach-mark bubble tweak ([#146](https://github.com/rae004/rae-dev-portfolio-2026/issues/146)) ([2525be2](https://github.com/rae004/rae-dev-portfolio-2026/commit/2525be2c809ccf1b492e2b74d609a9bd67c15974))
+
 ## [0.12.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.11.0...v0.12.0) (2026-09-28)
 
 
