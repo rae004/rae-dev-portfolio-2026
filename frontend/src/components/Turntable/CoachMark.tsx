@@ -169,7 +169,7 @@ const CoachMark = ({ getTarget, text, offscreenText }: CoachMarkProps) => {
       </svg>
       <div
         ref={bubbleRef}
-        className='absolute max-w-[220px] rounded-full bg-primary text-primary-content px-4 py-2 text-sm font-semibold shadow-lg whitespace-nowrap transition-opacity duration-300'
+        className='absolute max-w-[240px] rounded-full bg-primary text-primary-content px-4 py-3 text-sm text-wrap font-semibold shadow-lg transition-opacity duration-300'
         style={{
           transform: layout ? `translate(${layout.bubble.x}px, ${layout.bubble.y}px)` : undefined,
           opacity: layout ? 1 : 0,
