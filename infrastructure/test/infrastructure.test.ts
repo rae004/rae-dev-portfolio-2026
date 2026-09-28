@@ -319,6 +319,12 @@ describe('RaePortfolioStack (prod)', () => {
   test('manages apex, www, api and media records by default', () => {
     const app = new cdk.App();
     const template = Template.fromStack(new RaePortfolioStack(app, 'RaePortfolioProd', prodProps));
+    // The frontend distribution must list www too, or CloudFront 403s it.
+    const dists = Object.values(template.findResources('AWS::CloudFront::Distribution')) as Array<{
+      Properties: { DistributionConfig: { Aliases?: string[] } };
+    }>;
+    const aliases = dists.map(d => d.Properties.DistributionConfig.Aliases ?? []);
+    expect(aliases).toContainEqual(['rae-dev.com', 'www.rae-dev.com']);
     template.hasResourceProperties('AWS::Route53::RecordSet', { Name: 'rae-dev.com.', Type: 'A' });
     template.hasResourceProperties('AWS::Route53::RecordSet', {
       Name: 'www.rae-dev.com.',
