@@ -1,5 +1,21 @@
 # WordPress CloudFront HTTPS Troubleshooting Quick Reference
 
+## 🧭 Which blueprint am I on?
+
+Two WordPress instance layouts exist (dev is still on the deprecated Bitnami
+image; prod is on the Lightsail-packaged one). Substitute accordingly below.
+
+| | Bitnami `wordpress` (dev) | Lightsail `wordpress_ls_1_0` (prod) |
+|---|---|---|
+| SSH | `bitnami@<ip>` | `admin@<ip>` |
+| WordPress root | `/opt/bitnami/wordpress` | `/var/www/html` |
+| `wp-config.php` | `/opt/bitnami/wordpress/wp-config.php` | `/var/www/wp-config.php` |
+| wp-cli | `sudo wp --path=<root> …` | `sudo -u admin wp --path=/var/www/html …` |
+| Restart Apache | `sudo /opt/bitnami/ctlscript.sh restart apache` | `sudo systemctl restart apache2` |
+| Apache error log | `/opt/bitnami/apache/logs/error_log` | `/var/log/apache2/error.log` |
+| Default admin password | `~/bitnami_application_password` | `~/application_credentials` |
+| Setup script log | `/var/log/wordpress-setup.log` | `/var/log/wordpress-setup.log` |
+
 ## 🚨 Emergency Commands
 
 ### WordPress Not Loading

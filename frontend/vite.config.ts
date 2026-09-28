@@ -49,8 +49,10 @@ export default defineConfig(({ mode }) => {
     define: {
       // App environment for runtime detection
       __APP_ENV__: JSON.stringify(appEnv),
-      // Frontend package version (release-please bumps this on every release)
-      __APP_VERSION__: JSON.stringify(pkg.version),
+      // Frontend package version (release-please bumps this on every release).
+      // Preview builds append a suffix like "-rc.142.a1b2c3d" so the footer
+      // badge on dev says exactly which PR/commit is live there.
+      __APP_VERSION__: JSON.stringify(`${pkg.version}${process.env.APP_VERSION_SUFFIX ?? ''}`),
       // Legacy support
       __DEV__: JSON.stringify(process.env.NODE_ENV === 'development'),
     },

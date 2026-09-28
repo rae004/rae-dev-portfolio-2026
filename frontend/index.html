@@ -1,5 +1,6 @@
 <!doctype html>
-<html lang="en">
+<!-- class for Theme transition for smooth theme switching -->
+<html lang="en" class="transition-[color-scheme] duration-200 ease-in-out">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
@@ -10,7 +11,7 @@
       // Keep the valid-theme list in sync with ThemeSwitcher.tsx and
       // tailwind.config.js's daisyui.themes array.
       ;(function () {
-        var validThemes = [
+        const validThemes = [
           'corporate',
           'cmyk',
           'acid',
@@ -26,16 +27,16 @@
           'dracula',
           'coffee',
         ]
-        var preferred = window.matchMedia('(prefers-color-scheme: dark)').matches
+        const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches
           ? 'black'
           : 'corporate'
-        var saved = localStorage.getItem('theme')
-        var theme = saved && validThemes.indexOf(saved) !== -1 ? saved : preferred
+        const saved = localStorage.getItem('theme')
+        const theme = saved && validThemes.indexOf(saved) !== -1 ? saved : preferred
         document.documentElement.setAttribute('data-theme', theme)
       })()
     </script>
   </head>
-  <body>
+  <body class="overflow-x-hidden">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

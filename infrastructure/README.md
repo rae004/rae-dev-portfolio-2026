@@ -21,7 +21,10 @@ For the full deployment workflow (including the manual WordPress URL/HTTPS recon
 DEV_CERTIFICATE_ARN=arn:aws:acm:us-east-1:<account>:certificate/<id>   # us-east-1, wildcard for the domain
 DEV_DOMAIN=rae-dev.com
 PROD_CERTIFICATE_ARN=...
-PROD_DOMAIN=raeengel.dev
+PROD_DOMAIN=rae-dev.com
+# Set to false only during the Vercel → AWS cutover window (see
+# documentation/production_deployment_plan.md); omit otherwise.
+# PROD_MANAGE_APEX_DNS=false
 CDK_DEFAULT_ACCOUNT=<account>
 CDK_DEFAULT_REGION=us-east-1
 ```

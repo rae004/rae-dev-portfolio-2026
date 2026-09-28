@@ -27,62 +27,44 @@ interface CustomResourceEvent {
   };
 }
 
-interface CustomResourceResponse {
-  Status: 'SUCCESS' | 'FAILED';
-  Reason?: string;
-  PhysicalResourceId: string;
-  StackId: string;
-  RequestId: string;
-  LogicalResourceId: string;
-  Data?: Record<string, any>;
-}
-
 const lightsailClient = new LightsailClient({});
 
-export const handler = async (event: CustomResourceEvent): Promise<void> => {
+// Provider-framework contract (aws-cdk-lib custom-resources `Provider`):
+// return on success, throw on failure. The framework sends the
+// CloudFormation response — this handler must NOT send its own. It used
+// to: a self-sent FAILED followed by the framework's SUCCESS (last write
+// wins) let a failed validation register as a successful deploy.
+export const handler = async (
+  event: CustomResourceEvent
+): Promise<{ PhysicalResourceId: string; Data?: Record<string, unknown> }> => {
   console.log('WordPress Configuration Event:', JSON.stringify(event, null, 2));
-
-  const { RequestType, ResourceProperties, ResponseURL, StackId, RequestId, LogicalResourceId } = event;
+  const { RequestType, ResourceProperties } = event;
   const { InstanceName, StaticIpAddress, Domain, Environment, CloudFrontDomain } = ResourceProperties;
+  const PhysicalResourceId = `${InstanceName}-wordpress-config`;
 
-  let response: CustomResourceResponse = {
-    Status: 'SUCCESS',
-    PhysicalResourceId: `${InstanceName}-wordpress-config`,
-    StackId,
-    RequestId,
-    LogicalResourceId,
-  };
-
-  try {
-    switch (RequestType) {
-      case 'Create':
-      case 'Update':
-        const certificateResult = await configureSSLCertificate(ResourceProperties);
-        await validateAndConfigureWordPress(InstanceName, StaticIpAddress, Domain, Environment, CloudFrontDomain);
-        response.Data = {
+  switch (RequestType) {
+    case 'Create':
+    case 'Update': {
+      const certificateResult = await configureSSLCertificate(ResourceProperties);
+      await validateAndConfigureWordPress(InstanceName, StaticIpAddress, Domain, Environment, CloudFrontDomain);
+      return {
+        PhysicalResourceId,
+        Data: {
           InstanceName,
           StaticIpAddress,
           ConfigurationStatus: 'Complete',
           HealthCheckUrl: `http://${StaticIpAddress}/health-check.php`,
           WordPressAdminUrl: `http://${StaticIpAddress}/wp-admin/`,
           SSLCertificate: certificateResult,
-        };
-        break;
-
-      case 'Delete':
-        console.log('Delete operation - cleanup if necessary');
-        break;
-
-      default:
-        throw new Error(`Unknown request type: ${RequestType}`);
+        },
+      };
     }
-  } catch (error) {
-    console.error('Error processing WordPress configuration:', error);
-    response.Status = 'FAILED';
-    response.Reason = error instanceof Error ? error.message : 'Unknown error occurred';
+    case 'Delete':
+      console.log('Delete operation - nothing to clean up');
+      return { PhysicalResourceId };
+    default:
+      throw new Error(`Unknown request type: ${RequestType}`);
   }
-
-  await sendResponse(ResponseURL, response);
 };
 
 async function validateAndConfigureWordPress(
@@ -92,8 +74,12 @@ async function validateAndConfigureWordPress(
   environment: string,
   cloudFrontDomain?: string
 ): Promise<void> {
-  const maxRetries = 5;  // Reduced from 20
-  const retryDelay = 15000; // 15 seconds (reduced from 30)
+  // The instance is "running" long before the user-data setup script has
+  // finished (WordPress first-boot install + our config + health endpoint
+  // can take several minutes on a fresh image). Budget ~10 minutes; the
+  // Lambda's own timeout is set above that in the stack.
+  const maxRetries = 30;
+  const retryDelay = 20000; // 20 seconds
 
   console.log(`Starting WordPress validation for instance ${instanceName}`);
 
@@ -303,26 +289,4 @@ async function configureSSLCertificate(
 
 async function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function sendResponse(responseURL: string, response: CustomResourceResponse): Promise<void> {
-  const responseBody = JSON.stringify(response);
-  console.log('Sending response:', responseBody);
-
-  try {
-    // Using native fetch (Node.js 18+)
-    const result = await fetch(responseURL, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': '',
-        'Content-Length': responseBody.length.toString(),
-      },
-      body: responseBody,
-    });
-
-    console.log('Response sent successfully:', result.status);
-  } catch (error) {
-    console.error('Failed to send response:', error);
-    throw error;
-  }
 }

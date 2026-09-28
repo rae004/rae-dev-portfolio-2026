@@ -241,6 +241,32 @@ that this trigger requires explicit security review before being introduced,
 since it grants write tokens to workflows running unreviewed PR code — the
 exact vector that compromised TanStack.
 
+**2.7 Deploys from pull requests (`preview.yml`, added 2026-09)**
+
+`preview.yml` builds a release candidate from a PR and deploys it to the
+**dev** environment. It is deliberately on `pull_request`, not
+`pull_request_target`: the PR's own code runs with a read-only
+`GITHUB_TOKEN`, and secrets are only available to same-repo PRs (forks get
+none and simply cannot deploy). Guardrails:
+
+- Bots never mint an RC: the job is skipped for `dependabot/**` and
+  `release-please--**` branches and for `dependabot[bot]` /
+  `github-actions[bot]` actors, and only when `frontend/**` changed.
+- The only write it performs on GitHub is a sticky PR comment, via `gh`
+  with the default token and a per-job `pull-requests: write` — no
+  third-party comment Action.
+- Deploy credentials come from the `dev` GitHub Environment's OIDC role
+  (`github-deploy-dev`), whose IAM trust is scoped to
+  `repo:…:environment:dev`. Prod is a separate Environment with its own
+  role (`github-deploy-prod`) and a required-reviewer rule, so no workflow
+  path — PR, tag, or manual dispatch — can reach prod without a human
+  approving that specific run.
+
+`deploy-frontend.yml` reads bucket / distribution / site URL / build target
+from Environment **variables** rather than hard-coding them, so the same
+reusable workflow serves both environments and the environment name is the
+single thing that selects credentials and targets.
+
 ### Phase 3 — Lambda packaging follow-up
 
 `infrastructure/lib/rae-portfolio-stack.ts` uses
@@ -249,13 +275,19 @@ This means whatever `node_modules` is on local disk gets baked into the
 Lambda. Currently the CI `cdk-synth` job runs `pnpm install` only in
 `infrastructure/`, not in each lambda subdirectory.
 
-**Follow-up recommendation** (not strictly part of this hardening pass):
-migrate the three lambdas to `aws-cdk-lib/aws-lambda-nodejs` `NodejsFunction`,
-which bundles via esbuild from source. The lambda's `package.json` deps
-become bundling input only — no npm install happens at deploy time,
-eliminating the lambda npm install attack surface entirely.
+**Done (2026-09-27)** — the three lambdas are now
+`aws-cdk-lib/aws-lambda-nodejs` `NodejsFunction`s bundled from `index.ts` by
+esbuild at synth time (`esbuild` is an infrastructure devDependency, pinned
+and listed in `allowBuilds`). Each lambda imports only `@aws-sdk/*`, which
+the Node 22 runtime provides and `NodejsFunction` leaves external by default,
+so nothing from a lambda's `node_modules` is ever packaged — the lambda npm
+install attack surface is gone. The lambda `package.json` files remain as
+dependency intent for Dependabot and local type-checking only.
 
-Flagged here so it is not forgotten; tracked separately.
+This also fixed a latent deploy bug: `Code.fromAsset` zipped the directory
+as-is and depended on compiled `.js` happening to exist on the deploying
+machine (it's gitignored), which surfaced as `Cannot find module 'index'` on
+the first prod deploy from a clean checkout.
 
 ### Phase 4 — Automated update tooling (Dependabot)
 

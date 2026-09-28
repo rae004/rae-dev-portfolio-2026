@@ -1,26 +1,49 @@
 name: Deploy Frontend
 
 # Reusable workflow that builds the SPA and uploads it to S3 + invalidates
-# CloudFront for the dev environment. Two trigger modes:
+# CloudFront for ONE environment. Everything environment-specific comes from
+# the GitHub Environment named by `environment` (its variables + secrets):
 #
-#   - workflow_call: invoked from release-please.yml after a tag is cut.
-#     Pass the tag as `ref` so the deployed bundle matches the released
-#     version exactly.
+#   vars.S3_BUCKET                  e.g. rae-portfolio-dev-233416806179
+#   vars.CLOUDFRONT_DISTRIBUTION_ID e.g. EY6SKG56NXSIP
+#   vars.SITE_URL                   e.g. https://dev.rae-dev.com   (smoke test)
+#   vars.BUILD_TARGET               dev | prod  → runs `pnpm build:<target>`
+#   secrets.AWS_DEPLOY_ROLE_ARN     the github-deploy-<env> role from the CDK stack
 #
-#   - workflow_dispatch: manual trigger from the Actions UI. Use for
-#     incident recovery, hotfix deploys without cutting a release, or to
-#     populate a freshly-provisioned bucket. Defaults to the current main.
+# The `prod` Environment carries a required-reviewer rule, so any job that
+# targets it — from any caller — pauses for approval. That rule, not this
+# file, is what guarantees "no prod deploy without a human".
+#
+# Trigger modes:
+#   - workflow_call: from release-please.yml (tag → dev → prod) and from
+#     preview.yml (PR release candidate → dev).
+#   - workflow_dispatch: manual, e.g. hotfix or re-deploy of a known ref.
 
 on:
   workflow_call:
     inputs:
+      environment:
+        description: "GitHub Environment to deploy to (dev | prod)"
+        required: true
+        type: string
       ref:
         description: "Git ref to deploy (tag, branch, or SHA)"
         required: false
         type: string
         default: ""
+      version_suffix:
+        description: "Appended to the package version in the build (e.g. -rc.142.a1b2c3d)"
+        required: false
+        type: string
+        default: ""
   workflow_dispatch:
     inputs:
+      environment:
+        description: "GitHub Environment to deploy to"
+        required: true
+        type: choice
+        options: [dev, prod]
+        default: dev
       ref:
         description: "Git ref to deploy (defaults to current main)"
         required: false
@@ -29,9 +52,13 @@ on:
 
 jobs:
   deploy-frontend:
-    name: Deploy frontend to dev
+    name: Deploy frontend to ${{ inputs.environment }}
     runs-on: ubuntu-latest
-    environment: dev
+    environment: ${{ inputs.environment }}
+    # One deploy per environment at a time. Not cancel-in-progress: a deploy
+    # that has started syncing S3 should finish rather than leave a half
+    # bucket. preview.yml applies its own cancel-in-progress group upstream.
+    concurrency: deploy-${{ inputs.environment }}
     permissions:
       id-token: write   # required for OIDC token exchange
       contents: read
@@ -62,9 +89,11 @@ jobs:
         working-directory: ./frontend
         run: pnpm install --frozen-lockfile
 
-      - name: Build (dev target)
+      - name: Build (${{ vars.BUILD_TARGET }} target)
         working-directory: ./frontend
-        run: pnpm build:dev
+        env:
+          APP_VERSION_SUFFIX: ${{ inputs.version_suffix }}
+        run: pnpm build:${{ vars.BUILD_TARGET }}
 
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
@@ -74,14 +103,14 @@ jobs:
 
       - name: Sync to S3
         run: |
-          aws s3 sync frontend/dist/ s3://rae-portfolio-dev-233416806179 \
+          aws s3 sync frontend/dist/ "s3://${{ vars.S3_BUCKET }}" \
             --delete \
             --no-progress
 
       - name: Invalidate CloudFront cache
         run: |
           aws cloudfront create-invalidation \
-            --distribution-id EY6SKG56NXSIP \
+            --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" \
             --paths '/*'
 
       - name: Smoke test
@@ -92,7 +121,7 @@ jobs:
             # Match the actual portfolio title content, not just any <title>
             # tag — a broken build that emits an empty <title></title> would
             # otherwise sneak past the gate.
-            if curl -fsS https://dev.rae-dev.com | grep -q '<title>Rae Dev Portfolio</title>'; then
+            if curl -fsS "${{ vars.SITE_URL }}" | grep -q '<title>Rae Dev Portfolio</title>'; then
               echo "Smoke test passed (attempt $attempt)"
               exit 0
             fi

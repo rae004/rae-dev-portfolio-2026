@@ -1,5 +1,15 @@
 name: Release Please
 
+# Release flow (see documentation/production_deployment_plan.md):
+#
+#   merge release PR → tag vX.Y.Z
+#     → deploy the tag to dev   (automatic)
+#     → deploy the tag to prod  (pauses for the `prod` Environment's
+#                                required reviewer)
+#
+# Prod only ever ships an artifact that has already been built and smoke
+# tested on dev from the same tag.
+
 on:
   push:
     branches: [main]
@@ -31,5 +41,18 @@ jobs:
       contents: read
     uses: ./.github/workflows/deploy-frontend.yml
     with:
+      environment: dev
+      ref: ${{ needs.release-please.outputs.tag_name }}
+    secrets: inherit
+
+  deploy-frontend-prod:
+    needs: [release-please, deploy-frontend-dev]
+    if: needs.release-please.outputs.release_created == 'true'
+    permissions:
+      id-token: write
+      contents: read
+    uses: ./.github/workflows/deploy-frontend.yml
+    with:
+      environment: prod
       ref: ${{ needs.release-please.outputs.tag_name }}
     secrets: inherit

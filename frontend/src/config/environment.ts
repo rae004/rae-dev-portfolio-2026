@@ -69,8 +69,8 @@ const ENVIRONMENT_CONFIGS: Record<
   production: {
     name: 'production',
     wpApiBase: 'https://api.rae-dev.com',
-    // Update with `ContactApiUrl` from RaePortfolioProd stack outputs.
-    contactApiUrl: '',
+    // `ContactApiUrl` output of the RaePortfolioProd stack (deployed 2026-09-27).
+    contactApiUrl: 'https://9h15swpj41.execute-api.us-east-1.amazonaws.com/contact',
     recaptcha: {
       enabled: true, // Will be dynamically loaded from WordPress
       threshold: 0.1, // Default, will be overridden by WordPress settings

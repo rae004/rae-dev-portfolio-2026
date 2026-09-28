@@ -13,6 +13,8 @@ describe('RaePortfolioStack (dev with cert)', () => {
       domainName: 'rae-dev.com',
       certificateArn:
         'arn:aws:acm:us-east-1:233416806179:certificate/da62c8c8-1aa9-4e36-8995-735e93c827f6',
+      // Mirrors bin/infrastructure.ts: dev is pinned to the legacy Bitnami blueprint.
+      wordpressBlueprintId: 'wordpress',
     });
     template = Template.fromStack(stack);
   });
@@ -305,6 +307,124 @@ describe('RaePortfolioStack (dev with cert)', () => {
   });
 });
 
+describe('RaePortfolioStack (prod)', () => {
+  const prodProps = {
+    env: { account: '233416806179', region: 'us-east-1' },
+    envName: 'prod',
+    domainName: 'rae-dev.com',
+    certificateArn:
+      'arn:aws:acm:us-east-1:233416806179:certificate/00000000-0000-0000-0000-000000000000',
+  };
+
+  test('manages apex, www, api and media records by default', () => {
+    const app = new cdk.App();
+    const template = Template.fromStack(new RaePortfolioStack(app, 'RaePortfolioProd', prodProps));
+    template.hasResourceProperties('AWS::Route53::RecordSet', { Name: 'rae-dev.com.', Type: 'A' });
+    template.hasResourceProperties('AWS::Route53::RecordSet', {
+      Name: 'www.rae-dev.com.',
+      Type: 'CNAME',
+    });
+    template.hasResourceProperties('AWS::Route53::RecordSet', {
+      Name: 'api.rae-dev.com.',
+      Type: 'A',
+    });
+    template.hasResourceProperties('AWS::Route53::RecordSet', {
+      Name: 'media.rae-dev.com.',
+      Type: 'A',
+    });
+  });
+
+  test('uses the Lightsail-packaged WordPress blueprint, a bash-run setup script and an explicit firewall', () => {
+    const app = new cdk.App();
+    const template = Template.fromStack(new RaePortfolioStack(app, 'RaePortfolioProd', prodProps));
+    const instance = Object.values(template.findResources('AWS::Lightsail::Instance'))[0] as {
+      Properties: {
+        InstanceName: string;
+        BlueprintId: string;
+        UserData: string;
+        Networking: { Ports: Array<{ FromPort: number; Cidrs: string[] }> };
+      };
+    };
+    expect(instance.Properties.BlueprintId).toBe('wordpress_ls_1_0');
+    // Name carries the blueprint generation so a blueprint change can be a
+    // CloudFormation replacement (custom-named resources can't be replaced
+    // in place). Dev's legacy Bitnami instance keeps the bare name.
+    expect(instance.Properties.InstanceName).toBe('rae-portfolio-wp-prod-ls10');
+    // Lightsail runs user-data under /bin/sh; the real script must be handed to bash.
+    expect(instance.Properties.UserData).toMatch(/^#!\/bin\/sh\n/);
+    expect(instance.Properties.UserData).toContain('bash /root/rae-wp-setup.sh');
+    expect(instance.Properties.UserData).toContain("cat > /root/rae-wp-setup.sh <<'RAE_SETUP_EOF'");
+    // The script must handle both layouts and never use IMDSv1.
+    expect(instance.Properties.UserData).toContain('/var/www/html/wp-load.php');
+    expect(instance.Properties.UserData).toContain('/opt/bitnami/wordpress');
+    expect(instance.Properties.UserData).toContain('X-aws-ec2-metadata-token');
+    // wp-cli lives in /usr/local/bin, which cloud-init's PATH omits.
+    expect(instance.Properties.UserData).toContain('export PATH=/usr/local/sbin:/usr/local/bin');
+    // The Lightsail image's HTTP→HTTPS vhost redirect must be disabled for CloudFront.
+    expect(instance.Properties.UserData).toContain('000-default.conf');
+    expect(instance.Properties.UserData).toContain('api.rae-dev.com');
+    // SSH + HTTP must stay reachable (Lightsail images restrict 22 by default).
+    const ports = instance.Properties.Networking.Ports.map(p => p.FromPort).sort((a, b) => a - b);
+    expect(ports).toEqual([22, 80, 443]);
+  });
+
+  test('CORS policy lists each origin once (CloudFront rejects duplicates) and allows www', () => {
+    const app = new cdk.App();
+    const template = Template.fromStack(new RaePortfolioStack(app, 'RaePortfolioProd', prodProps));
+    const policies = Object.values(template.findResources('AWS::CloudFront::ResponseHeadersPolicy'));
+    const origins = (
+      policies[0] as {
+        Properties: {
+          ResponseHeadersPolicyConfig: { CorsConfig: { AccessControlAllowOrigins: { Items: string[] } } };
+        };
+      }
+    ).Properties.ResponseHeadersPolicyConfig.CorsConfig.AccessControlAllowOrigins.Items;
+    expect(new Set(origins).size).toBe(origins.length);
+    expect(origins).toContain('https://rae-dev.com');
+    expect(origins).toContain('https://www.rae-dev.com');
+  });
+
+  test('manageApexDns=false holds back only the apex and www records (cutover window)', () => {
+    const app = new cdk.App();
+    const template = Template.fromStack(
+      new RaePortfolioStack(app, 'RaePortfolioProd', { ...prodProps, manageApexDns: false })
+    );
+    const records = Object.values(template.findResources('AWS::Route53::RecordSet')).map(
+      r => (r as { Properties: { Name: string } }).Properties.Name
+    );
+    expect(records).not.toContain('rae-dev.com.');
+    expect(records).not.toContain('www.rae-dev.com.');
+    expect(records).toContain('api.rae-dev.com.');
+    expect(records).toContain('media.rae-dev.com.');
+    // Distributions still exist — only the two DNS records are deferred.
+    template.resourceCountIs('AWS::CloudFront::Distribution', 3);
+  });
+
+  test('deploy role trusts only the GitHub `prod` environment and imports the OIDC provider', () => {
+    const app = new cdk.App();
+    const template = Template.fromStack(new RaePortfolioStack(app, 'RaePortfolioProd', prodProps));
+    // The OIDC provider is an account singleton owned by the dev stack.
+    template.resourceCountIs('Custom::AWSCDKOpenIdConnectProvider', 0);
+    // Project-prefixed: the bare `github-deploy-prod` name is taken by
+    // another project in the same account.
+    template.hasResourceProperties('AWS::IAM::Role', {
+      RoleName: 'rae-portfolio-github-deploy-prod',
+      AssumeRolePolicyDocument: {
+        Statement: [
+          {
+            Condition: {
+              StringEquals: {
+                'token.actions.githubusercontent.com:sub':
+                  'repo:rae004/rae-dev-portfolio-2026:environment:prod',
+              },
+            },
+          },
+        ],
+      },
+    });
+  });
+});
+
 describe('RaePortfolioStack (no cert)', () => {
   test('skips Route 53 record creation when no certificate is provided', () => {
     const app = new cdk.App();
@@ -313,6 +433,7 @@ describe('RaePortfolioStack (no cert)', () => {
       envName: 'dev',
       domainName: 'rae-dev.com',
       // certificateArn intentionally omitted
+      wordpressBlueprintId: 'wordpress',
     });
     const template = Template.fromStack(stack);
     template.resourceCountIs('AWS::Route53::RecordSet', 0);

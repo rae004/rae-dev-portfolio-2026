@@ -1,3 +1,5 @@
+import { config } from '../../config/environment'
+
 export interface SongLabel {
   // Base colour of the record label; ink colour is derived from it.
   color: string
@@ -27,10 +29,14 @@ export interface Song {
   albumArt?: AlbumArt
 }
 
-// Covers live in the WordPress media library (uploaded as WebP), referenced
-// by absolute URL so nothing here changes once song data comes from the
-// media-projects API instead of this file.
-const COVER_ART_BASE = 'https://api-dev.rae-dev.com/wp-content/uploads/2026/09'
+// Covers live in the WordPress media library (uploaded as WebP) of whichever
+// environment we're built for — dev's for dev, prod's for prod — at the same
+// upload path in both (the migration preserves it; see
+// documentation/production_deployment_plan.md, Phase 2). Local dev has no
+// media library of its own, so it borrows dev's. Once song data comes from
+// the media-projects API the URL will arrive with the song instead.
+const COVER_ART_HOST = config.isLocal ? 'https://api-dev.rae-dev.com' : config.wpApiBase
+const COVER_ART_BASE = `${COVER_ART_HOST}/wp-content/uploads/2026/09`
 const cover = (file: string, title: string, artist: string): AlbumArt => ({
   url: `${COVER_ART_BASE}/${file}.webp`,
   alt: `Album cover for ${title} by ${artist}`,

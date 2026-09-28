@@ -11,8 +11,14 @@
 #   binary and needs its install script to run. Published and widely
 #   used across the JS ecosystem (Nuxt, ESLint 9). Past our 7-day
 #   cooldown wall.
+#
+# esbuild — bundles the three Lambdas from TypeScript source at synth time
+#   (aws-lambda-nodejs NodejsFunction). Its install script only validates
+#   the platform binary shipped via optionalDependencies. Same version the
+#   frontend already allows.
 allowBuilds:
   unrs-resolver: true
+  esbuild: true
 
 # Each override below patches a high-severity advisory in a transitive
 # dep. All patched versions chosen here are well past our 7-day cooldown.

@@ -7,6 +7,8 @@ import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as lightsail from 'aws-cdk-lib/aws-lightsail';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as nodejs from 'aws-cdk-lib/aws-lambda-nodejs';
+import * as path from 'node:path';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
@@ -18,13 +20,31 @@ export interface RaePortfolioStackProps extends cdk.StackProps {
   envName: string;
   domainName: string;
   certificateArn?: string;
+  // Prod only. When false, the stack skips the apex (`domainName`) and
+  // `www.` records so it can be deployed while another host still owns
+  // those names in Route 53 (the Vercel → AWS cutover window). Every other
+  // record (api., media.) is still created. Defaults to true.
+  manageApexDns?: boolean;
+  // Lightsail blueprint for the WordPress instance. Defaults to the
+  // Lightsail-packaged `wordpress_ls_1_0`. CHANGING THIS ON A DEPLOYED STACK
+  // REPLACES THE INSTANCE (and its database) — only do it as a planned
+  // migration. Dev pins the legacy Bitnami `wordpress` until then.
+  wordpressBlueprintId?: string;
 }
+
+export const DEFAULT_WORDPRESS_BLUEPRINT = 'wordpress_ls_1_0';
 
 export class RaePortfolioStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: RaePortfolioStackProps) {
     super(scope, id, props);
 
-    const { envName, domainName, certificateArn } = props;
+    const {
+      envName,
+      domainName,
+      certificateArn,
+      manageApexDns = true,
+      wordpressBlueprintId = DEFAULT_WORDPRESS_BLUEPRINT,
+    } = props;
 
     // S3 Bucket for hosting static website
     const websiteBucket = new s3.Bucket(this, 'WebsiteBucket', {
@@ -83,231 +103,210 @@ export class RaePortfolioStack extends cdk.Stack {
     // Note: S3BucketOrigin.withOriginAccessControl() automatically handles the bucket policy
 
     // WordPress LightSail Instance
-    const wordpressInstance = new lightsail.CfnInstance(this, 'WordPressInstance', {
-      instanceName: `rae-portfolio-wp-${envName}`,
-      blueprintId: 'wordpress',
-      bundleId: envName === 'prod' ? 'micro_3_0' : 'nano_3_0', // Prod: $5/month, Dev: $3.50/month
-      availabilityZone: `${this.region}a`,
-      userData: `#!/bin/bash
-        # Enhanced WordPress setup script with CloudFront HTTPS configuration
-        set -euo pipefail
-        
-        # Logging setup
-        LOG_FILE="/var/log/wordpress-setup.log"
-        exec 1> >(tee -a "$LOG_FILE")
-        exec 2> >(tee -a "$LOG_FILE" >&2)
-        echo "$(date): Starting WordPress setup with HTTPS configuration"
-        
-        # Set WordPress URL environment variables
-        export WP_HOME="https://${apiFqdn}"
-        export WP_SITEURL="https://${apiFqdn}"
-        echo "WordPress URLs will be set to: $WP_HOME"
-        
-        # Wait for Bitnami initialization to complete (critical!)
-        echo "Waiting for Bitnami services to initialize completely..."
-        sleep 300  # 5 minutes for full initialization (increased from 3)
-        
-        # Auto-detect WordPress directory structure (modern vs legacy Bitnami)
-        if [ -d "/opt/bitnami/wordpress" ]; then
-            WP_ROOT="/opt/bitnami/wordpress"
-            echo "Detected modern Bitnami structure: $WP_ROOT"
-        elif [ -d "/opt/bitnami/apps/wordpress/htdocs" ]; then
-            WP_ROOT="/opt/bitnami/apps/wordpress/htdocs"
-            echo "Detected legacy Bitnami structure: $WP_ROOT"
-        else
-            echo "ERROR: Could not detect WordPress installation directory"
-            exit 1
-        fi
-        
-        # Enhanced service checking with retries
-        check_service() {
-            local service="$1"
-            local max_attempts=10
-            for attempt in $(seq 1 $max_attempts); do
-                if /opt/bitnami/ctlscript.sh status "$service" | grep -q "already running"; then
-                    echo "$service is running (attempt $attempt)"
-                    return 0
-                fi
-                echo "Waiting for $service... (attempt $attempt/$max_attempts)"
-                sleep 15
-            done
-            echo "WARNING: $service failed to start after $max_attempts attempts"
-            return 1
-        }
-        
-        # Wait for services to be ready
-        echo "Checking Bitnami service status..."
-        check_service apache || echo "Apache status check failed"
-        check_service mysql || echo "MySQL status check failed"
-        
-        # Enhanced WordPress accessibility test
-        echo "Testing WordPress accessibility..."
-        for i in {1..10}; do
-            if curl -f -s -o /dev/null "http://localhost/" && curl -f -s -o /dev/null "http://localhost/wp-admin/"; then
-                echo "WordPress is accessible via HTTP (attempt $i)"
-                break
-            elif [ $i -eq 10 ]; then
-                echo "WARNING: WordPress not accessible after 10 attempts"
-            else
-                echo "Attempt $i: WordPress not accessible, waiting 30s..."
-                sleep 30
-            fi
-        done
-        
-        # Get public IP for logging
-        PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
-        echo "Public IP: $PUBLIC_IP"
-        echo "CloudFront Domain: ${apiFqdn}"
-        
-        # Enhanced wp-config.php configuration for CloudFront HTTPS
-        echo "Configuring wp-config.php for CloudFront HTTPS..."
-        cd "$WP_ROOT" || exit 1
-        
-        # Backup original wp-config.php
-        cp wp-config.php wp-config.php.original
-        
-        # Create CloudFront-optimized wp-config.php
-        cat > wp-config-cloudfront.php << 'WPCONFIG'
+    //
+    // Blueprint: the Bitnami-packaged `wordpress` blueprint is deprecated
+    // (no updates since 2026-05-19; can't create instances from it after
+    // 2026-11-19). New instances use the Lightsail-packaged
+    // `wordpress_ls_1_0`. Layout differs — see the setup script below — so
+    // it detects which one it's on. Dev still pins the legacy blueprint
+    // (bin/infrastructure.ts) until it's migrated; changing a running
+    // instance's blueprint REPLACES the instance and its database.
+    //
+    // The setup script is written to disk and run with bash explicitly.
+    // Lightsail wraps user-data in its own `#!/bin/sh` prelude, so a bash
+    // shebang here is cosmetic and the script would otherwise run under dash
+    // (which is exactly how the first prod deploy died: `set -o pipefail` is
+    // illegal in dash → exit 2 at 0.6 s, silently, before any configuration).
+    const wordpressSetupScript = `#!/bin/bash
+set -euo pipefail
+# cloud-init's PATH lacks /usr/local/bin, where the Lightsail image installs wp-cli.
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+LOG_FILE=/var/log/wordpress-setup.log
+exec 1> >(tee -a "$LOG_FILE") 2>&1
+echo "$(date): starting WordPress setup for https://${apiFqdn}"
+
+# ---- Detect blueprint layout ---------------------------------------------
+if [ -d /opt/bitnami/wordpress ]; then
+  FLAVOR=bitnami
+  WP_ROOT=/opt/bitnami/wordpress
+  WP_OWNER=bitnami:bitnami
+  restart_web() { /opt/bitnami/ctlscript.sh restart apache; }
+elif [ -f /var/www/html/wp-load.php ]; then
+  FLAVOR=lightsail
+  WP_ROOT=/var/www/html
+  WP_OWNER=admin:www-data
+  restart_web() { systemctl restart apache2; }
+  # The image's default vhost 301s every plain-HTTP request to https:// on
+  # a self-signed cert. CloudFront reaches this origin over plain HTTP and
+  # already enforces HTTPS for visitors, and the config Lambda's health
+  # probes are plain HTTP — so the instance-level redirect must go.
+  # No reload here: on first boot Apache may not be up yet (reload fails,
+  # and set -e would abort the whole script). restart_web at the end
+  # applies it.
+  sed -i -E '/^[[:space:]]*Rewrite(Engine|Cond|Rule)/ s|^|# rae-disabled (CloudFront terminates TLS): |' /etc/apache2/sites-available/000-default.conf
+  apache2ctl -t
+  echo "disabled Apache HTTP->HTTPS redirect (applied on restart below)"
+else
+  echo "ERROR: no WordPress installation found"
+  exit 1
+fi
+if [ -f "$WP_ROOT/wp-config.php" ]; then
+  WP_CONFIG="$WP_ROOT/wp-config.php"
+else
+  WP_CONFIG="$(dirname "$WP_ROOT")/wp-config.php"
+fi
+echo "layout=$FLAVOR root=$WP_ROOT config=$WP_CONFIG"
+WP="wp --allow-root --path=$WP_ROOT"
+
+# ---- Wait until WordPress is installed and answering (max 10 min) ---------
+for i in $(seq 1 60); do
+  if [ -f "$WP_CONFIG" ] && $WP core is-installed >/dev/null 2>&1 && curl -fs -o /dev/null http://localhost/; then
+    echo "WordPress ready (check $i)"
+    break
+  fi
+  if [ "$i" -eq 60 ]; then
+    echo "ERROR: WordPress not ready after 10 minutes"
+    exit 1
+  fi
+  sleep 10
+done
+
+# ---- Public IP for the log (IMDSv2 — v1 is disabled on Lightsail images) --
+TOKEN=$(curl -s -m 5 -X PUT http://169.254.169.254/latest/api/token -H "X-aws-ec2-metadata-token-ttl-seconds: 60" || true)
+PUBLIC_IP=$(curl -s -m 5 -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/public-ipv4 || echo unknown)
+echo "public ip: $PUBLIC_IP  cloudfront: ${apiFqdn}"
+
+# ---- wp-config.php: make WordPress CloudFront/HTTPS aware -----------------
+MODE=$(stat -c %a "$WP_CONFIG")
+OWNER_USER=$(stat -c %U "$WP_CONFIG")
+OWNER_GROUP=$(stat -c %G "$WP_CONFIG")
+cp -p "$WP_CONFIG" "$WP_CONFIG.original"
+
+# Both blueprints ship WP_HOME/WP_SITEURL derived from HTTP_HOST. Remove them
+# so the definitions inserted below are authoritative rather than a
+# "constant already defined" no-op.
+sed -i "/^define( *'WP_HOME'/d; /^define( *'WP_SITEURL'/d" "$WP_CONFIG"
+
+cat > /tmp/rae-head.php <<'PHP'
 <?php
-// CloudFront HTTPS detection - MUST be at the top before any WordPress loads
+// CloudFront terminates TLS; let WordPress see the original scheme and host.
 if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
     $_SERVER['HTTPS'] = 'on';
     $_SERVER['SERVER_PORT'] = 443;
     $_SERVER['REQUEST_SCHEME'] = 'https';
 }
-
-// Force correct host for CloudFront
 if (isset($_SERVER['HTTP_X_FORWARDED_HOST']) && $_SERVER['HTTP_X_FORWARDED_HOST'] === '${apiFqdn}') {
     $_SERVER['HTTP_HOST'] = '${apiFqdn}';
-    $_SERVER['REQUEST_SCHEME'] = 'https';
     $_SERVER['HTTPS'] = 'on';
     $_SERVER['SERVER_PORT'] = 443;
+    $_SERVER['REQUEST_SCHEME'] = 'https';
 }
-
-// Ensure HTTP_HOST is always set for all requests
 if (!isset($_SERVER['HTTP_HOST'])) {
     $_SERVER['HTTP_HOST'] = '${apiFqdn}';
 }
-WPCONFIG
-        
-        # Insert CloudFront detection at the beginning of wp-config.php
-        {
-            cat wp-config-cloudfront.php
-            echo ""
-            tail -n +2 wp-config.php  # Skip the <?php opening tag from original
-        } > wp-config-new.php
-        
-        # Add HTTPS constants before the "stop editing" line
-        sed -i '/\/\* That.s all, stop editing! Happy publishing\. \*\//i\\n// FORCE HTTPS URLs - These override database options and ensure HTTPS everywhere\ndefine( '\''WP_HOME'\'', '\''https://${apiFqdn}'\'' );\ndefine( '\''WP_SITEURL'\'', '\''https://${apiFqdn}'\'' );\n\n// Force SSL for admin area\ndefine( '\''FORCE_SSL_ADMIN'\'', true );\n\n// Allow WordPress to detect proper HTTPS behind reverse proxy/CloudFront\ndefine( '\''WP_CONTENT_URL'\'', '\''https://${apiFqdn}/wp-content'\'' );\n\n// WP-CLI compatibility\nif ( defined( '\''WP_CLI'\'' ) ) {\n\t$_SERVER['\''HTTP_HOST'\''] = '\''${apiFqdn}'\'';\n\t$_SERVER['\''REQUEST_SCHEME'\''] = '\''https'\'';\n\t$_SERVER['\''HTTPS'\''] = '\''on'\'';\n\t$_SERVER['\''SERVER_PORT'\''] = 443;\n}\n' wp-config-new.php
-        
-        # Replace the original wp-config.php
-        mv wp-config-new.php wp-config.php
-        chown bitnami:bitnami wp-config.php
-        chmod 644 wp-config.php
-        
-        # Clean up temporary files
-        rm -f wp-config-cloudfront.php
-        
-        echo "wp-config.php updated for CloudFront HTTPS support"
-        
-        # Enhanced WordPress URL configuration with retries
-        if command -v wp >/dev/null 2>&1; then
-            echo "WP-CLI found, configuring WordPress for HTTPS..."
-            
-            # Wait longer for WordPress database to be fully ready
-            sleep 60
-            
-            # Multiple attempts to update WordPress URLs
-            for attempt in {1..5}; do
-                echo "Attempt $attempt to update WordPress URLs..."
-                
-                if wp option update home "$WP_HOME" --allow-root --quiet && \
-                   wp option update siteurl "$WP_SITEURL" --allow-root --quiet; then
-                    echo "Successfully updated WordPress URLs"
-                    break
-                elif [ $attempt -eq 5 ]; then
-                    echo "Failed to update WordPress URLs after 5 attempts"
-                else
-                    echo "URL update failed, waiting 30s before retry..."
-                    sleep 30
-                fi
-            done
-            
-            # Verify the configuration
-            echo "Verifying WordPress URL configuration..."
-            HOME_URL=$(wp option get home --allow-root --quiet 2>/dev/null || echo "failed")
-            SITE_URL=$(wp option get siteurl --allow-root --quiet 2>/dev/null || echo "failed")
-            echo "Configured home URL: $HOME_URL"
-            echo "Configured site URL: $SITE_URL"
-            
-            # Additional WordPress configuration
-            wp option update FORCE_SSL_ADMIN 1 --allow-root --quiet || echo "Failed to set FORCE_SSL_ADMIN"
-            
-        else
-            echo "WP-CLI not found, skipping WordPress URL configuration"
-        fi
-        
-        # Create enhanced health check endpoint  
-        echo "Creating enhanced health check endpoint..."
-        cat > "$WP_ROOT/health-check.php" << 'HEALTHEOF'
+PHP
+
+cat > /tmp/rae-constants.php <<'PHP'
+// Canonical public URLs (behind CloudFront). Override the database options.
+define( 'WP_HOME', 'https://${apiFqdn}' );
+define( 'WP_SITEURL', 'https://${apiFqdn}' );
+define( 'WP_CONTENT_URL', 'https://${apiFqdn}/wp-content' );
+define( 'FORCE_SSL_ADMIN', true );
+// WP-CLI runs without a request; give it the same view of the world.
+if ( defined( 'WP_CLI' ) ) {
+    $_SERVER['HTTP_HOST'] = '${apiFqdn}';
+    $_SERVER['HTTPS'] = 'on';
+    $_SERVER['SERVER_PORT'] = 443;
+    $_SERVER['REQUEST_SCHEME'] = 'https';
+}
+
+PHP
+
+# Prepend the header (dropping the original <?php line), then insert the
+# constants just before WordPress's "stop editing" marker.
+{ cat /tmp/rae-head.php; tail -n +2 "$WP_CONFIG"; } > /tmp/rae-wp-config-1.php
+awk -v f=/tmp/rae-constants.php '/That.s all, stop editing/ { while ((getline l < f) > 0) print l } { print }' /tmp/rae-wp-config-1.php > /tmp/rae-wp-config-2.php
+php -l /tmp/rae-wp-config-2.php
+install -m "$MODE" -o "$OWNER_USER" -g "$OWNER_GROUP" /tmp/rae-wp-config-2.php "$WP_CONFIG"
+rm -f /tmp/rae-head.php /tmp/rae-constants.php /tmp/rae-wp-config-1.php /tmp/rae-wp-config-2.php
+echo "wp-config.php updated"
+
+# ---- Database URL options -------------------------------------------------
+$WP option update home "https://${apiFqdn}"
+$WP option update siteurl "https://${apiFqdn}"
+echo "home=$($WP option get home) siteurl=$($WP option get siteurl)"
+
+# ---- Health check endpoint (used by the WordPressConfig custom resource) --
+cat > "$WP_ROOT/health-check.php" <<'PHP'
 <?php
-/**
- * WordPress Health Check Endpoint for CloudFront
- */
 header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
-
 $health = [
     "status" => "ok",
     "timestamp" => date("c"),
     "server_ip" => $_SERVER["SERVER_ADDR"] ?? "unknown",
-    "client_ip" => $_SERVER["REMOTE_ADDR"] ?? "unknown"
 ];
-
-if (file_exists("wp-config.php")) {
+if (file_exists(__DIR__ . "/wp-load.php")) {
     $health["wordpress"] = "detected";
-    
     define("WP_USE_THEMES", false);
-    require_once("wp-load.php");
-    
+    require_once(__DIR__ . "/wp-load.php");
+    $expected = "https://${apiFqdn}";
     $health["wordpress_home"] = home_url();
     $health["wordpress_siteurl"] = site_url();
     $health["https_configured"] = (strpos(home_url(), "https://") === 0);
-    $health["ssl_admin_enabled"] = get_option("FORCE_SSL_ADMIN") ? true : false;
-    
-    $expected_domain = "https://${apiFqdn}";
-    $health["urls_correctly_configured"] = (
-        home_url() === $expected_domain && 
-        site_url() === $expected_domain
-    );
-    
+    $health["ssl_admin_enabled"] = defined("FORCE_SSL_ADMIN") && FORCE_SSL_ADMIN;
+    $health["urls_correctly_configured"] = (home_url() === $expected && site_url() === $expected);
     $health["wp_home_constant"] = defined("WP_HOME") ? WP_HOME : "not defined";
     $health["wp_siteurl_constant"] = defined("WP_SITEURL") ? WP_SITEURL : "not defined";
-    
 } else {
     $health["wordpress"] = "missing";
     $health["status"] = "error";
 }
-
 http_response_code($health["status"] === "ok" ? 200 : 503);
 echo json_encode($health, JSON_PRETTY_PRINT);
-?>
-HEALTHEOF
-        
-        # Set proper permissions for health check
-        chmod 644 "$WP_ROOT/health-check.php"
-        chown bitnami:bitnami "$WP_ROOT/health-check.php" 2>/dev/null || echo "Could not set health-check.php ownership"
-        
-        # Restart Apache to ensure all changes take effect
-        echo "Restarting Apache to apply configuration changes..."
-        /opt/bitnami/ctlscript.sh restart apache
-        
-        echo "$(date): Enhanced WordPress setup completed successfully"
-        echo "Health check: https://${apiFqdn}/health-check.php"
-        echo "WordPress admin: https://${apiFqdn}/wp-admin/"
-        echo "Direct IP access: http://$PUBLIC_IP/wp-admin/"
-        echo "Setup log: $LOG_FILE"
-      `,
+PHP
+chown "$WP_OWNER" "$WP_ROOT/health-check.php"
+chmod 644 "$WP_ROOT/health-check.php"
+
+restart_web
+echo "$(date): WordPress setup complete — https://${apiFqdn}/health-check.php"
+`;
+
+    // The instance name carries the blueprint generation. CloudFormation
+    // refuses to *replace* a custom-named resource ("Rename … and update the
+    // stack again"), and changing the blueprint is a replacement — so the
+    // name must change with it. Legacy Bitnami keeps the bare name.
+    const blueprintTag =
+      wordpressBlueprintId === 'wordpress'
+        ? ''
+        : `-${wordpressBlueprintId.replace(/^wordpress_?/, '').replace(/_/g, '')}`; // wordpress_ls_1_0 → -ls10
+    const wordpressInstanceName = `rae-portfolio-wp-${envName}${blueprintTag}`;
+
+    const wordpressInstance = new lightsail.CfnInstance(this, 'WordPressInstance', {
+      instanceName: wordpressInstanceName,
+      blueprintId: wordpressBlueprintId,
+      bundleId: envName === 'prod' ? 'micro_3_0' : 'nano_3_0', // Prod: $7/month, Dev: $5/month
+      availabilityZone: `${this.region}a`,
+      // Declared explicitly: Lightsail-packaged blueprints restrict port 22 to
+      // Lightsail's own connect ranges by default, which would lock out
+      // seed.sh / rsync deploys. 80 must be world-open — CloudFront reaches
+      // the origin over plain HTTP at <static-ip>.nip.io.
+      networking: {
+        ports: [
+          { fromPort: 22, toPort: 22, protocol: 'tcp', cidrs: ['0.0.0.0/0'], ipv6Cidrs: ['::/0'] },
+          { fromPort: 80, toPort: 80, protocol: 'tcp', cidrs: ['0.0.0.0/0'], ipv6Cidrs: ['::/0'] },
+          { fromPort: 443, toPort: 443, protocol: 'tcp', cidrs: ['0.0.0.0/0'], ipv6Cidrs: ['::/0'] },
+        ],
+      },
+      userData: [
+        '#!/bin/sh',
+        '# Lightsail prepends its own #!/bin/sh prelude; write the real script and run it with bash.',
+        "cat > /root/rae-wp-setup.sh <<'RAE_SETUP_EOF'",
+        wordpressSetupScript,
+        'RAE_SETUP_EOF',
+        'chmod 700 /root/rae-wp-setup.sh',
+        'bash /root/rae-wp-setup.sh',
+      ].join('\n'),
       tags: [{
         key: 'Environment',
         value: envName,
@@ -330,10 +329,15 @@ HEALTHEOF
         accessControlAllowCredentials: true,
         accessControlAllowHeaders: ['Content-Type', 'Authorization', 'X-WP-Nonce', 'X-Requested-With'],
         accessControlAllowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'],
+        // De-duplicated: for prod `frontendFqdn` IS the apex, and CloudFront
+        // rejects a policy with the same origin listed twice.
         accessControlAllowOrigins: [
-          'http://localhost:5173',           // Local development
-          `https://${frontendFqdn}`,         // Frontend domain (dev.rae-dev.com or rae-dev.com)
-          'https://rae-dev.com'              // Production domain
+          ...new Set([
+            'http://localhost:5173',           // Local development
+            `https://${frontendFqdn}`,         // Frontend domain (dev.rae-dev.com or rae-dev.com)
+            `https://${domainName}`,           // Apex (prod frontend; also allowed from dev)
+            ...(envName === 'prod' ? [`https://www.${domainName}`] : []),
+          ]),
         ],
         accessControlExposeHeaders: ['X-WP-Total', 'X-WP-TotalPages'],
         accessControlMaxAge: cdk.Duration.hours(24),
@@ -368,11 +372,28 @@ HEALTHEOF
     });
 
 
+    // Lambdas are bundled from their TypeScript source by esbuild at synth
+    // time (aws-lambda-nodejs). They only import @aws-sdk/*, which the Node
+    // 22 runtime provides and NodejsFunction leaves external by default, so
+    // nothing from a lambda's node_modules ever ships — there is no
+    // install-time attack surface (supply_chain_hardening.md, Phase 3).
+    // Previously Code.fromAsset zipped the directory as-is and relied on
+    // compiled .js happening to exist on the deploying machine; with *.js
+    // gitignored that broke on any fresh checkout ("Cannot find module
+    // 'index'").
+    const lambdaEntry = (name: string) => path.join(__dirname, '..', 'lambda', name, 'index.ts');
+    const lambdaBundling: nodejs.BundlingOptions = {
+      minify: true,
+      sourceMap: true,
+      target: 'node22',
+    };
+
     // Lambda function for LightSail automation
-    const lightsailAutomationFunction = new lambda.Function(this, 'LightsailAutomationFunction', {
+    const lightsailAutomationFunction = new nodejs.NodejsFunction(this, 'LightsailAutomationFunction', {
       runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'index.handler',
-      code: lambda.Code.fromAsset('./lambda/lightsail-automation'),
+      entry: lambdaEntry('lightsail-automation'),
+      handler: 'handler',
+      bundling: lambdaBundling,
       timeout: cdk.Duration.minutes(15),
       environment: {
         NODE_OPTIONS: '--enable-source-maps',
@@ -404,16 +425,23 @@ HEALTHEOF
       properties: {
         InstanceName: wordpressInstance.instanceName,
         StaticIpName: staticIp.staticIpName,
+        // Not read by the handler — present so a *replaced* instance (new
+        // ARN, same name) changes the properties and triggers an Update,
+        // re-attaching the static IP. Names alone don't change on replace.
+        InstanceArn: wordpressInstance.attrInstanceArn,
         Region: this.region,
       },
     });
 
     // Lambda function for WordPress configuration validation
-    const wordpressConfigFunction = new lambda.Function(this, 'WordPressConfigFunction', {
+    const wordpressConfigFunction = new nodejs.NodejsFunction(this, 'WordPressConfigFunction', {
       runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'index.handler',
-      code: lambda.Code.fromAsset('./lambda/wordpress-config'),
-      timeout: cdk.Duration.minutes(5), // Reduced timeout
+      entry: lambdaEntry('wordpress-config'),
+      handler: 'handler',
+      bundling: lambdaBundling,
+      // Must exceed the handler's own retry budget (~10 min of health checks
+      // while a fresh instance finishes its first-boot setup).
+      timeout: cdk.Duration.minutes(14),
       environment: {
         NODE_OPTIONS: '--enable-source-maps',
       },
@@ -444,6 +472,8 @@ HEALTHEOF
       serviceToken: wordpressConfigProvider.serviceToken,
       properties: {
         InstanceName: wordpressInstance.instanceName,
+        // Same reason as StaticIpAttachment: re-validate after a replacement.
+        InstanceArn: wordpressInstance.attrInstanceArn,
         StaticIpAddress: staticIp.attrIpAddress,
         Domain: domainName,
         Environment: envName,
@@ -462,22 +492,26 @@ HEALTHEOF
         domainName: domainName,
       });
 
-      // A Record for frontend domain
-      new route53.ARecord(this, 'FrontendAliasRecord', {
-        zone: hostedZone,
-        recordName: frontendFqdn,
-        target: route53.RecordTarget.fromAlias(
-          new targets.CloudFrontTarget(frontendDistribution)
-        ),
-      });
-
-      if (envName === 'prod') {
-        // CNAME for www subdomain
-        new route53.CnameRecord(this, 'WwwRecord', {
+      // Frontend records. For prod these are the apex + www — held back
+      // during cutover via `manageApexDns` (see the prop's comment); dev's
+      // `dev.` record is always managed here.
+      if (envName !== 'prod' || manageApexDns) {
+        new route53.ARecord(this, 'FrontendAliasRecord', {
           zone: hostedZone,
-          recordName: `www.${frontendFqdn}`,
-          domainName: frontendDistribution.distributionDomainName,
+          recordName: frontendFqdn,
+          target: route53.RecordTarget.fromAlias(
+            new targets.CloudFrontTarget(frontendDistribution)
+          ),
         });
+
+        if (envName === 'prod') {
+          // CNAME for www subdomain
+          new route53.CnameRecord(this, 'WwwRecord', {
+            zone: hostedZone,
+            recordName: `www.${frontendFqdn}`,
+            domainName: frontendDistribution.distributionDomainName,
+          });
+        }
       }
 
       // A Record for API subdomain pointing to WordPress CloudFront
@@ -566,8 +600,17 @@ HEALTHEOF
           `arn:aws:iam::${this.account}:oidc-provider/token.actions.githubusercontent.com`,
         );
 
+    // Role names are account-global and this account hosts other projects:
+    // `github-deploy-prod` already belongs to rae004/ai-security-digest. New
+    // roles are therefore project-prefixed. Dev keeps its original unprefixed
+    // name because it's live and referenced by the `dev` GitHub Environment
+    // secret — renaming it replaces the role (new ARN) and would break dev
+    // deploys until that secret is updated. Align it in a deliberate step.
+    const githubDeployRoleName =
+      envName === 'dev' ? 'github-deploy-dev' : `rae-portfolio-github-deploy-${envName}`;
+
     const githubDeployRole = new iam.Role(this, 'GithubDeployRole', {
-      roleName: `github-deploy-${envName}`,
+      roleName: githubDeployRoleName,
       description: `Assumed by GitHub Actions to deploy the frontend SPA to ${envName}`,
       assumedBy: new iam.FederatedPrincipal(
         githubOidcProvider.openIdConnectProviderArn,
@@ -602,10 +645,11 @@ HEALTHEOF
       stringListValue: ['rae004dev@gmail.com'],
     });
 
-    const contactFormFunction = new lambda.Function(this, 'ContactFormFunction', {
+    const contactFormFunction = new nodejs.NodejsFunction(this, 'ContactFormFunction', {
       runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'index.handler',
-      code: lambda.Code.fromAsset('./lambda/contact-form'),
+      entry: lambdaEntry('contact-form'),
+      handler: 'handler',
+      bundling: lambdaBundling,
       timeout: cdk.Duration.seconds(15),
       memorySize: 256,
       // Cap blast radius if reCAPTCHA is somehow bypassed: at most 5
