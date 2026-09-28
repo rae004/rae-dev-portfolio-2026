@@ -39,7 +39,7 @@ const themeGroups: { category: string; themes: ThemeOption[] }[] = [
 const allThemeIds = themeGroups.flatMap(g => g.themes.map(t => t.id))
 
 function getDefaultTheme(): string {
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'black' : 'corporate'
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dracula' : 'acid'
 }
 
 function getInitialTheme(): string {
