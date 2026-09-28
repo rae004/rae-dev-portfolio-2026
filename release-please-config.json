@@ -14,7 +14,7 @@
     { "type": "build", "section": "Build System" },
     { "type": "ci", "section": "Continuous Integration" },
     { "type": "test", "section": "Tests" },
-    { "type": "style", "section": "Styles", "hidden": true },
+    { "type": "style", "section": "Styles" },
     { "type": "chore", "section": "Chores", "hidden": true }
   ],
   "packages": {
