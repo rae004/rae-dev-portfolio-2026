@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.12.2](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.12.1...v0.12.2) (2026-09-28)
+
+
+### Continuous Integration
+
+* **release:** treat style commits as releasable ([#150](https://github.com/rae004/rae-dev-portfolio-2026/issues/150)) ([8a2f165](https://github.com/rae004/rae-dev-portfolio-2026/commit/8a2f165855cf167887f6cfed7dcfd0f8b615e26b))
+
+
+### Styles
+
+* Chage default drak to dracula and light to acid ([#148](https://github.com/rae004/rae-dev-portfolio-2026/issues/148)) ([8e6a7c1](https://github.com/rae004/rae-dev-portfolio-2026/commit/8e6a7c13a4ba4f92d4c5244f4b4c0de619128f8f))
+
 ## [0.12.1](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.12.0...v0.12.1) (2026-09-28)
 
 
