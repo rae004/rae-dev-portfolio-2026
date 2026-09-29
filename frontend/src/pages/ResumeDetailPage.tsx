@@ -65,56 +65,58 @@ const ResumeDetailPage: React.FC = () => {
 
   return (
     <div className='container mx-auto px-4 py-8'>
-      {/* Breadcrumb Navigation */}
-      <div className='breadcrumbs text-sm mb-6'>
-        <ul>
-          <li>
-            <Link to='/'>Home</Link>
-          </li>
-          <li>
-            <Link to='/resume'>Resume</Link>
-          </li>
-          <li className='font-semibold'>{decodeHtml(resumeItem.title.rendered)}</li>
-        </ul>
-      </div>
-
-      {/* Resume Item Detail Card */}
-      <div className='card bg-base-100 shadow-xl mb-8'>
-        <div className='card-body'>
-          <h1 className='card-title text-3xl mb-4'>{decodeHtml(resumeItem.title.rendered)}</h1>
-
-          {/* Employment Dates */}
-          {resumeItem.employment_dates?.formatted_range && (
-            <div className='text-lg text-base-content/70 mb-6'>
-              {resumeItem.employment_dates.formatted_range}
-            </div>
-          )}
-
-          {/* Content */}
-          <div
-            className='prose prose-lg max-w-none mb-6'
-            dangerouslySetInnerHTML={{ __html: resumeItem.content.rendered }}
-          />
-
-          {/* Related Skills */}
-          {Object.keys(groupedSkills).length > 0 && (
-            <div className='mt-8'>
-              <h2 className='text-2xl font-bold mb-4'>Related Skills</h2>
-              <SkillsGroup groupedSkills={groupedSkills} className='flex-wrap' />
-            </div>
-          )}
+      <div className='max-w-6xl mx-auto'>
+        {/* Breadcrumb Navigation */}
+        <div className='breadcrumbs text-sm mb-6'>
+          <ul>
+            <li>
+              <Link to='/'>Home</Link>
+            </li>
+            <li>
+              <Link to='/resume'>Resume</Link>
+            </li>
+            <li className='font-semibold'>{decodeHtml(resumeItem.title.rendered)}</li>
+          </ul>
         </div>
-      </div>
 
-      {/* Navigation */}
-      <ProjectPagination
-        previousItem={previousResume}
-        nextItem={nextResume}
-        backToPath='/resume'
-        backToLabel='Back to Resume'
-        itemTypePath='resume'
-        paginationWrapperClasses={['flex justify-center items-center gap-24']}
-      />
+        {/* Resume Item Detail Card */}
+        <div className='card bg-base-100 shadow-xl mb-8'>
+          <div className='card-body'>
+            <h1 className='card-title text-3xl mb-4'>{decodeHtml(resumeItem.title.rendered)}</h1>
+
+            {/* Employment Dates */}
+            {resumeItem.employment_dates?.formatted_range && (
+              <div className='text-lg text-base-content/70 mb-6'>
+                {resumeItem.employment_dates.formatted_range}
+              </div>
+            )}
+
+            {/* Content */}
+            <div
+              className='prose prose-lg max-w-none mb-6'
+              dangerouslySetInnerHTML={{ __html: resumeItem.content.rendered }}
+            />
+
+            {/* Related Skills */}
+            {Object.keys(groupedSkills).length > 0 && (
+              <div className='mt-8'>
+                <h2 className='text-2xl font-bold mb-4'>Related Skills</h2>
+                <SkillsGroup groupedSkills={groupedSkills} className='flex-wrap' />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <ProjectPagination
+          previousItem={previousResume}
+          nextItem={nextResume}
+          backToPath='/resume'
+          backToLabel='Back to Resume'
+          itemTypePath='resume'
+          paginationWrapperClasses={['flex justify-center items-center gap-24']}
+        />
+      </div>
     </div>
   )
 }
