@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.4](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.12.3...v0.12.4) (2026-09-29)
+
+
+### Bug Fixes
+
+* **blog:** hide the blog behind a feature flag until it's ready ([#154](https://github.com/rae004/rae-dev-portfolio-2026/issues/154)) ([704f410](https://github.com/rae004/rae-dev-portfolio-2026/commit/704f4103982278b55d57e22a21a94e9c6a0b3e3f))
+
 ## [0.12.3](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.12.2...v0.12.3) (2026-09-29)
 
 
