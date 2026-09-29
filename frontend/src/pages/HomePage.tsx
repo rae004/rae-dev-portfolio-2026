@@ -3,14 +3,19 @@ import { Link } from '@tanstack/react-router'
 import { useBlogPosts, useSoftwareProjects, useMediaProjects } from '../hooks/useWordPress'
 import { decodeHtml } from '../utils/decodeHtml'
 import Turntable, { TURNTABLE_SONGS } from '../components/Turntable'
+import { FEATURES } from '../config/features'
 
 const HomePage: React.FC = () => {
   // Get recent blog posts for featured content
-  const { data: recentPosts, isLoading: postsLoading } = useBlogPosts({
-    per_page: 3,
-    orderby: 'date',
-    order: 'desc',
-  })
+  const { data: recentPosts, isLoading: postsLoading } = useBlogPosts(
+    {
+      per_page: 3,
+      orderby: 'date',
+      order: 'desc',
+    },
+    // Don't even fetch while the blog is switched off.
+    { enabled: FEATURES.blog }
+  )
 
   // Get recent projects for featured content
   const { data: softwareProjects, isLoading: softwareLoading } = useSoftwareProjects({
@@ -81,8 +86,8 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Latest Blog Posts Section */}
-      {recentPosts && recentPosts.length > 0 && (
+      {/* Latest Blog Posts Section — hidden while the blog is switched off */}
+      {FEATURES.blog && recentPosts && recentPosts.length > 0 && (
         <section className='py-16 bg-base-100'>
           <div className='container mx-auto px-4'>
             <div className='max-w-4xl mx-auto'>

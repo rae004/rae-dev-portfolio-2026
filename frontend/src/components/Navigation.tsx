@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from '@tanstack/react-router'
 import ThemeSwitcher from './ThemeSwitcher'
+import { FEATURES } from '../config/features'
 
 const Navigation: React.FC = () => {
   return (
@@ -47,11 +48,13 @@ const Navigation: React.FC = () => {
                 Media
               </Link>
             </li>
-            <li>
-              <Link to='/blog' className='[&.active]:font-bold'>
-                Blog
-              </Link>
-            </li>
+            {FEATURES.blog && (
+              <li>
+                <Link to='/blog' className='[&.active]:font-bold'>
+                  Blog
+                </Link>
+              </li>
+            )}
             <li>
               <Link to='/contact' className='[&.active]:font-bold'>
                 Contact
@@ -86,11 +89,13 @@ const Navigation: React.FC = () => {
               Media
             </Link>
           </li>
-          <li>
-            <Link to='/blog' className='[&.active]:font-bold'>
-              Blog
-            </Link>
-          </li>
+          {FEATURES.blog && (
+            <li>
+              <Link to='/blog' className='[&.active]:font-bold'>
+                Blog
+              </Link>
+            </li>
+          )}
           <li>
             <Link to='/contact' className='[&.active]:font-bold'>
               Contact
