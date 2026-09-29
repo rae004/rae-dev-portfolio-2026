@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.3](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.12.2...v0.12.3) (2026-09-29)
+
+
+### Bug Fixes
+
+* **theme:** default to Dracula (dark) and Acid (light) ([#149](https://github.com/rae004/rae-dev-portfolio-2026/issues/149)) ([275569f](https://github.com/rae004/rae-dev-portfolio-2026/commit/275569fa6a028413228af081843c8bb16f8e904e))
+
 ## [0.12.2](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.12.1...v0.12.2) (2026-09-28)
 
 
