@@ -150,8 +150,33 @@ elif [ -f /var/www/html/wp-load.php ]; then
   # and set -e would abort the whole script). restart_web at the end
   # applies it.
   sed -i -E '/^[[:space:]]*Rewrite(Engine|Cond|Rule)/ s|^|# rae-disabled (CloudFront terminates TLS): |' /etc/apache2/sites-available/000-default.conf
-  apache2ctl -t
   echo "disabled Apache HTTP->HTTPS redirect (applied on restart below)"
+  # Pretty permalinks: the image ships without mod_rewrite or AllowOverride,
+  # so WordPress's .htaccess rules (and WPS Hide Login's slug) would 404 at
+  # Apache. Same steps as wordpress/scripts/configure-instance.sh.
+  a2enmod -q rewrite
+  cat > /etc/apache2/conf-available/rae-wordpress.conf <<'CONF'
+# Managed by rae-dev-portfolio (CDK setup script / configure-instance.sh).
+<Directory /var/www/html>
+    AllowOverride All
+</Directory>
+# 10 prefork workers (image default: 5) and a short keep-alive — CloudFront
+# keeps origin connections open and wp-admin fans out many parallel requests.
+MaxRequestWorkers 10
+ServerLimit 10
+KeepAliveTimeout 2
+CONF
+  a2enconf -q rae-wordpress
+  apache2ctl -t
+  # Daily Debian security updates.
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get install -y -qq unattended-upgrades >/dev/null 2>&1 || echo "WARN: unattended-upgrades install failed"
+  cat > /etc/apt/apt.conf.d/20auto-upgrades <<'APT'
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+APT::Periodic::AutocleanInterval "7";
+APT
+  systemctl enable -q --now unattended-upgrades || true
 else
   echo "ERROR: no WordPress installation found"
   exit 1
@@ -241,6 +266,26 @@ echo "wp-config.php updated"
 $WP option update home "https://${apiFqdn}"
 $WP option update siteurl "https://${apiFqdn}"
 echo "home=$($WP option get home) siteurl=$($WP option get siteurl)"
+# WordPress's standard .htaccess so pretty permalinks work (needs the Apache
+# config above). Written directly: WP-CLI can't detect mod_rewrite from the
+# command line, so \`wp rewrite flush --hard\` silently skips the file.
+if [ ! -f "$WP_ROOT/.htaccess" ]; then
+  cat > "$WP_ROOT/.htaccess" <<'HTACCESS'
+# BEGIN WordPress
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index\\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]
+</IfModule>
+# END WordPress
+HTACCESS
+  chown "$WP_OWNER" "$WP_ROOT/.htaccess"
+  chmod 664 "$WP_ROOT/.htaccess"
+fi
+$WP rewrite flush --quiet || true
 
 # ---- Health check endpoint (used by the WordPressConfig custom resource) --
 cat > "$WP_ROOT/health-check.php" <<'PHP'
@@ -352,15 +397,44 @@ echo "$(date): WordPress setup complete — https://${apiFqdn}/health-check.php"
     });
 
     // WordPress CloudFront Distribution for HTTPS API access
+    const wordpressOrigin = new origins.HttpOrigin(`${staticIp.attrIpAddress}.nip.io`, {
+      protocolPolicy: cloudfront.OriginProtocolPolicy.HTTP_ONLY,
+      customHeaders: {
+        'X-Forwarded-Host': apiFqdn, // Pass the custom domain to WordPress
+        'X-Forwarded-Proto': 'https', // Tell WordPress the request came via HTTPS
+      },
+    });
+
+    // Static assets (core CSS/JS, theme/plugin files, uploads) are cached at
+    // the edge. Without this, every wp-admin page pulled ~100 asset requests
+    // through CloudFront to an Apache with 5 workers — the whole admin queued
+    // behind its own stylesheets. Query strings are part of the key so
+    // WordPress's `?ver=` cache-busting keeps working across updates.
+    const wordpressStaticCachePolicy = new cloudfront.CachePolicy(this, 'WordPressStaticCachePolicy', {
+      cachePolicyName: `rae-portfolio-wp-static-${envName}`,
+      comment: 'WordPress static assets: cache at the edge, keyed on query string (?ver=)',
+      defaultTtl: cdk.Duration.days(1),
+      maxTtl: cdk.Duration.days(365),
+      minTtl: cdk.Duration.seconds(0),
+      queryStringBehavior: cloudfront.CacheQueryStringBehavior.all(),
+      headerBehavior: cloudfront.CacheHeaderBehavior.none(),
+      cookieBehavior: cloudfront.CacheCookieBehavior.none(),
+      enableAcceptEncodingGzip: true,
+      enableAcceptEncodingBrotli: true,
+    });
+    const wordpressStaticBehavior: cloudfront.BehaviorOptions = {
+      origin: wordpressOrigin,
+      viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+      cachePolicy: wordpressStaticCachePolicy,
+      responseHeadersPolicy: corsResponseHeadersPolicy,
+      allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
+      cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD_OPTIONS,
+      compress: true,
+    };
+
     const wordpressDistribution = new cloudfront.Distribution(this, 'WordPressDistribution', {
       defaultBehavior: {
-        origin: new origins.HttpOrigin(`${staticIp.attrIpAddress}.nip.io`, {
-          protocolPolicy: cloudfront.OriginProtocolPolicy.HTTP_ONLY,
-          customHeaders: {
-            'X-Forwarded-Host': apiFqdn, // Pass the custom domain to WordPress
-            'X-Forwarded-Proto': 'https', // Tell WordPress the request came via HTTPS
-          },
-        }),
+        origin: wordpressOrigin,
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED, // WordPress is dynamic content
         originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER,
@@ -368,6 +442,13 @@ echo "$(date): WordPress setup complete — https://${apiFqdn}/health-check.php"
         allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
         cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD,
         compress: true,
+      },
+      additionalBehaviors: {
+        '/wp-includes/*': wordpressStaticBehavior,
+        '/wp-admin/css/*': wordpressStaticBehavior,
+        '/wp-admin/js/*': wordpressStaticBehavior,
+        '/wp-admin/images/*': wordpressStaticBehavior,
+        '/wp-content/*': wordpressStaticBehavior,
       },
       domainNames: certificate ? [apiFqdn] : undefined,
       certificate,
