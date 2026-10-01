@@ -79,6 +79,35 @@ describe('RaePortfolioStack (dev with cert)', () => {
     });
   });
 
+  test('WordPress distribution caches static assets at the edge but not dynamic pages', () => {
+    const dists = Object.values(template.findResources('AWS::CloudFront::Distribution')) as Array<{
+      Properties: {
+        DistributionConfig: {
+          Comment?: string;
+          DefaultCacheBehavior: { CachePolicyId: unknown };
+          CacheBehaviors?: Array<{ PathPattern: string }>;
+        };
+      };
+    }>;
+    const wp = dists.find(d => d.Properties.DistributionConfig.Comment?.startsWith('WordPress'))!;
+    // Default (API/admin pages): AWS managed CachingDisabled.
+    expect(wp.Properties.DistributionConfig.DefaultCacheBehavior.CachePolicyId).toBe(
+      '4135ea2d-6df8-44a3-9df3-4b5a84be39ad'
+    );
+    const patterns = (wp.Properties.DistributionConfig.CacheBehaviors ?? []).map(b => b.PathPattern);
+    expect(patterns).toEqual(
+      expect.arrayContaining(['/wp-includes/*', '/wp-admin/css/*', '/wp-admin/js/*', '/wp-content/*'])
+    );
+    template.hasResourceProperties('AWS::CloudFront::CachePolicy', {
+      CachePolicyConfig: Match.objectLike({
+        Name: 'rae-portfolio-wp-static-dev',
+        ParametersInCacheKeyAndForwardedToOrigin: Match.objectLike({
+          QueryStringsConfig: { QueryStringBehavior: 'all' },
+        }),
+      }),
+    });
+  });
+
   test('a custom CORS response-headers policy is attached to the WordPress distribution', () => {
     template.resourceCountIs('AWS::CloudFront::ResponseHeadersPolicy', 1);
     template.hasResourceProperties('AWS::CloudFront::ResponseHeadersPolicy', {
@@ -368,6 +397,11 @@ describe('RaePortfolioStack (prod)', () => {
     expect(instance.Properties.UserData).toContain('export PATH=/usr/local/sbin:/usr/local/bin');
     // The Lightsail image's HTTP→HTTPS vhost redirect must be disabled for CloudFront.
     expect(instance.Properties.UserData).toContain('000-default.conf');
+    // Pretty permalinks need mod_rewrite + AllowOverride; the image ships neither.
+    expect(instance.Properties.UserData).toContain('a2enmod -q rewrite');
+    expect(instance.Properties.UserData).toContain('AllowOverride All');
+    expect(instance.Properties.UserData).toContain('rewrite flush --hard');
+    expect(instance.Properties.UserData).toContain('unattended-upgrades');
     expect(instance.Properties.UserData).toContain('api.rae-dev.com');
     // SSH + HTTP must stay reachable (Lightsail images restrict 22 by default).
     const ports = instance.Properties.Networking.Ports.map(p => p.FromPort).sort((a, b) => a - b);

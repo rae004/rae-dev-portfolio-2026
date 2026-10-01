@@ -11,6 +11,7 @@ import {
 
 interface CustomResourceEvent {
   RequestType: 'Create' | 'Update' | 'Delete';
+  PhysicalResourceId?: string;
   ResponseURL: string;
   StackId: string;
   RequestId: string;
@@ -61,7 +62,9 @@ export const handler = async (
     }
     case 'Delete':
       console.log('Delete operation - nothing to clean up');
-      return { PhysicalResourceId };
+      // Echo back the ID CloudFormation is deleting (it may be a legacy
+      // framework-generated UUID); answering with a different ID is an error.
+      return { PhysicalResourceId: event.PhysicalResourceId ?? PhysicalResourceId };
     default:
       throw new Error(`Unknown request type: ${RequestType}`);
   }
