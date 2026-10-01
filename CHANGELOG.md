@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.5](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.12.4...v0.12.5) (2026-10-01)
+
+
+### Bug Fixes
+
+* **infra:** make wp-admin usable; widen the contact page ([#157](https://github.com/rae004/rae-dev-portfolio-2026/issues/157)) ([b56dccb](https://github.com/rae004/rae-dev-portfolio-2026/commit/b56dccbf59f00eb7263849ebd1c6027a22ba9661))
+
 ## [0.12.4](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.12.3...v0.12.4) (2026-09-29)
 
 
