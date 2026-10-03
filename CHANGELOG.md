@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.12.5...v0.13.0) (2026-10-03)
+
+
+### Features
+
+* **wordpress:** streaming links repeater and API field for media projects ([#159](https://github.com/rae004/rae-dev-portfolio-2026/issues/159)) ([a46ece8](https://github.com/rae004/rae-dev-portfolio-2026/commit/a46ece8c8a9a1d2219ad6710c076909736157388))
+
 ## [0.12.5](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.12.4...v0.12.5) (2026-10-01)
 
 
