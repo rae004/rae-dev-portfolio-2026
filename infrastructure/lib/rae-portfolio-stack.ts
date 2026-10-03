@@ -663,8 +663,18 @@ echo "$(date): WordPress setup complete — https://${apiFqdn}/health-check.php"
       resources: [mediaBucket.arnForObjects('*')],
     }));
 
+    // The bucket has ACLs disabled (BucketOwnerEnforced) and public access
+    // blocked. WP Offload Media decides whether to send an ACL with each
+    // upload by reading those two bucket settings; without permission to
+    // read them it assumes ACLs are allowed, sends `public-read`, and every
+    // upload fails with AccessControlListNotSupported.
     mediaUploaderUser.addToPolicy(new iam.PolicyStatement({
-      actions: ['s3:ListBucket', 's3:GetBucketLocation'],
+      actions: [
+        's3:ListBucket',
+        's3:GetBucketLocation',
+        's3:GetBucketPublicAccessBlock',
+        's3:GetBucketOwnershipControls',
+      ],
       resources: [mediaBucket.bucketArn],
     }));
 

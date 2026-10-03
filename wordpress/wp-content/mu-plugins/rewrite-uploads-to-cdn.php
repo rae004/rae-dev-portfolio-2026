@@ -17,19 +17,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * S3 bucket the offload plugin writes to. Filterable via
- * `rae_media_s3_bucket`. Defaults to the dev bucket.
+ * S3 bucket the offload plugin writes to. Set per environment with the
+ * RAE_MEDIA_S3_BUCKET constant in wp-config.php (prod:
+ * rae-portfolio-media-prod-<account>); defaults to the dev bucket.
+ * Filterable via `rae_media_s3_bucket`.
  */
 function rae_media_s3_bucket(): string {
-	return (string) apply_filters( 'rae_media_s3_bucket', 'rae-portfolio-media-dev-233416806179' );
+	$default = defined( 'RAE_MEDIA_S3_BUCKET' ) ? RAE_MEDIA_S3_BUCKET : 'rae-portfolio-media-dev-233416806179';
+	return (string) apply_filters( 'rae_media_s3_bucket', $default );
 }
 
 /**
- * CDN host (CloudFront → S3 via OAC) that serves the bucket publicly.
- * Filterable via `rae_media_cdn_host`.
+ * CDN host (CloudFront → S3 via OAC) that serves the bucket publicly. Set
+ * per environment with the RAE_MEDIA_CDN_HOST constant in wp-config.php
+ * (prod: media.rae-dev.com); defaults to dev. Filterable via
+ * `rae_media_cdn_host`.
  */
 function rae_media_cdn_host(): string {
-	return (string) apply_filters( 'rae_media_cdn_host', 'media-dev.rae-dev.com' );
+	$default = defined( 'RAE_MEDIA_CDN_HOST' ) ? RAE_MEDIA_CDN_HOST : 'media-dev.rae-dev.com';
+	return (string) apply_filters( 'rae_media_cdn_host', $default );
 }
 
 /**
