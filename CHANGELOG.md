@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.2](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.14.1...v0.14.2) (2026-10-03)
+
+
+### Styles
+
+* **media:** show streaming link labels except at lg/xl widths ([#167](https://github.com/rae004/rae-dev-portfolio-2026/issues/167)) ([17785a6](https://github.com/rae004/rae-dev-portfolio-2026/commit/17785a6854ae36316adcb12649b1129ad204966e))
+
 ## [0.14.1](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.14.0...v0.14.1) (2026-10-03)
 
 
