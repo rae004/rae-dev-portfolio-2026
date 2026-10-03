@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.13.0...v0.14.0) (2026-10-03)
+
+
+### Features
+
+* **media:** album artwork and image gallery on media project pages ([#161](https://github.com/rae004/rae-dev-portfolio-2026/issues/161)) ([11d0378](https://github.com/rae004/rae-dev-portfolio-2026/commit/11d03784f45ae6c482f48b2e37c4446132810b92))
+
 ## [0.13.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.12.5...v0.13.0) (2026-10-03)
 
 
