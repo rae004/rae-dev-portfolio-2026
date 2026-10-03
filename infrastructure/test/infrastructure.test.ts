@@ -325,6 +325,13 @@ describe('RaePortfolioStack (dev with cert)', () => {
     const allStatements = uploaderPolicies.flatMap(
       p => p.Properties.PolicyDocument.Statement as Array<{ Action: string | string[]; Resource: unknown }>,
     );
+    // WP Offload Media must be able to read the bucket's ACL/public-access
+    // state, otherwise it sends ACLs the bucket rejects.
+    const allActions = allStatements.flatMap(s => (Array.isArray(s.Action) ? s.Action : [s.Action]));
+    expect(allActions).toEqual(
+      expect.arrayContaining(['s3:GetBucketPublicAccessBlock', 's3:GetBucketOwnershipControls']),
+    );
+
     // Every action listed must be S3, and every resource ARN must include the media bucket.
     for (const stmt of allStatements) {
       const actions = Array.isArray(stmt.Action) ? stmt.Action : [stmt.Action];

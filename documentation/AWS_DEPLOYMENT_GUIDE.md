@@ -366,6 +366,46 @@ hand-curated. Automating theme sync (likely via SSM Run Command, since SSH +
 long-lived keys are undesirable) is a future enhancement — see the discussion
 in the project's CI/CD planning history.
 
+### Media offload (WP Offload Media → S3 → CloudFront)
+
+Uploads are copied to `rae-portfolio-media-<env>-<account>` and served from
+`media-<env>.rae-dev.com` (prod: `media.rae-dev.com`), a CloudFront
+distribution with Origin Access Control over the private bucket. The
+`rewrite-uploads-to-cdn.php` mu-plugin rewrites the plugin's raw S3 URLs to
+that host (custom domains are a Pro feature). Local files are kept
+(`remove-local-file: false`) so hardcoded `/wp-content/uploads/...` URLs on
+the API host — the turntable album covers in `songs.ts` — keep working.
+
+The bucket has ACLs disabled (`BucketOwnerEnforced`) and public access
+blocked. The plugin must therefore upload **without** ACLs: it works that
+out by calling `GetBucketPublicAccessBlock` / `GetBucketOwnershipControls`
+(the uploader IAM policy grants both), and the setting is also pinned
+explicitly (`use-bucket-acls: false`) so it can't regress. The symptom when
+this is wrong is every upload silently staying local, with
+`AccessControlListNotSupported` in the plugin's error.
+
+**Configuring an environment**
+
+1. Create an access key for the uploader user (one per environment; never
+   paste it anywhere but the box):
+   `aws iam create-access-key --user-name rae-portfolio-media-uploader-<env>`
+2. In `wp-config.php` (prod: `/var/www/wp-config.php`), above the
+   "stop editing" line, define `RAE_MEDIA_S3_BUCKET`, `RAE_MEDIA_CDN_HOST`
+   and `AS3CF_SETTINGS` (serialized array: `provider: aws`, the key pair,
+   `bucket`, `region: us-east-1`, `copy-to-s3`, `serve-from-s3`,
+   `remove-local-file: false`, `use-bucket-acls: false`,
+   `object-prefix: wp-content/uploads/`, `use-yearmonth-folders`,
+   `object-versioning`). Dev predates this and holds the same values in the
+   `tantan_wordpress_s3` option instead.
+3. Copy `wordpress/wp-content/mu-plugins/rewrite-uploads-to-cdn.php` to
+   `wp-content/mu-plugins/` and restart Apache/php-fpm.
+4. Verify: `wp media import` a small image and check `wp_get_attachment_url`
+   returns the `media…rae-dev.com` host; delete the probe.
+5. Backfill existing attachments with the plugin's "Offload now" tool in
+   Media → Offload Media, or via `wp eval` with the plugin's
+   `Upload_Handler` (see the 2026-10-03 session notes in
+   `documentation/follow_ups.md`).
+
 ### Regular Tasks
 
 1. **WordPress Updates**: Monthly security updates

@@ -30,7 +30,17 @@ off rather than deleting them so the history stays readable.
   create the real admin, then drop/rotate `user`.
 - ⬜ `sendmail` is missing on prod, so WordPress mail (password resets,
   contact-form notifications) silently fails. Pick SES or a mail plugin.
-- ⬜ WP Offload Media is installed but unconfigured on both environments.
+- ✅ (2026-10-03) WP Offload Media configured and backfilled on dev and
+  prod. Root cause of the silent failure: the uploader IAM user couldn't
+  read the bucket's ACL/public-access state, so the plugin sent ACLs the
+  bucket rejects. Fixed in CDK (policy) and pinned `use-bucket-acls: false`
+  on both. Procedure: `AWS_DEPLOYMENT_GUIDE.md` → "Media offload".
+- ⬜ Dev's uploader user has **two** active access keys (2026-08-23); only
+  one is in use. Identify the live one (`aws iam get-access-key-last-used`)
+  and delete the other.
+- ⬜ Move dev's Offload Media settings from the `tantan_wordpress_s3` option
+  into an `AS3CF_SETTINGS` wp-config constant to match prod (natural moment:
+  the dev blueprint migration).
 - ⬜ Confirm `rae-dev.com` is listed on the reCAPTCHA key's allowed domains.
 
 ## Dependencies
