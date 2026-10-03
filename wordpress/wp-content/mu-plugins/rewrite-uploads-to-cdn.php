@@ -115,3 +115,42 @@ add_filter(
 	},
 	999
 );
+
+// Intermediate sizes resolved through image_downsize() directly (bypassing
+// wp_get_attachment_image_src), which is what the admin media grid/modal and
+// the REST media endpoint use to build per-size URLs.
+add_filter(
+	'image_downsize',
+	function ( $out ) {
+		if ( is_array( $out ) && isset( $out[0] ) ) {
+			$out[0] = rae_rewrite_media_url( $out[0] );
+		}
+		return $out;
+	},
+	999
+);
+
+// Attachment payload for the admin media modal / grid: url, icon and every
+// size URL. Belt and braces over the filters above.
+add_filter(
+	'wp_prepare_attachment_for_js',
+	function ( $response ) {
+		if ( ! is_array( $response ) ) {
+			return $response;
+		}
+		foreach ( array( 'url', 'icon' ) as $key ) {
+			if ( isset( $response[ $key ] ) ) {
+				$response[ $key ] = rae_rewrite_media_url( $response[ $key ] );
+			}
+		}
+		if ( isset( $response['sizes'] ) && is_array( $response['sizes'] ) ) {
+			foreach ( $response['sizes'] as $size => $data ) {
+				if ( isset( $data['url'] ) ) {
+					$response['sizes'][ $size ]['url'] = rae_rewrite_media_url( $data['url'] );
+				}
+			}
+		}
+		return $response;
+	},
+	999
+);
