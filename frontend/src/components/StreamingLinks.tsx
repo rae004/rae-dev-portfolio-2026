@@ -13,6 +13,14 @@ interface StreamingLinksProps {
   title?: string
 }
 
+// The grid below goes to three columns at `lg`, which leaves no room for the
+// platform name beside the icon until `2xl`. In that band the buttons are
+// icon-only and centred; everywhere else the label shows and content is
+// left-aligned with the video marker pushed to the right.
+const LABEL_VISIBLE = 'inline lg:hidden 2xl:inline'
+const BUTTON_ALIGN = 'justify-start lg:justify-center 2xl:justify-start'
+const VIDEO_MARKER_ALIGN = 'ml-auto lg:ml-0 2xl:ml-auto'
+
 const StreamingLinks = ({ links, title = 'Listen Online' }: StreamingLinksProps) => {
   if (!links || links.length === 0) {
     return null
@@ -78,11 +86,11 @@ const StreamingLinks = ({ links, title = 'Listen Online' }: StreamingLinksProps)
                 href={link.url}
                 target='_blank'
                 rel='noopener noreferrer'
-                className={`btn ${platformInfo.className} btn-outline flex flex-nowrap items-center gap-2 justify-start`}
+                className={`btn ${platformInfo.className} btn-outline flex flex-nowrap items-center gap-2 ${BUTTON_ALIGN}`}
               >
                 <span className={platformInfo.color}>{platformInfo.icon}</span>
-                <span className='hidden lg:inline truncate'>{link.platform}</span>
-                {link.type === 'video' && <VideoIcon className='ml-auto' size='sm' />}
+                <span className={`${LABEL_VISIBLE} truncate`}>{link.platform}</span>
+                {link.type === 'video' && <VideoIcon className={VIDEO_MARKER_ALIGN} size='sm' />}
               </a>
             )
           })}
