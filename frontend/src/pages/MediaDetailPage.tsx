@@ -90,51 +90,8 @@ const MediaDetailPage: React.FC = () => {
   const mediaSkills = getMediaProjectSkills(mediaProject, allSkills || [])
   const groupedSkills = sortSkillsInCategories(groupSkillsByCategory(mediaSkills))
 
-  // Create sample gallery images (in real implementation, these would come from WordPress)
-  const sampleGalleryImages = [
-    {
-      id: 1,
-      url: 'https://picsum.photos/800/600?random=1',
-      alt: 'Project Image 1',
-      caption: 'Studio recording session',
-    },
-    {
-      id: 2,
-      url: 'https://picsum.photos/800/600?random=2',
-      alt: 'Project Image 2',
-      caption: 'Equipment setup',
-    },
-    {
-      id: 3,
-      url: 'https://picsum.photos/800/600?random=3',
-      alt: 'Project Image 3',
-      caption: 'Team collaboration',
-    },
-    {
-      id: 4,
-      url: 'https://picsum.photos/800/600?random=4',
-      alt: 'Project Image 4',
-      caption: 'Final mixdown',
-    },
-    {
-      id: 5,
-      url: 'https://picsum.photos/800/600?random=5',
-      alt: 'Project Image 5',
-      caption: 'Post-production work',
-    },
-    {
-      id: 6,
-      url: 'https://picsum.photos/800/600?random=6',
-      alt: 'Project Image 6',
-      caption: 'Client presentation',
-    },
-    {
-      id: 7,
-      url: 'https://picsum.photos/800/600?random=7',
-      alt: 'Project Image 7',
-      caption: 'Behind the scenes',
-    },
-  ]
+  const title = decodeHtml(mediaProject.title.rendered)
+  const galleryImages = mediaProject.gallery ?? []
 
   return (
     <div className='container mx-auto px-4 py-8'>
@@ -179,6 +136,17 @@ const MediaDetailPage: React.FC = () => {
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
         {/* Main Content Area */}
         <div className='lg:col-span-2 space-y-8'>
+          {/* Album artwork / featured image */}
+          {mediaProject.featured_image_url && (
+            <figure className='card bg-base-100 shadow-xl overflow-hidden'>
+              <img
+                src={mediaProject.featured_image_url}
+                alt={`${title} artwork`}
+                className='w-full max-h-[32rem] object-contain bg-base-200'
+              />
+            </figure>
+          )}
+
           {/* Project Content */}
           <div className='card bg-base-100 shadow-xl'>
             <div className='card-body'>
@@ -192,11 +160,7 @@ const MediaDetailPage: React.FC = () => {
           </div>
 
           {/* Project Gallery */}
-          <MediaProjectGallery
-            images={sampleGalleryImages}
-            title='Project Gallery'
-            imagesPerPage={6}
-          />
+          <MediaProjectGallery images={galleryImages} title='Project Gallery' imagesPerPage={6} />
 
           {/* Related Skills */}
           {Object.keys(groupedSkills).length > 0 && (

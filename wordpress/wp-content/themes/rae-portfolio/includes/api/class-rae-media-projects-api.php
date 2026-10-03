@@ -167,6 +167,7 @@ class RAE_Media_Projects_API extends RAE_API_Base {
 			'class_list'         => get_post_class( '', $post->ID ),
 			'featured_image_url' => $featured_image_url,
 			'project_type'       => $project_type ? $project_type : null,
+			'gallery'            => RAE_Media_Gallery_Meta_Box::get_gallery( $post->ID ),
 		);
 
 		// Add project-specific metadata based on type

@@ -87,6 +87,7 @@ class RAE_Theme_Loader {
 		$this->load_file( $includes_path . 'admin/meta-boxes/class-rae-software-skills-meta-box.php' );
 		$this->load_file( $includes_path . 'admin/meta-boxes/class-rae-skills-meta-box.php' );
 		$this->load_file( $includes_path . 'admin/meta-boxes/class-rae-media-project-details.php' );
+		$this->load_file( $includes_path . 'admin/meta-boxes/class-rae-media-gallery-meta-box.php' );
 
 		// Initialize all classes after loading
 		$this->initialize_classes();
