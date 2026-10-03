@@ -1,13 +1,9 @@
 import React, { useState } from 'react'
 import { ChevronLeft, ChevronRight, CloseIcon, SearchIcon } from './icons'
+import type { GalleryImage } from '../types/wordpress'
 
 interface MediaProjectGalleryProps {
-  images: Array<{
-    id: number
-    url: string
-    alt: string
-    caption?: string
-  }>
+  images: GalleryImage[]
   title?: string
   imagesPerPage?: number
 }
@@ -61,8 +57,9 @@ const MediaProjectGallery: React.FC<MediaProjectGalleryProps> = ({
               onClick={() => openLightbox(index)}
             >
               <img
-                src={image.url}
+                src={image.thumbnail_url ?? image.url}
                 alt={image.alt}
+                loading='lazy'
                 className='w-full h-full object-cover transition-transform group-hover:scale-105'
               />
               <div className='absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center'>
@@ -87,6 +84,7 @@ const MediaProjectGallery: React.FC<MediaProjectGalleryProps> = ({
               className='btn btn-sm'
               onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
+              aria-label='Previous page'
             >
               <ChevronLeft size='sm' />
             </button>
@@ -107,6 +105,7 @@ const MediaProjectGallery: React.FC<MediaProjectGalleryProps> = ({
               className='btn btn-sm'
               onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
+              aria-label='Next page'
             >
               <ChevronRight size='sm' />
             </button>

@@ -83,11 +83,23 @@ export interface StreamingLink {
   type: 'audio' | 'video'
 }
 
+// One image in a media project's gallery (resolved from a WP attachment)
+export interface GalleryImage {
+  id: number
+  url: string
+  thumbnail_url?: string
+  alt: string
+  caption?: string
+  width?: number
+  height?: number
+}
+
 // Base media project interface
 export interface MediaProject extends WordPressPost {
   type: 'media-project'
   project_type: 'Music' | 'Audio_Post_Production' | null
   related_skills: SkillItem[] // New field for explicit skill relationships
+  gallery?: GalleryImage[] // Ordered gallery images; the featured image is separate
 
   // Music-specific fields
   music_artist_name?: string | null
