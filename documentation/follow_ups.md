@@ -56,6 +56,11 @@ off rather than deleting them so the history stays readable.
   ordered images from the media library (attachment IDs), API returns
   `{id,url,alt,caption}[]`, page drops the placeholders.
 - ⬜ Album name on the turntable record label (fast-follow).
-- ⬜ `songs.ts` album covers assume `/wp-content/uploads/2026/09/` path
-  parity between dev and prod; eventual state is per-file URLs from the
-  media API.
+- ⬜ `songs.ts` album covers are hardcoded to
+  `<api host>/wp-content/uploads/2026/09/<file>.webp` and so are served by
+  the WordPress instance, not the media CDN. Deliberately left as-is
+  (2026-10-03) until the turntable reads its songs from the media library.
+  **Depends on Offload Media's `remove-local-file: false`** — flipping that
+  deletes the local copies and 404s the covers. The CDN keys aren't
+  predictable (object versioning adds a timestamp folder), so the fix is to
+  resolve `source_url` from `/wp/v2/media` at runtime, not a host swap.

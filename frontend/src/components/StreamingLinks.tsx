@@ -78,10 +78,10 @@ const StreamingLinks = ({ links, title = 'Listen Online' }: StreamingLinksProps)
                 href={link.url}
                 target='_blank'
                 rel='noopener noreferrer'
-                className={`btn ${platformInfo.className} btn-outline flex items-center gap-2 justify-start`}
+                className={`btn ${platformInfo.className} btn-outline flex flex-nowrap items-center gap-2 justify-start`}
               >
                 <span className={platformInfo.color}>{platformInfo.icon}</span>
-                <span className='truncate'>{link.platform}</span>
+                <span className='hidden lg:inline truncate'>{link.platform}</span>
                 {link.type === 'video' && <VideoIcon className='ml-auto' size='sm' />}
               </a>
             )
