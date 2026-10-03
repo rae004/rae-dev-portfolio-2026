@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.14.1](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.14.0...v0.14.1) (2026-10-03)
+
+
+### Bug Fixes
+
+* **infra:** let WP Offload Media read bucket ACL state; prod media config ([#163](https://github.com/rae004/rae-dev-portfolio-2026/issues/163)) ([15c2ca4](https://github.com/rae004/rae-dev-portfolio-2026/commit/15c2ca4357997d6ac56e3908b5c52ccfd7f6b56a))
+* **wordpress:** rewrite intermediate-size media URLs to the CDN ([#165](https://github.com/rae004/rae-dev-portfolio-2026/issues/165)) ([c14ef80](https://github.com/rae004/rae-dev-portfolio-2026/commit/c14ef800e8fb32787a148ee4795665b021e3accf))
+
+
+### Styles
+
+* **media:** keep streaming link buttons on one line on small screens ([#166](https://github.com/rae004/rae-dev-portfolio-2026/issues/166)) ([5d390e1](https://github.com/rae004/rae-dev-portfolio-2026/commit/5d390e1a6eb8c6bef3ff955048a7ed6efab2b738))
+
 ## [0.14.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.13.0...v0.14.0) (2026-10-03)
 
 
