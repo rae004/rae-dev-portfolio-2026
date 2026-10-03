@@ -32,6 +32,149 @@ class Rae_Media_Project_Details {
 	public function __construct() {
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ) );
 		add_action( 'save_post', array( $this, 'save_meta_data' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
+	}
+
+	/**
+	 * Allowed values for a streaming link's type.
+	 *
+	 * @var string[]
+	 */
+	private const LINK_TYPES = array( 'audio', 'video' );
+
+	/**
+	 * Suggested platform names for the streaming-link repeater. Free text is
+	 * still allowed; the frontend matches platforms by substring.
+	 *
+	 * @var string[]
+	 */
+	private const PLATFORM_SUGGESTIONS = array(
+		'Spotify',
+		'Apple Music',
+		'YouTube',
+		'YouTube Music',
+		'SoundCloud',
+		'Bandcamp',
+		'Tidal',
+		'Amazon Music',
+		'Deezer',
+	);
+
+	/**
+	 * Read the streaming links for a post as a normalised list.
+	 *
+	 * Accepts the current array storage and the legacy JSON-string storage
+	 * (the old textarea), returning an empty array for anything else.
+	 *
+	 * @param int $post_id The post ID.
+	 *
+	 * @return array<int, array{platform: string, url: string, type: string}>
+	 */
+	public static function get_streaming_links( int $post_id ): array {
+		$raw = get_post_meta( $post_id, '_music_online_links', true );
+
+		if ( is_string( $raw ) && '' !== $raw ) {
+			$decoded = json_decode( $raw, true );
+			$raw     = is_array( $decoded ) ? $decoded : array();
+		}
+
+		if ( ! is_array( $raw ) ) {
+			return array();
+		}
+
+		return self::sanitize_streaming_links( $raw );
+	}
+
+	/**
+	 * Sanitize a list of streaming links. Rows without a valid URL are dropped.
+	 *
+	 * @param array $links Raw rows, each with platform/url/type keys.
+	 *
+	 * @return array<int, array{platform: string, url: string, type: string}>
+	 */
+	private static function sanitize_streaming_links( array $links ): array {
+		$clean = array();
+
+		foreach ( $links as $link ) {
+			if ( ! is_array( $link ) ) {
+				continue;
+			}
+
+			$url = isset( $link['url'] ) ? esc_url_raw( trim( (string) $link['url'] ) ) : '';
+			if ( '' === $url ) {
+				continue;
+			}
+
+			$platform = isset( $link['platform'] ) ? sanitize_text_field( (string) $link['platform'] ) : '';
+			if ( '' === $platform ) {
+				$platform = self::guess_platform( $url );
+			}
+
+			$type = isset( $link['type'] ) ? strtolower( sanitize_key( (string) $link['type'] ) ) : 'audio';
+			if ( ! in_array( $type, self::LINK_TYPES, true ) ) {
+				$type = 'audio';
+			}
+
+			$clean[] = array(
+				'platform' => $platform,
+				'url'      => $url,
+				'type'     => $type,
+			);
+		}
+
+		return $clean;
+	}
+
+	/**
+	 * Derive a platform label from a URL when the editor leaves it blank.
+	 *
+	 * @param string $url The link URL.
+	 *
+	 * @return string
+	 */
+	private static function guess_platform( string $url ): string {
+		$host = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+		$host = preg_replace( '/^(www|open|music|play)\./', '', $host );
+
+		$known = array(
+			'spotify.com'    => 'Spotify',
+			'apple.com'      => 'Apple Music',
+			'youtube.com'    => 'YouTube',
+			'youtu.be'       => 'YouTube',
+			'soundcloud.com' => 'SoundCloud',
+			'bandcamp.com'   => 'Bandcamp',
+			'tidal.com'      => 'Tidal',
+			'amazon.com'     => 'Amazon Music',
+			'deezer.com'     => 'Deezer',
+		);
+
+		foreach ( $known as $domain => $label ) {
+			if ( $host === $domain || str_ends_with( $host, '.' . $domain ) ) {
+				return $label;
+			}
+		}
+
+		return $host ? $host : 'Listen';
+	}
+
+	/**
+	 * Enqueue the repeater's script/styles on the media-project edit screen only.
+	 *
+	 * @param string $hook The current admin page hook.
+	 */
+	public function enqueue_admin_scripts( string $hook ): void {
+		if ( ! in_array( $hook, array( 'post.php', 'post-new.php' ), true ) ) {
+			return;
+		}
+
+		$screen = get_current_screen();
+		if ( ! $screen || 'media-project' !== $screen->post_type ) {
+			return;
+		}
+
+		wp_enqueue_script( 'jquery-ui-sortable' );
+		wp_add_inline_style( 'wp-admin', $this->get_streaming_links_styles() );
+		wp_add_inline_script( 'jquery-ui-sortable', $this->get_streaming_links_javascript() );
 	}
 
 	/**
@@ -134,21 +277,18 @@ class Rae_Media_Project_Details {
 	 */
 	public function music_project_details_meta_box_callback( WP_Post $post ): void {
 		// Get current values
-		$artist_name              = get_post_meta( $post->ID, '_music_artist_name', true );
-		$album_names              = get_post_meta( $post->ID, '_music_album_names', true );
-		$songs_list               = get_post_meta( $post->ID, '_music_songs_list', true );
-		$release_date             = get_post_meta( $post->ID, '_music_release_date', true );
-		$artist_website           = get_post_meta( $post->ID, '_music_artist_website', true );
-		$genre                    = get_post_meta( $post->ID, '_music_genre', true );
-		$record_label             = get_post_meta( $post->ID, '_music_record_label', true );
-		$duration                 = get_post_meta( $post->ID, '_music_duration', true );
-		$studio                   = get_post_meta( $post->ID, '_music_studio', true );
-		$producer                 = get_post_meta( $post->ID, '_music_producer', true );
-		$collaborators            = get_post_meta( $post->ID, '_music_collaborators', true );
-		$stream_links_placeholder = array(
-			'{ &quot;platform&quot;: &quot;Spotify&quot;, &quot;url&quot;: &quot;https://...&quot;, &quot;type&quot;: &quot;audio&quot;}}',
-			'{ &quot;platform&quot;: &quot;YouTube&quot;, &quot;url&quot;: &quot;https://...&quot;, &quot;type&quot;: &quot;video&quot;}',
-		);
+		$artist_name     = get_post_meta( $post->ID, '_music_artist_name', true );
+		$album_names     = get_post_meta( $post->ID, '_music_album_names', true );
+		$songs_list      = get_post_meta( $post->ID, '_music_songs_list', true );
+		$release_date    = get_post_meta( $post->ID, '_music_release_date', true );
+		$artist_website  = get_post_meta( $post->ID, '_music_artist_website', true );
+		$genre           = get_post_meta( $post->ID, '_music_genre', true );
+		$record_label    = get_post_meta( $post->ID, '_music_record_label', true );
+		$duration        = get_post_meta( $post->ID, '_music_duration', true );
+		$studio          = get_post_meta( $post->ID, '_music_studio', true );
+		$producer        = get_post_meta( $post->ID, '_music_producer', true );
+		$collaborators   = get_post_meta( $post->ID, '_music_collaborators', true );
+		$streaming_links = self::get_streaming_links( $post->ID );
 
 		?>
 		<table class="form-table">
@@ -271,21 +411,196 @@ class Rae_Media_Project_Details {
 				</td>
 			</tr>
 			<tr>
-				<th scope="row">
-					<label for="music_online_links">Streaming Links</label>
-				</th>
+				<th scope="row">Streaming Links</th>
 				<td>
-				<textarea
-					id="music_online_links"
-					name="music_online_links"
-					rows="4" style="width: 100%;"
-					placeholder="[<?php echo esc_attr( implode( ', ', $stream_links_placeholder ) ); ?>]"
-					></textarea>
-					<p class="description">JSON array of streaming links with platform, url, and type (audio/video)</p>
+					<div id="rae-streaming-links" class="rae-streaming-links">
+						<div class="rae-streaming-links__header" aria-hidden="true">
+							<span></span>
+							<span>Platform</span>
+							<span>URL</span>
+							<span>Type</span>
+							<span></span>
+						</div>
+						<div class="rae-streaming-links__rows">
+							<?php foreach ( $streaming_links as $index => $link ) : ?>
+								<?php $this->render_streaming_link_row( $index, $link ); ?>
+							<?php endforeach; ?>
+						</div>
+						<p class="rae-streaming-links__empty" <?php echo $streaming_links ? 'hidden' : ''; ?>>
+							No streaming links yet.
+						</p>
+						<p>
+							<button type="button" class="button" id="rae-add-streaming-link">+ Add link</button>
+						</p>
+						<datalist id="rae-streaming-platforms">
+							<?php foreach ( self::PLATFORM_SUGGESTIONS as $suggestion ) : ?>
+								<option value="<?php echo esc_attr( $suggestion ); ?>"></option>
+							<?php endforeach; ?>
+						</datalist>
+						<template id="rae-streaming-link-template">
+							<?php
+							$this->render_streaming_link_row(
+								'__INDEX__',
+								array(
+									'platform' => '',
+									'url'      => '',
+									'type'     => 'audio',
+								)
+							);
+							?>
+						</template>
+					</div>
+					<p class="description">
+						Where listeners can find this project. Drag the handle to reorder. Leave
+						Platform blank to fill it in from the URL.
+					</p>
 				</td>
 			</tr>
 		</table>
 		<?php
+	}
+
+	/**
+	 * Render one row of the streaming-link repeater.
+	 *
+	 * @param int|string $index Row index, or the literal "__INDEX__" for the template.
+	 * @param array      $link  Row values (platform, url, type).
+	 */
+	private function render_streaming_link_row( int|string $index, array $link ): void {
+		$name = 'music_online_links[' . $index . ']';
+		?>
+		<div class="rae-streaming-links__row">
+			<span class="rae-streaming-links__handle dashicons dashicons-menu" title="Drag to reorder"></span>
+			<input type="text"
+					name="<?php echo esc_attr( $name ); ?>[platform]"
+					value="<?php echo esc_attr( $link['platform'] ); ?>"
+					list="rae-streaming-platforms"
+					placeholder="Spotify"
+					aria-label="Platform" />
+			<input type="url"
+					name="<?php echo esc_attr( $name ); ?>[url]"
+					value="<?php echo esc_attr( $link['url'] ); ?>"
+					placeholder="https://"
+					aria-label="URL" />
+			<select name="<?php echo esc_attr( $name ); ?>[type]" aria-label="Type">
+				<?php foreach ( self::LINK_TYPES as $type ) : ?>
+					<option value="<?php echo esc_attr( $type ); ?>" <?php selected( $link['type'], $type ); ?>>
+						<?php echo esc_html( ucfirst( $type ) ); ?>
+					</option>
+				<?php endforeach; ?>
+			</select>
+			<button type="button" class="button-link rae-streaming-links__remove" aria-label="Remove link">
+				<span class="dashicons dashicons-no-alt"></span>
+			</button>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Styles for the streaming-link repeater.
+	 *
+	 * @return string
+	 */
+	private function get_streaming_links_styles(): string {
+		return '
+			.rae-streaming-links__header,
+			.rae-streaming-links__row {
+				display: grid;
+				grid-template-columns: 24px 1fr 2fr 110px 32px;
+				gap: 8px;
+				align-items: center;
+			}
+			.rae-streaming-links__header {
+				font-weight: 600;
+				color: #50575e;
+				margin-bottom: 4px;
+			}
+			.rae-streaming-links__row {
+				padding: 6px 0;
+				border-top: 1px solid #dcdcde;
+			}
+			.rae-streaming-links__row input,
+			.rae-streaming-links__row select {
+				width: 100%;
+				margin: 0;
+			}
+			.rae-streaming-links__handle {
+				cursor: grab;
+				color: #8c8f94;
+			}
+			.rae-streaming-links__row.ui-sortable-helper {
+				background: #fff;
+				box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+			}
+			.rae-streaming-links__placeholder {
+				height: 44px;
+				border: 1px dashed #c3c4c7;
+				background: #f6f7f7;
+			}
+			.rae-streaming-links__remove {
+				color: #b32d2e;
+				text-decoration: none;
+			}
+			.rae-streaming-links__remove:hover {
+				color: #8a2424;
+			}
+			.rae-streaming-links__empty {
+				color: #646970;
+				font-style: italic;
+				margin: 8px 0;
+			}
+		';
+	}
+
+	/**
+	 * Behaviour for the streaming-link repeater: add, remove, reorder, and
+	 * re-index field names so PHP receives a dense array.
+	 *
+	 * @return string
+	 */
+	private function get_streaming_links_javascript(): string {
+		return '
+			jQuery(function ($) {
+				const $root = $("#rae-streaming-links");
+				if (!$root.length) {
+					return;
+				}
+
+				const $rows = $root.find(".rae-streaming-links__rows");
+				const $empty = $root.find(".rae-streaming-links__empty");
+				const template = document.getElementById("rae-streaming-link-template").innerHTML;
+
+				const refresh = () => {
+					$rows.children(".rae-streaming-links__row").each(function (index) {
+						$(this).find("[name]").each(function () {
+							this.name = this.name.replace(/music_online_links\\[[^\\]]*\\]/, "music_online_links[" + index + "]");
+						});
+					});
+					$empty.prop("hidden", $rows.children().length > 0);
+				};
+
+				$("#rae-add-streaming-link").on("click", () => {
+					const $row = $(template.replace(/__INDEX__/g, String($rows.children().length)));
+					$rows.append($row);
+					refresh();
+					$row.find("input[type=url]").trigger("focus");
+				});
+
+				$root.on("click", ".rae-streaming-links__remove", function () {
+					$(this).closest(".rae-streaming-links__row").remove();
+					refresh();
+				});
+
+				$rows.sortable({
+					handle: ".rae-streaming-links__handle",
+					axis: "y",
+					placeholder: "rae-streaming-links__placeholder",
+					update: refresh,
+				});
+
+				refresh();
+			});
+		';
 	}
 
 	/**
@@ -525,7 +840,6 @@ class Rae_Media_Project_Details {
 			'music_songs_list'     => '_music_songs_list',
 			'music_release_date'   => '_music_release_date',
 			'music_artist_website' => '_music_artist_website',
-			'music_online_links'   => '_music_online_links',
 			'music_genre'          => '_music_genre',
 			'music_record_label'   => '_music_record_label',
 			'music_duration'       => '_music_duration',
@@ -546,6 +860,21 @@ class Rae_Media_Project_Details {
 					delete_post_meta( $post_id, $meta_key );
 				}
 			}
+		}
+
+		// Save streaming links (structured array from the repeater). The field is
+		// absent from the request when every row has been removed, which must
+		// clear the stored value rather than leave stale links behind.
+		$raw_links = array();
+		if ( isset( $_POST['music_online_links'] ) && is_array( $_POST['music_online_links'] ) ) {
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitised per field in sanitize_streaming_links().
+			$raw_links = wp_unslash( $_POST['music_online_links'] );
+		}
+		$links = self::sanitize_streaming_links( $raw_links );
+		if ( $links ) {
+			update_post_meta( $post_id, '_music_online_links', $links );
+		} else {
+			delete_post_meta( $post_id, '_music_online_links' );
 		}
 
 		// Save audio post production fields

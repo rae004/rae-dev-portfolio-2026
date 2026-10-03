@@ -227,6 +227,7 @@ class RAE_Media_Projects_API extends RAE_API_Base {
 			'music_equipment_used' => RAE_Meta_Utilities::get_list_meta( $post_id, '_music_equipment_used' ),
 			'music_studios'        => RAE_Meta_Utilities::get_list_meta( $post_id, '_music_studios' ),
 			'music_collaborators'  => RAE_Meta_Utilities::get_list_meta( $post_id, '_music_collaborators' ),
+			'music_online_links'   => Rae_Media_Project_Details::get_streaming_links( $post_id ),
 		);
 	}
 
