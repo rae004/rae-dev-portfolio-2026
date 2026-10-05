@@ -58,11 +58,14 @@ seed_remote() {
 		exit 1
 	fi
 
+	# umask 002: any uploads/<year>/<month> folder the seed creates must be
+	# group-writable, or Apache (www-data) can't write later uploads into it
+	# ("The uploaded file could not be moved to wp-content/uploads/2026/09").
 	local wp_cmd
 	if [[ -n "$wp_user" ]]; then
-		wp_cmd="sudo -u $wp_user wp --path=$wp_path eval-file -"
+		wp_cmd="sudo -u $wp_user bash -c 'umask 002 && wp --path=$wp_path eval-file -'"
 	else
-		wp_cmd="sudo wp --path=$wp_path eval-file -"
+		wp_cmd="sudo bash -c 'umask 002 && wp --path=$wp_path eval-file -'"
 	fi
 
 	echo "→ Seeding $env_label WordPress at $host ($wp_path)..."
