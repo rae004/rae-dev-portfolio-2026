@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.3](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.14.2...v0.14.3) (2026-10-05)
+
+
+### Bug Fixes
+
+* **wordpress:** keep seed-created upload folders writable by Apache ([#175](https://github.com/rae004/rae-dev-portfolio-2026/issues/175)) ([a4cf9bf](https://github.com/rae004/rae-dev-portfolio-2026/commit/a4cf9bf6ed3ac4c5c9abee9c00317ec25d8348d7))
+
 ## [0.14.2](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.14.1...v0.14.2) (2026-10-03)
 
 
