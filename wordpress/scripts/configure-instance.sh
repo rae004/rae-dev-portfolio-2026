@@ -22,6 +22,8 @@
 #      uses ?rest_route=, which is why this went unnoticed.
 #   2. Flushes WordPress rewrite rules so .htaccess is written.
 #   3. Installs unattended-upgrades for daily Debian security updates.
+#   4. Makes the uploads tree group-writable by Apache (seed-created month
+#      folders otherwise block uploads to posts dated in that month).
 
 set -euo pipefail
 
@@ -119,6 +121,17 @@ APT::Periodic::AutocleanInterval "7";
 APT
 systemctl enable -q --now unattended-upgrades
 echo "unattended-upgrades: enabled"
+
+# 4. Uploads tree writable by Apache. WordPress files uploads under the
+#    attached post's year/month, so a folder created by wp-cli as `admin`
+#    (seeding) with the default umask is 755 and Apache (www-data) can't
+#    write into it. Normalise: group www-data, dirs 2775 (setgid so new
+#    subfolders inherit the group), files 664.
+UPLOADS="$WP_ROOT/wp-content/uploads"
+chown -R admin:www-data "$UPLOADS"
+find "$UPLOADS" -type d -exec chmod 2775 {} +
+find "$UPLOADS" -type f -exec chmod 664 {} +
+echo "uploads: ownership and permissions normalised"
 
 # Verify a pretty URL reaches WordPress (anything but an Apache 404).
 code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost/wp-login.php)
