@@ -15,12 +15,28 @@ off rather than deleting them so the history stays readable.
   then, after a theme change: tar over SSH, swap the directory, flush the WP
   cache **and restart php-fpm** (opcache held the old code on dev
   2026-10-03).
-- ⬜ **Dev migration to the Lightsail WordPress blueprint before
-  2026-11-19** (Bitnami image deprecation): snapshot dev; drop the
-  `wordpressBlueprintId: 'wordpress'` pin in `infrastructure/bin/infrastructure.ts`;
-  deploy; re-run first-run setup, `seed.sh dev`, media re-upload,
-  plugin/options config; `wordpress/scripts/configure-instance.sh dev`;
-  update `seed.sh` dev defaults and `TROUBLESHOOTING_QUICK_REFERENCE.md`.
+- ✅ **Dev migration to the Lightsail WordPress blueprint** — done
+  2026-10-24, pulled forward by the critical PHP CVEs 2026-109618/19 (the
+  Bitnami image was stuck on vulnerable PHP 8.2.28). Dev data is now a
+  URL-rewritten prod clone. Details and the four-attempt war story:
+  `production_deployment_plan.md` Phase 1b.
+- ⬜ **Rotate the prod media-uploader IAM access key**
+  (`rae-portfolio-media-uploader-prod`): its secret was printed to a
+  terminal session on 2026-10-24 while reading prod's `AS3CF_SETTINGS`
+  from wp-config. Scoped to the media bucket, but rotate anyway (create new
+  key → update `AS3CF_SETTINGS` in prod wp-config → delete old key).
+- ⬜ Delete the pre-migration dev snapshot
+  `rae-portfolio-wp-dev-pre-ls10-migration-20261024` (~$1/month for 20 GB)
+  after dev has been stable for a week or so (~2026-11-01).
+- ⬜ Old dev had 24 published media-projects; prod (and therefore the new
+  dev clone) has 23. Probably an intentional prod-side edit since the
+  2026-09 seeding, but worth a quick diff against the snapshot if anything
+  seems missing. The pre-migration DB dump is not retained locally; the
+  snapshot above holds it.
+- ⬜ Verify unattended fresh-boot end to end (`production_deployment_plan.md`
+  Phase 1b item): the cloud-init deadlock fix (`systemd-run`) shipped with
+  the dev migration but the migration itself needed one manual unblock
+  before the fix existed, so no instance has yet booted clean with it.
 - ⬜ Delete the old Vercel project (~1 week after the 2026-09 DNS cutover,
   once nothing points at it).
 - ⬜ Rename the dev deploy role `github-deploy-dev` →

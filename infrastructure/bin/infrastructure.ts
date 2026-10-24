@@ -30,11 +30,10 @@ new RaePortfolioStack(app, 'RaePortfolioDev', {
   envName: 'dev',
   domainName: process.env.DEV_DOMAIN || 'rae-dev.com',
   certificateArn: devCertificateArn,
-  // Dev still runs the deprecated Bitnami blueprint. Do NOT drop this line
-  // casually — changing the blueprint replaces the instance and its
-  // database. Migrate deliberately (snapshot, reseed, re-upload media) before
-  // 2026-11-19; see documentation/production_deployment_plan.md.
-  wordpressBlueprintId: 'wordpress',
+  // Dev migrated off the deprecated Bitnami blueprint on 2026-10-24
+  // (snapshot rae-portfolio-wp-dev-pre-ls10-migration-20261024): no
+  // wordpressBlueprintId pin means the default `wordpress_ls_1_0`, same as
+  // prod. See documentation/production_deployment_plan.md, Phase 1b.
 });
 
 // Production environment stack.

@@ -180,7 +180,8 @@ curl -s "http://localhost:8080/?rest_route=/wp/v2/recaptcha/status" | jq
 ```
 
 ## Current Infrastructure State
-- **Static IP**: 44.216.72.226 (LightSail WordPress instance, name: `rae-portfolio-wp-ip-dev`)
+- **Static IP**: 44.216.72.226 (static IP name `rae-portfolio-wp-ip-dev`; dev instance `rae-portfolio-wp-dev-ls10`, Lightsail-packaged `wordpress_ls_1_0` blueprint, micro_3_0, Debian, PHP from apt with unattended-upgrades — migrated off Bitnami 2026-10-24; SSH `admin@`, WP root `/var/www/html`)
+- **Prod**: `rae-portfolio-wp-prod-ls10` at 100.52.156.202 (`api.rae-dev.com`), same blueprint; dev's WordPress data is a URL-rewritten clone of prod (2026-10-24)
 - **WordPress HTTPS**: https://api-dev.rae-dev.com/wp-admin/ ✅
 - **Frontend HTTPS**: https://dev.rae-dev.com ✅
 - **CloudFront Distributions**: Frontend + WordPress both deployed ✅
