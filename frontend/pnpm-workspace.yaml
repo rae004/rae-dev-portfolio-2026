@@ -18,10 +18,14 @@ allowBuilds:
 # anchor to the vulnerable version. All patched versions chosen here are
 # past our 7-day cooldown wall.
 #
-# seroval ^1.4.1 — patches three DoS advisories
+# seroval 1.6.9 — patches GHSA-p6vx-979v-rg4c (critical, fromJSON Promise
+#   thenable assimilation, fixed 1.6.1), GHSA-jp82-f5mq-hwhp (high, TypedArray
+#   length memory exhaustion, fixed 1.6.3), and the earlier DoS trio
 #   (GHSA-hj76-42vx-jwp4, GHSA-3j22-8qj3-26mx, GHSA-hx9m-jf43-8ffr).
-#   Anchored to vulnerable 1.4.0 via the exact pin on @tanstack/react-router.
-#   Patched in seroval@1.4.1+ (published 2025-12-19).
+#   Exact pin, not a caret: as of 2026-10-24 every release after 1.6.9
+#   (2026-10-09) is younger than the 7-day cooldown wall, and `pnpm update`
+#   was observed resolving straight past minimum-release-age to a 1-day-old
+#   version. Relax to a caret once the line has settled.
 #
 # devalue ^5.6.2 — patches two DoS advisories in devalue.parse
 #   (GHSA-vw5p-8cq8-m7mv and one related).
@@ -46,8 +50,13 @@ allowBuilds:
 # picomatch@4 ^4.0.4 — patches GHSA-3v7f-55p6-f55p. Scoped to 4.x; the
 #   2.x picomatch already in the tree is at 2.3.2 which is patched.
 #   Patched in 4.0.4+ (published 2026-03-23).
+#
+# source-map-js ^1.2.2 — patches GHSA-68fv-2mgg-jv7q (high, event-loop DoS
+#   via indexed source-map section offsets). Transitive via postcss.
+#   Patched in 1.2.2 (published 2026-09-30, past the cooldown).
 overrides:
-  seroval: '^1.4.1'
+  seroval: '1.6.9'
+  'source-map-js': '^1.2.2'
   devalue: '^5.6.2'
   flatted: '^3.4.2'
   'glob@10': '^10.5.0'
