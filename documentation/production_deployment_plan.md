@@ -181,11 +181,34 @@ user-data in a `#!/bin/sh` prelude, so it executed under dash and died on
     stack, as it should.
 - ⬜ Fresh-boot verification: throwaway instance launched with the exact
   synthesized user-data must reach a healthy `health-check.php` unattended.
-- ⬜ **Dev migration (before 2026-11-19):** snapshot dev; drop the
-  `wordpressBlueprintId: 'wordpress'` pin in `bin/infrastructure.ts`;
-  deploy (instance + DB replaced); re-run first-run setup, `seed.sh dev`,
-  media re-upload, plugin/options config; update `seed.sh` dev defaults and
-  TROUBLESHOOTING_QUICK_REFERENCE.md to the new layout.
+  Still open after the dev migration — attempt 4 needed one manual unblock —
+  but the deadlock fix below should make the next replacement pass clean.
+- ✅ **Dev migration (done 2026-10-24,** prompted by the critical PHP CVEs
+  2026-109618/19 — the Bitnami image was stuck on vulnerable PHP 8.2.28
+  with no update channel): snapshot
+  (`rae-portfolio-wp-dev-pre-ls10-migration-20261024`), pin dropped,
+  instance + DB replaced (`rae-portfolio-wp-dev-ls10`, now PHP 8.2.35 with
+  unattended-upgrades). Dev content replaced with a **prod clone** rather
+  than reseeding: `wp db export | wp db import`, URL search-replace
+  (api/media/apex → dev equivalents, bucket prod → dev), uploads + theme +
+  plugins tar-piped from prod, prod media bucket synced into the dev bucket
+  at identical keys. `seed.sh` dev defaults and
+  TROUBLESHOOTING_QUICK_REFERENCE.md updated to the new layout.
+
+  Took four deploy attempts; what they taught, all fixed in code:
+  - **The image installs WordPress via a cloud-init `runcmd`, which runs
+    AFTER user-data scripts in the same run-parts pass.** Running the setup
+    script inline therefore deadlocks cloud-init and WordPress never
+    installs — this is also why prod's first boot never worked unattended.
+    The script is now launched detached (`systemd-run --unit=rae-wp-setup`).
+  - The health gate was a single Lambda invocation (≤15 min hard cap),
+    too short for this image's first boot. It's now the Provider
+    framework's `isComplete` pattern: a one-shot probe Lambda polled every
+    30 s with a 30-min budget.
+  - `nano_3_0` (512 MB) cannot reliably finish the image's first-boot
+    provisioning (one marginal boot, one wedged instance, one 30+ min).
+    Dev now runs `micro_3_0` like prod ($5 → $7/month).
+  - The setup script's own wait loop went 10 → 25 min.
 
 ## Phase 2 — populate prod WordPress
 

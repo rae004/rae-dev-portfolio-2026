@@ -189,14 +189,16 @@ fi
 echo "layout=$FLAVOR root=$WP_ROOT config=$WP_CONFIG"
 WP="wp --allow-root --path=$WP_ROOT"
 
-# ---- Wait until WordPress is installed and answering (max 10 min) ---------
-for i in $(seq 1 60); do
+# ---- Wait until WordPress is installed and answering (max 25 min) ---------
+# 10 minutes was not enough: on a nano_3_0 (512 MB) the image's own first-boot
+# WordPress provisioning alone can take >10 min (dev migration, 2026-10-24).
+for i in $(seq 1 150); do
   if [ -f "$WP_CONFIG" ] && $WP core is-installed >/dev/null 2>&1 && curl -fs -o /dev/null http://localhost/; then
     echo "WordPress ready (check $i)"
     break
   fi
-  if [ "$i" -eq 60 ]; then
-    echo "ERROR: WordPress not ready after 10 minutes"
+  if [ "$i" -eq 150 ]; then
+    echo "ERROR: WordPress not ready after 25 minutes"
     exit 1
   fi
   sleep 10
@@ -336,7 +338,12 @@ echo "$(date): WordPress setup complete — https://${apiFqdn}/health-check.php"
     const wordpressInstance = new lightsail.CfnInstance(this, 'WordPressInstance', {
       instanceName: wordpressInstanceName,
       blueprintId: wordpressBlueprintId,
-      bundleId: envName === 'prod' ? 'micro_3_0' : 'nano_3_0', // Prod: $7/month, Dev: $5/month
+      // micro_3_0 ($7/month) everywhere: the Lightsail WordPress image does
+      // not reliably finish first-boot provisioning in nano_3_0's 512 MB
+      // (three failed attempts during the 2026-10-24 dev migration: one
+      // marginal ~13 min boot, one wedged instance, one still unprovisioned
+      // at 30+ min). Prod's micro passed its health gate first try.
+      bundleId: 'micro_3_0',
       availabilityZone: `${this.region}a`,
       // Declared explicitly: Lightsail-packaged blueprints restrict port 22 to
       // Lightsail's own connect ranges by default, which would lock out
@@ -356,7 +363,14 @@ echo "$(date): WordPress setup complete — https://${apiFqdn}/health-check.php"
         wordpressSetupScript,
         'RAE_SETUP_EOF',
         'chmod 700 /root/rae-wp-setup.sh',
-        'bash /root/rae-wp-setup.sh',
+        '# MUST NOT run inline: on the Lightsail-packaged image the WordPress',
+        '# installer itself is a cloud-init runcmd, which executes AFTER this',
+        '# user-data script in the same run-parts pass. Running the setup',
+        '# script here blocks cloud-init, so WordPress never installs and the',
+        "# script's own wait loop deadlocks (dev migration, 2026-10-24).",
+        '# systemd-run detaches it into its own transient unit; its wait loop',
+        '# then polls until the image install finishes.',
+        'systemd-run --unit=rae-wp-setup bash /root/rae-wp-setup.sh',
       ].join('\n'),
       tags: [{
         key: 'Environment',
@@ -526,9 +540,9 @@ echo "$(date): WordPress setup complete — https://${apiFqdn}/health-check.php"
       entry: lambdaEntry('wordpress-config'),
       handler: 'handler',
       bundling: lambdaBundling,
-      // Must exceed the handler's own retry budget (~10 min of health checks
-      // while a fresh instance finishes its first-boot setup).
-      timeout: cdk.Duration.minutes(14),
+      // onEvent is quick now (certificate check only; the health wait lives
+      // in the provider's isComplete handler below).
+      timeout: cdk.Duration.minutes(5),
       environment: {
         NODE_OPTIONS: '--enable-source-maps',
       },
@@ -548,9 +562,33 @@ echo "$(date): WordPress setup complete — https://${apiFqdn}/health-check.php"
       resources: ['*'],
     }));
 
+    // isComplete probe: one cheap health check per invocation; the provider
+    // polls it until WordPress answers. A fresh nano_3_0 needs 15+ minutes
+    // of first-boot provisioning, which no single Lambda invocation
+    // (15-minute hard cap) can outwait — found during the dev blueprint
+    // migration, 2026-10-24.
+    const wordpressIsCompleteFunction = new nodejs.NodejsFunction(this, 'WordPressConfigIsComplete', {
+      runtime: lambda.Runtime.NODEJS_22_X,
+      entry: path.join(__dirname, '..', 'lambda', 'wordpress-config', 'is-complete.ts'),
+      handler: 'handler',
+      bundling: lambdaBundling,
+      timeout: cdk.Duration.minutes(1),
+      environment: {
+        NODE_OPTIONS: '--enable-source-maps',
+      },
+    });
+    wordpressIsCompleteFunction.addToRolePolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ['lightsail:GetInstance'],
+      resources: ['*'],
+    }));
+
     // Custom resource provider for WordPress configuration
     const wordpressConfigProvider = new cr.Provider(this, 'WordPressConfigProvider', {
       onEventHandler: wordpressConfigFunction,
+      isCompleteHandler: wordpressIsCompleteFunction,
+      queryInterval: cdk.Duration.seconds(30),
+      totalTimeout: cdk.Duration.minutes(30),
       logRetention: 14,
     });
 

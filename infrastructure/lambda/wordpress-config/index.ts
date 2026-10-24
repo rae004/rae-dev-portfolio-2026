@@ -1,6 +1,5 @@
-import { 
-  LightsailClient, 
-  GetInstanceCommand, 
+import {
+  LightsailClient,
   GetCertificatesCommand,
   AttachCertificateToDistributionCommand,
   GetLoadBalancersCommand,
@@ -47,7 +46,13 @@ export const handler = async (
     case 'Create':
     case 'Update': {
       const certificateResult = await configureSSLCertificate(ResourceProperties);
-      await validateAndConfigureWordPress(InstanceName, StaticIpAddress, Domain, Environment, CloudFrontDomain);
+      // Health/admin validation lives in is-complete.ts: the Provider
+      // framework polls it until WordPress is actually up, on a budget far
+      // beyond a single Lambda invocation (a nano's first boot takes 15+ min).
+      if (CloudFrontDomain) {
+        console.log(`WordPress URLs configured by user data script for ${CloudFrontDomain}`);
+      }
+      console.log(`Starting WordPress validation for instance ${InstanceName} via isComplete polling (${Domain}/${Environment})`);
       return {
         PhysicalResourceId,
         Data: {
@@ -69,153 +74,6 @@ export const handler = async (
       throw new Error(`Unknown request type: ${RequestType}`);
   }
 };
-
-async function validateAndConfigureWordPress(
-  instanceName: string,
-  staticIpAddress: string,
-  domain: string,
-  environment: string,
-  cloudFrontDomain?: string
-): Promise<void> {
-  // The instance is "running" long before the user-data setup script has
-  // finished (WordPress first-boot install + our config + health endpoint
-  // can take several minutes on a fresh image). Budget ~10 minutes; the
-  // Lambda's own timeout is set above that in the stack.
-  const maxRetries = 30;
-  const retryDelay = 20000; // 20 seconds
-
-  console.log(`Starting WordPress validation for instance ${instanceName}`);
-
-  // Wait for instance to be fully ready
-  await waitForInstance(instanceName, maxRetries);
-
-  // WordPress URL configuration handled by user data script
-  if (cloudFrontDomain) {
-    console.log(`WordPress URLs configured by user data script for ${cloudFrontDomain}`);
-  }
-
-  // Validate WordPress health endpoint
-  await validateWordPressHealth(staticIpAddress, maxRetries, retryDelay);
-
-  // Validate WordPress admin accessibility
-  await validateWordPressAdmin(staticIpAddress, maxRetries, retryDelay);
-
-  console.log('WordPress configuration validation completed successfully');
-}
-
-async function waitForInstance(instanceName: string, maxRetries: number): Promise<void> {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const response = await lightsailClient.send(
-        new GetInstanceCommand({ instanceName })
-      );
-
-      const instance = response.instance;
-      if (!instance) {
-        throw new Error(`Instance ${instanceName} not found`);
-      }
-
-      console.log(`Instance ${instanceName} state: ${instance.state?.name}`);
-
-      if (instance.state?.name === 'running') {
-        console.log(`Instance ${instanceName} is running and ready`);
-        return;
-      }
-
-      if (attempt === maxRetries) {
-        throw new Error(`Instance ${instanceName} not running after ${maxRetries} attempts`);
-      }
-
-      console.log(`Waiting for instance to be running... (attempt ${attempt}/${maxRetries})`);
-      await sleep(30000);
-    } catch (error) {
-      console.error(`Error checking instance state (attempt ${attempt}):`, error);
-      if (attempt === maxRetries) {
-        throw error;
-      }
-      await sleep(30000);
-    }
-  }
-}
-
-async function validateWordPressHealth(
-  staticIpAddress: string,
-  maxRetries: number,
-  retryDelay: number
-): Promise<void> {
-  const healthUrl = `http://${staticIpAddress}/health-check.php`;
-  
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      console.log(`Checking WordPress health endpoint: ${healthUrl} (attempt ${attempt}/${maxRetries})`);
-      
-      // Using native fetch (Node.js 18+)
-      const response = await fetch(healthUrl, {
-        method: 'GET',
-      });
-
-      if (response.ok) {
-        const healthData = await response.json() as any;
-        console.log('WordPress health check response:', healthData);
-        
-        if (healthData.status === 'ok') {
-          console.log('WordPress health check passed');
-          return;
-        } else {
-          console.log(`WordPress health check failed: ${JSON.stringify(healthData)}`);
-        }
-      } else {
-        console.log(`Health endpoint returned status: ${response.status}`);
-      }
-    } catch (error) {
-      console.error(`Health check attempt ${attempt} failed:`, error);
-    }
-
-    if (attempt === maxRetries) {
-      throw new Error(`WordPress health check failed after ${maxRetries} attempts`);
-    }
-
-    console.log(`Waiting ${retryDelay / 1000} seconds before next health check...`);
-    await sleep(retryDelay);
-  }
-}
-
-async function validateWordPressAdmin(
-  staticIpAddress: string,
-  maxRetries: number,
-  retryDelay: number
-): Promise<void> {
-  const adminUrl = `http://${staticIpAddress}/wp-admin/`;
-  
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      console.log(`Checking WordPress admin accessibility: ${adminUrl} (attempt ${attempt}/${maxRetries})`);
-      
-      // Using native fetch (Node.js 18+)
-      const response = await fetch(adminUrl, {
-        method: 'GET',
-        redirect: 'manual', // Don't follow redirects
-      });
-
-      // WordPress admin should return either 200 (login page) or 302 (redirect to login)
-      if (response.status === 200 || response.status === 302) {
-        console.log('WordPress admin is accessible');
-        return;
-      } else {
-        console.log(`WordPress admin returned status: ${response.status}`);
-      }
-    } catch (error) {
-      console.error(`Admin accessibility check attempt ${attempt} failed:`, error);
-    }
-
-    if (attempt === maxRetries) {
-      throw new Error(`WordPress admin not accessible after ${maxRetries} attempts`);
-    }
-
-    console.log(`Waiting ${retryDelay / 1000} seconds before next admin check...`);
-    await sleep(retryDelay);
-  }
-}
 
 async function configureSSLCertificate(
   resourceProperties: {

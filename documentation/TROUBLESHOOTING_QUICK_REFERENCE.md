@@ -1,20 +1,26 @@
 # WordPress CloudFront HTTPS Troubleshooting Quick Reference
 
-## 🧭 Which blueprint am I on?
+## 🧭 Instance layout
 
-Two WordPress instance layouts exist (dev is still on the deprecated Bitnami
-image; prod is on the Lightsail-packaged one). Substitute accordingly below.
+Both environments run the Lightsail-packaged `wordpress_ls_1_0` blueprint
+(dev migrated off the deprecated Bitnami image on 2026-10-24).
 
-| | Bitnami `wordpress` (dev) | Lightsail `wordpress_ls_1_0` (prod) |
-|---|---|---|
-| SSH | `bitnami@<ip>` | `admin@<ip>` |
-| WordPress root | `/opt/bitnami/wordpress` | `/var/www/html` |
-| `wp-config.php` | `/opt/bitnami/wordpress/wp-config.php` | `/var/www/wp-config.php` |
-| wp-cli | `sudo wp --path=<root> …` | `sudo -u admin wp --path=/var/www/html …` |
-| Restart Apache | `sudo /opt/bitnami/ctlscript.sh restart apache` | `sudo systemctl restart apache2` |
-| Apache error log | `/opt/bitnami/apache/logs/error_log` | `/var/log/apache2/error.log` |
-| Default admin password | `~/bitnami_application_password` | `~/application_credentials` |
-| Setup script log | `/var/log/wordpress-setup.log` | `/var/log/wordpress-setup.log` |
+| | Lightsail `wordpress_ls_1_0` (dev + prod) |
+|---|---|
+| SSH | `admin@<ip>` |
+| WordPress root | `/var/www/html` |
+| `wp-config.php` | `/var/www/wp-config.php` |
+| wp-cli | `sudo -u admin wp --path=/var/www/html …` |
+| Restart Apache | `sudo systemctl restart apache2` |
+| Apache error log | `/var/log/apache2/error.log` |
+| Default admin password | `~/application_credentials` |
+| Setup script log | `/var/log/wordpress-setup.log` |
+
+First-boot gotcha: the image installs WordPress via a cloud-init `runcmd`
+that runs AFTER our user-data script, so the setup script must be launched
+detached (`systemd-run`) — running it inline deadlocks cloud-init. The CDK
+user-data does this; if a fresh instance sits unprovisioned with Apache
+down, check `cloud-init status` and `/var/log/wordpress-setup.log`.
 
 ## 🚨 Emergency Commands
 
@@ -24,8 +30,8 @@ image; prod is on the Lightsail-packaged one). Substitute accordingly below.
 aws lightsail get-instances --profile rae_dev --query 'instances[?contains(name, `rae-portfolio-wp-dev`)].[name,state.name,publicIpAddress]' --output table
 
 # Emergency direct access
-ssh -i /path/to/your-key.pem bitnami@44.216.72.226
-sudo /opt/bitnami/ctlscript.sh status
+ssh -i /path/to/your-key.pem admin@44.216.72.226
+sudo systemctl status apache2 mariadb
 ```
 
 ### Mixed Content Warnings Fix
@@ -34,16 +40,16 @@ sudo /opt/bitnami/ctlscript.sh status
 curl -s "https://api-dev.rae-dev.com/health-check.php" | jq '.https_configured, .urls_correctly_configured'
 
 # 2. If false, deploy fixed wp-config.php
-scp -i /path/to/your-key.pem claude-working-wp-config.php bitnami@44.216.72.226:/tmp/wp-config.php
-ssh -i /path/to/your-key.pem bitnami@44.216.72.226 "sudo cp /tmp/wp-config.php /opt/bitnami/wordpress/wp-config.php && sudo /opt/bitnami/ctlscript.sh restart apache"
+scp -i /path/to/your-key.pem claude-working-wp-config.php admin@44.216.72.226:/tmp/wp-config.php
+ssh -i /path/to/your-key.pem admin@44.216.72.226 "sudo cp /tmp/wp-config.php /var/www/wp-config.php && sudo systemctl restart apache2"
 ```
 
 ### Database URL Cleanup
 ```bash
 # Fix HTTP URLs in database
-ssh -i /path/to/your-key.pem bitnami@44.216.72.226
-sudo -u root wp search-replace 'http://api-dev.rae-dev.com' 'https://api-dev.rae-dev.com' --allow-root --path=/opt/bitnami/wordpress
-sudo -u root wp search-replace 'http://44.216.72.226' 'https://api-dev.rae-dev.com' --allow-root --path=/opt/bitnami/wordpress
+ssh -i /path/to/your-key.pem admin@44.216.72.226
+sudo -u admin wp search-replace 'http://api-dev.rae-dev.com' 'https://api-dev.rae-dev.com' --path=/var/www/html
+sudo -u admin wp search-replace 'http://44.216.72.226' 'https://api-dev.rae-dev.com' --path=/var/www/html
 ```
 
 ## 📊 Health Check Interpretation
@@ -111,13 +117,13 @@ aws lightsail attach-static-ip --static-ip-name rae-portfolio-wp-ip-dev --instan
 
 ### WordPress Setup Log
 ```bash
-ssh -i /path/to/your-key.pem bitnami@44.216.72.226
+ssh -i /path/to/your-key.pem admin@44.216.72.226
 sudo tail -50 /var/log/wordpress-setup.log
 ```
 
 ### Apache Error Log
 ```bash
-sudo tail -20 /opt/bitnami/apache/logs/error_log
+sudo tail -20 /var/log/apache2/error.log
 ```
 
 ### CloudFormation Events
@@ -162,9 +168,9 @@ npm run cdk deploy RaePortfolioDev -- --profile rae_dev --require-approval never
 
 ### Rollback wp-config.php
 ```bash
-ssh -i /path/to/your-key.pem bitnami@44.216.72.226
-sudo cp /opt/bitnami/wordpress/wp-config.php.original /opt/bitnami/wordpress/wp-config.php
-sudo /opt/bitnami/ctlscript.sh restart apache
+ssh -i /path/to/your-key.pem admin@44.216.72.226
+sudo cp /var/www/wp-config.php.original /var/www/wp-config.php
+sudo systemctl restart apache2
 ```
 
 ## 💡 Success Indicators
@@ -179,11 +185,11 @@ sudo /opt/bitnami/ctlscript.sh restart apache
 
 - **Direct IP Access**: http://44.216.72.226/wp-admin/ (bypasses CloudFront)
 - **Database Access**: phpMyAdmin at http://44.216.72.226/phpmyadmin/ (if enabled)
-- **SSH Access**: bitnami@44.216.72.226 (requires private key)
+- **SSH Access**: admin@44.216.72.226 (requires private key)
 
 ## 🔐 Security Notes
 
-- Default WordPress credentials: `user` / `bitnami` (change immediately)
+- Default WordPress credentials: `user` / see `~/application_credentials` (change immediately)
 - SSH key location: `/Users/rae004/Desktop/portfolio-dev-us-east-1.pem`
 - Never commit private keys or passwords to git
 - Rotate SSH keys quarterly

@@ -11,11 +11,9 @@
 #   <ENV>_WP_PATH   optional  default depends on the blueprint (see below)
 #   <ENV>_WP_USER   optional  OS user that owns WordPress; wp-cli runs as it
 #
-# Blueprint defaults:
-#   dev  — Bitnami `wordpress` (deprecated): path /opt/bitnami/wordpress,
-#          wp-cli via Bitnami's `sudo wp` wrapper (it switches user itself).
-#   prod — Lightsail `wordpress_ls_1_0`: path /var/www/html, owner `admin`,
-#          wp-cli via `sudo -u admin wp`.
+# Blueprint defaults (both environments on Lightsail `wordpress_ls_1_0`
+# since the dev migration on 2026-10-24):
+#   path /var/www/html, owner `admin`, wp-cli via `sudo -u admin wp`.
 #
 # Idempotent — re-running upserts by slug, no duplicates.
 # See documentation/portfolio_content_plan.md for content source.
@@ -83,7 +81,7 @@ case "$TARGET" in
 		;;
 
 	dev)
-		seed_remote DEV /opt/bitnami/wordpress ""
+		seed_remote DEV /var/www/html admin
 		;;
 
 	prod)
