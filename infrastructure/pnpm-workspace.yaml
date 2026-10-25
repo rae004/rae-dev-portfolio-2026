@@ -16,9 +16,16 @@
 #   (aws-lambda-nodejs NodejsFunction). Its install script only validates
 #   the platform binary shipped via optionalDependencies. Same version the
 #   frontend already allows.
+#
+# @parcel/watcher — native filesystem watcher jest 30.5+ pulls in for
+#   watch mode (unused in CI, which always runs `jest` one-shot). Its
+#   install script resolves the prebuilt platform binary. Maintained by
+#   the Parcel team, used by Tailwind/VS Code tooling. Allowed 2026-10-25
+#   to unblock Dependabot's jest bumps (ERR_PNPM_IGNORED_BUILDS on #172).
 allowBuilds:
   unrs-resolver: true
   esbuild: true
+  '@parcel/watcher': true
 
 # Each override below patches a high-severity advisory in a transitive
 # dep. All patched versions chosen here are well past our 7-day cooldown.
