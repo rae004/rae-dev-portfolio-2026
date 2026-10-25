@@ -61,9 +61,11 @@ off rather than deleting them so the history stays readable.
 
 ## Dependencies
 
-- ⬜ Decide on Dependabot #132 (React 19.3 — merge solo and watch dev) and
-  #122 (jest blocked by `@parcel/watcher` build script — add to
-  `allowBuilds` or close).
+- ⬜ Decide on Dependabot #132 (React 19.3 — merge solo and watch dev).
+- ✅ (2026-10-25) jest 30.5 blocked by `@parcel/watcher` build script
+  (#122, then #172): allowlisted `@parcel/watcher` in
+  `infrastructure/pnpm-workspace.yaml` — reputable Parcel-team native
+  watcher, only used by jest watch mode, never in CI.
 
 ## Features / content
 
