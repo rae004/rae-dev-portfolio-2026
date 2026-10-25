@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.1](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.15.0...v0.15.1) (2026-10-25)
+
+
+### Documentation
+
+* tick React 19.3 follow-up (merged solo via [#188](https://github.com/rae004/rae-dev-portfolio-2026/issues/188), verified on dev) ([#189](https://github.com/rae004/rae-dev-portfolio-2026/issues/189)) ([a1f010d](https://github.com/rae004/rae-dev-portfolio-2026/commit/a1f010d5bbb4d5c1b1e7c9a9afac9361ccf04455))
+
 ## [0.15.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.14.2...v0.15.0) (2026-10-24)
 
 
