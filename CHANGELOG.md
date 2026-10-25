@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.15.0](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.14.2...v0.15.0) (2026-10-24)
+
+
+### Features
+
+* **infra:** migrate dev to Lightsail wordpress_ls_1_0 blueprint ([#184](https://github.com/rae004/rae-dev-portfolio-2026/issues/184)) ([312588d](https://github.com/rae004/rae-dev-portfolio-2026/commit/312588dab66526008519c7ee4b3d58d99a69eff7))
+
+
+### Bug Fixes
+
+* **wordpress:** keep seed-created upload folders writable by Apache ([#175](https://github.com/rae004/rae-dev-portfolio-2026/issues/175)) ([a4cf9bf](https://github.com/rae004/rae-dev-portfolio-2026/commit/a4cf9bf6ed3ac4c5c9abee9c00317ec25d8348d7))
+
 ## [0.14.2](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.14.1...v0.14.2) (2026-10-03)
 
 
