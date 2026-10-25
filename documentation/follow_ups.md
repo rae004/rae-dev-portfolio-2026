@@ -61,7 +61,11 @@ off rather than deleting them so the history stays readable.
 
 ## Dependencies
 
-- ⬜ Decide on Dependabot #132 (React 19.3 — merge solo and watch dev).
+- ✅ (2026-10-25) React 19.3 (Dependabot #132, superseded by #188): merged
+  solo as 19.3.1 and verified on dev via a manual `deploy-frontend.yml`
+  dispatch — the Preview workflow deliberately skips Dependabot PRs, so
+  dependency bumps never mint an RC; 19.3.1 confirmed in the served
+  bundle, all REST endpoints + CORS + SPA routes green.
 - ✅ (2026-10-25) jest 30.5 blocked by `@parcel/watcher` build script
   (#122, then #172): allowlisted `@parcel/watcher` in
   `infrastructure/pnpm-workspace.yaml` — reputable Parcel-team native
