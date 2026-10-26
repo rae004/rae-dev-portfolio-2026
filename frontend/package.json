@@ -30,7 +30,7 @@
     "animejs": "^4.5.0",
     "autoprefixer": "^10.6.1",
     "daisyui": "4.12.24",
-    "postcss": "^8.5.30",
+    "postcss": "^8.5.31",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
