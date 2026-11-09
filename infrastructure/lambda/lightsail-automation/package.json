@@ -8,10 +8,10 @@
     "test": "jest"
   },
   "dependencies": {
-    "@aws-sdk/client-lightsail": "^3.1152.0"
+    "@aws-sdk/client-lightsail": "^3.1161.0"
   },
   "devDependencies": {
-    "@types/node": "^26.6.5",
+    "@types/node": "^26.6.6",
     "typescript": "^7.0.2"
   }
 }
