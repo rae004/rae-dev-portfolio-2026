@@ -142,6 +142,14 @@ Implementation plans (historical, features have shipped):
 - `documentation/skills_item_implementation_plan.md`
 - `documentation/code_cleanup_and_optimization_plan.md`
 
+## Repo settings
+
+GitHub settings for this repo (merge options, Actions permissions, the branch ruleset) come
+from the shared baseline in [`rae004/.github`](https://github.com/rae004/.github) and are
+applied from there. The only part kept here is
+[`.github/repo-settings.json`](.github/repo-settings.json), which lists the CI jobs that must
+pass before a PR can merge.
+
 ## License
 
 Private portfolio project — all rights reserved.
