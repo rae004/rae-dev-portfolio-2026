@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.2](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.15.1...v0.15.2) (2026-11-26)
+
+
+### Continuous Integration
+
+* manage repo settings as code ([#212](https://github.com/rae004/rae-dev-portfolio-2026/issues/212)) ([8818c01](https://github.com/rae004/rae-dev-portfolio-2026/commit/8818c01b300d41d9f777c505d674fc85643acb66))
+
 ## [0.15.1](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.15.0...v0.15.1) (2026-10-25)
 
 
