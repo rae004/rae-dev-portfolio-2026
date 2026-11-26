@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.3](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.15.2...v0.15.3) (2026-11-26)
+
+
+### Continuous Integration
+
+* move repo settings to the central baseline ([#215](https://github.com/rae004/rae-dev-portfolio-2026/issues/215)) ([ea86777](https://github.com/rae004/rae-dev-portfolio-2026/commit/ea86777901babdb3afac6a29f063e1f7670e154f))
+
 ## [0.15.2](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.15.1...v0.15.2) (2026-11-26)
 
 
