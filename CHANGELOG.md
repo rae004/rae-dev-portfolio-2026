@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.5](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.15.4...v0.15.5) (2026-11-26)
+
+
+### Bug Fixes
+
+* **deps:** clear 12 Dependabot alerts in frontend ([#219](https://github.com/rae004/rae-dev-portfolio-2026/issues/219)) ([a3ca3e8](https://github.com/rae004/rae-dev-portfolio-2026/commit/a3ca3e810f80c19573a0aba1dc056735723fa20b))
+
 ## [0.15.4](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.15.3...v0.15.4) (2026-11-26)
 
 
