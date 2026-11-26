@@ -1,0 +1,10 @@
+{
+  "required_status_checks": [
+    "Frontend lint + build",
+    "Frontend tests",
+    "WordPress PHPCS",
+    "CDK synth",
+    "CDK assertion tests",
+    "Dependency review (PR only)"
+  ]
+}
