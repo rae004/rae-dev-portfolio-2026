@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.4](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.15.3...v0.15.4) (2026-11-26)
+
+
+### Documentation
+
+* note where repo settings come from ([#217](https://github.com/rae004/rae-dev-portfolio-2026/issues/217)) ([291fdfa](https://github.com/rae004/rae-dev-portfolio-2026/commit/291fdfad7e03c26efccef36a8d33650c99959476))
+
 ## [0.15.3](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.15.2...v0.15.3) (2026-11-26)
 
 
