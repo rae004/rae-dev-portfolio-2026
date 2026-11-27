@@ -7,5 +7,22 @@
     "CDK assertion tests",
     "Dependency review (PR only)",
     "title / Conventional title"
+  ],
+  "labels": [
+    {
+      "name": "github-actions",
+      "color": "bfd4f2",
+      "description": "Workflows and GitHub Actions"
+    },
+    {
+      "name": "lambdas",
+      "color": "ff9900",
+      "description": "Lambda functions"
+    },
+    {
+      "name": "wordpress",
+      "color": "21759b",
+      "description": "WordPress theme and plugins"
+    }
   ]
 }
