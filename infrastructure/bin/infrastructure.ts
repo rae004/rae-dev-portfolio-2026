@@ -18,12 +18,6 @@ const env = {
 const devCertificateArn = process.env.DEV_CERTIFICATE_ARN;
 const prodCertificateArn = process.env.PROD_CERTIFICATE_ARN;
 
-console.log('Environment configuration:');
-console.log('- AWS Account:', env.account || 'Not set');
-console.log('- AWS Region:', env.region);
-console.log('- Dev Certificate ARN:', devCertificateArn || 'Not set');
-console.log('- Prod Certificate ARN:', prodCertificateArn || 'Not set');
-
 // Development environment stack
 new RaePortfolioStack(app, 'RaePortfolioDev', {
   env,
