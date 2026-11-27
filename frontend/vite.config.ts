@@ -1,11 +1,11 @@
 /// <reference types="vitest" />
-import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-const pkg = JSON.parse(readFileSync('./package.json', 'utf-8')) as {
-  version: string
-}
+// The release version lives in git tags only; package.json carries a 0.0.0
+// placeholder. Deploys pass the tag in as APP_VERSION (see
+// .github/workflows/deploy-frontend.yml). Local builds show the placeholder.
+const appVersion = process.env.APP_VERSION || '0.0.0'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -49,10 +49,10 @@ export default defineConfig(({ mode }) => {
     define: {
       // App environment for runtime detection
       __APP_ENV__: JSON.stringify(appEnv),
-      // Frontend package version (release-please bumps this on every release).
-      // Preview builds append a suffix like "-rc.142.a1b2c3d" so the footer
-      // badge on dev says exactly which PR/commit is live there.
-      __APP_VERSION__: JSON.stringify(`${pkg.version}${process.env.APP_VERSION_SUFFIX ?? ''}`),
+      // Release version from the deploy (the git tag). Preview builds append
+      // a suffix like "-rc.142.a1b2c3d" so the footer badge on dev says
+      // exactly which PR/commit is live there.
+      __APP_VERSION__: JSON.stringify(`${appVersion}${process.env.APP_VERSION_SUFFIX ?? ''}`),
       // Legacy support
       __DEV__: JSON.stringify(process.env.NODE_ENV === 'development'),
     },

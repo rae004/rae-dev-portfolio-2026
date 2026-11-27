@@ -5,6 +5,7 @@
     "WordPress PHPCS",
     "CDK synth",
     "CDK assertion tests",
-    "Dependency review (PR only)"
+    "Dependency review (PR only)",
+    "title / Conventional title"
   ]
 }

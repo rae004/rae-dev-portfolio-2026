@@ -2,8 +2,8 @@
 
 [![CI](https://github.com/rae004/rae-dev-portfolio-2026/actions/workflows/ci.yml/badge.svg)](https://github.com/rae004/rae-dev-portfolio-2026/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/rae004/rae-dev-portfolio-2026/branch/main/graph/badge.svg)](https://codecov.io/gh/rae004/rae-dev-portfolio-2026)
-[![Release](https://github.com/rae004/rae-dev-portfolio-2026/actions/workflows/release-please.yml/badge.svg)](https://github.com/rae004/rae-dev-portfolio-2026/actions/workflows/release-please.yml)
-[![Version](https://img.shields.io/github/package-json/v/rae004/rae-dev-portfolio-2026?filename=frontend%2Fpackage.json&color=blue&label=version)](./CHANGELOG.md)
+[![Release](https://github.com/rae004/rae-dev-portfolio-2026/actions/workflows/release.yml/badge.svg)](https://github.com/rae004/rae-dev-portfolio-2026/actions/workflows/release.yml)
+[![Version](https://img.shields.io/github/v/release/rae004/rae-dev-portfolio-2026?color=blue&label=version)](https://github.com/rae004/rae-dev-portfolio-2026/releases)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![PHP](https://img.shields.io/badge/PHP-8.2-777BB4?logo=php&logoColor=white)](https://www.php.net/)
 [![WordPress](https://img.shields.io/badge/WordPress-6.8-21759B?logo=wordpress&logoColor=white)](https://wordpress.org/)

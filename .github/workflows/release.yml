@@ -1,0 +1,56 @@
+name: Release
+
+# Release flow (see documentation/production_deployment_plan.md):
+#
+#   squash-merge a PR → that commit is tagged vX.Y.Z (when it warrants one)
+#     → deploy the tag to dev   (automatic)
+#     → deploy the tag to prod  (pauses for the `prod` Environment's
+#                                required reviewer)
+#
+# Prod only ever ships an artifact that has already been built and smoke
+# tested on dev from the same tag.
+#
+# The tag is cut by the shared workflow in rae004/.github from the squash
+# commit's Conventional Commit type (feat -> minor, fix/perf -> patch,
+# anything else -> no release; breaking changes bump the minor while on 0.x).
+# No release PR, no release commit. Rules and docs:
+# https://github.com/rae004/.github#releases
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    uses: rae004/.github/.github/workflows/release.yml@main
+
+  deploy-frontend-dev:
+    needs: release
+    if: needs.release.outputs.tag != ''
+    permissions:
+      id-token: write   # OIDC token exchange in the called workflow
+      contents: read
+    uses: ./.github/workflows/deploy-frontend.yml
+    with:
+      environment: dev
+      ref: ${{ needs.release.outputs.tag }}
+      version: ${{ needs.release.outputs.tag }}
+    secrets: inherit
+
+  deploy-frontend-prod:
+    needs: [release, deploy-frontend-dev]
+    if: needs.release.outputs.tag != ''
+    permissions:
+      id-token: write
+      contents: read
+    uses: ./.github/workflows/deploy-frontend.yml
+    with:
+      environment: prod
+      ref: ${{ needs.release.outputs.tag }}
+      version: ${{ needs.release.outputs.tag }}
+    secrets: inherit

@@ -36,6 +36,13 @@ updates:
       include:
         - "*"
     open-pull-requests-limit: 5
+    # The PR title becomes the squash commit, and release.yml reads its type.
+    # A release here deploys the frontend, so a runtime bump is a `fix` (patch
+    # release + deploy) and a dev-only bump is a `chore` (no release).
+    commit-message:
+      prefix: "fix"
+      prefix-development: "chore"
+      include: "scope"
     labels:
       - "dependencies"
     groups:
@@ -122,6 +129,10 @@ updates:
       include:
         - "*"
     open-pull-requests-limit: 3
+    # Not part of the frontend that a release deploys, so never a release.
+    commit-message:
+      prefix: "chore"
+      include: "scope"
     labels:
       - "dependencies"
     groups:
@@ -162,6 +173,10 @@ updates:
       include:
         - "*"
     open-pull-requests-limit: 2
+    # Not part of the frontend that a release deploys, so never a release.
+    commit-message:
+      prefix: "chore"
+      include: "scope"
     labels:
       - "dependencies"
       - "lambdas"
@@ -183,6 +198,10 @@ updates:
       include:
         - "*"
     open-pull-requests-limit: 3
+    # Workflow-only changes never need a release.
+    commit-message:
+      prefix: "chore"
+      include: "scope"
     labels:
       - "dependencies"
       - "github-actions"
@@ -205,6 +224,10 @@ updates:
       include:
         - "*"
     open-pull-requests-limit: 2
+    # Not part of the frontend that a release deploys, so never a release.
+    commit-message:
+      prefix: "chore"
+      include: "scope"
     labels:
       - "dependencies"
       - "wordpress"

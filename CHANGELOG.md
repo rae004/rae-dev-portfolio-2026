@@ -1,5 +1,9 @@
 # Changelog
 
+Releases after 0.15.5 are tagged directly on the merged commit and documented on the
+[GitHub Releases page](https://github.com/rae004/rae-dev-portfolio-2026/releases); this file is
+no longer updated.
+
 ## [0.15.5](https://github.com/rae004/rae-dev-portfolio-2026/compare/v0.15.4...v0.15.5) (2026-11-26)
 
 

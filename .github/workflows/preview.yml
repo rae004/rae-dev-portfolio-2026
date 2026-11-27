@@ -5,7 +5,7 @@ name: Preview (release candidate → dev)
 #
 # Only real changes mint an RC. All of the following must hold:
 #   - the PR is not a draft
-#   - the head branch is not dependabot/** or release-please--**
+#   - the head branch is not dependabot/**
 #   - the actor is not a bot (dependabot / github-actions)
 #   - the diff touches frontend/**  (nothing to preview otherwise)
 #
@@ -38,7 +38,6 @@ jobs:
     if: >-
       github.event.pull_request.draft == false &&
       !startsWith(github.head_ref, 'dependabot/') &&
-      !startsWith(github.head_ref, 'release-please--') &&
       github.actor != 'dependabot[bot]' &&
       github.actor != 'github-actions[bot]'
     outputs:

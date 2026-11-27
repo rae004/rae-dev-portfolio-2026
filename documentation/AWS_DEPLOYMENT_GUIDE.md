@@ -329,13 +329,15 @@ aws lightsail attach-static-ip --static-ip-name rae-portfolio-wp-ip-dev --instan
 
 ### Frontend Deploys
 
-The SPA auto-deploys to S3 + CloudFront whenever release-please cuts a tag on
+The SPA auto-deploys to S3 + CloudFront whenever a release tag is cut on
 `main`. The flow is:
 
-1. Merge a conventional-commit PR (squash) into `main`.
-2. `release-please.yml` opens a "release PR".
-3. Merge the release PR → release-please publishes a `vX.Y.Z` tag and the
-   `deploy-frontend-dev` job runs (under the `dev` GitHub Environment), assuming
+1. Merge a conventional-commit PR (squash) into `main`. The PR title is the
+   commit message.
+2. `release.yml` calls the shared release workflow in `rae004/.github`, which
+   tags that commit `vX.Y.Z` when its type calls for a release (`feat` →
+   minor, `fix`/`perf` → patch, anything else → none). There is no release PR.
+3. The `deploy-frontend-dev` job runs (under the `dev` GitHub Environment), assuming
    the `github-deploy-dev` IAM role via OIDC, syncing `frontend/dist/` to
    `rae-portfolio-dev-233416806179`, invalidating CloudFront, and running a
    `curl` smoke test against `https://dev.rae-dev.com`.

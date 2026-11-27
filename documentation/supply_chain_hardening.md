@@ -46,11 +46,11 @@ intent is defense in depth — any single layer can fail without catastrophe.
 
 - **pnpm**: 9.15.9 locally; CI workflows pin `version: 9` via `pnpm/action-setup`.
 - **Lockfiles**: `frontend/pnpm-lock.yaml` (pre-attack mtime), `infrastructure/pnpm-lock.yaml`, plus three npm `package-lock.json` files in `infrastructure/lambda/*`.
-- **`--frozen-lockfile`**: already enforced in all three CI workflows (`ci.yml`, `deploy-frontend.yml`, `release-please.yml`).
+- **`--frozen-lockfile`**: already enforced in all three CI workflows (`ci.yml`, `deploy-frontend.yml`, `release.yml`).
 - **`.npmrc`**: none — neither project-level nor user-level.
 - **Pre-commit hooks**: none.
 - **GitHub Actions**: all third-party Actions referenced by `@v4` tag (mutable).
-- **Permissions**: `ci.yml` has no explicit `permissions:` block (inherits broad repo defaults). `deploy-frontend.yml` and `release-please.yml` already set minimum permissions correctly.
+- **Permissions**: `ci.yml` has no explicit `permissions:` block (inherits broad repo defaults). `deploy-frontend.yml` and `release.yml` already set minimum permissions correctly.
 - **Lambda deploys**: `lambda.Code.fromAsset('./lambda/<name>')` zips the directory contents as-is. Lambdas use npm with small dep trees (`@aws-sdk/*` clients plus `node-fetch`).
 - **Router family pins**: `^1.132.41` in `frontend/package.json` (caret, allows drift).
 
@@ -198,7 +198,7 @@ permissions:
   contents: read
 ```
 
-`deploy-frontend.yml` and `release-please.yml` already do this correctly.
+`deploy-frontend.yml` and `release.yml` already do this correctly.
 
 **2.4 Add `actions/dependency-review-action` on PRs**
 
@@ -249,8 +249,8 @@ exact vector that compromised TanStack.
 `GITHUB_TOKEN`, and secrets are only available to same-repo PRs (forks get
 none and simply cannot deploy). Guardrails:
 
-- Bots never mint an RC: the job is skipped for `dependabot/**` and
-  `release-please--**` branches and for `dependabot[bot]` /
+- Bots never mint an RC: the job is skipped for `dependabot/**`
+  branches and for `dependabot[bot]` /
   `github-actions[bot]` actors, and only when `frontend/**` changed.
 - The only write it performs on GitHub is a sticky PR comment, via `gh`
   with the default token and a per-job `pull-requests: write` — no

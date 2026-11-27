@@ -15,7 +15,7 @@ name: Deploy Frontend
 # file, is what guarantees "no prod deploy without a human".
 #
 # Trigger modes:
-#   - workflow_call: from release-please.yml (tag → dev → prod) and from
+#   - workflow_call: from release.yml (tag → dev → prod) and from
 #     preview.yml (PR release candidate → dev).
 #   - workflow_dispatch: manual, e.g. hotfix or re-deploy of a known ref.
 
@@ -31,8 +31,13 @@ on:
         required: false
         type: string
         default: ""
+      version:
+        description: "Version shown in the site footer (e.g. v0.16.0). Defaults to the latest release tag."
+        required: false
+        type: string
+        default: ""
       version_suffix:
-        description: "Appended to the package version in the build (e.g. -rc.142.a1b2c3d)"
+        description: "Appended to the version in the build (e.g. -rc.142.a1b2c3d)"
         required: false
         type: string
         default: ""
@@ -89,9 +94,31 @@ jobs:
         working-directory: ./frontend
         run: pnpm install --frozen-lockfile
 
+      # The version lives in git tags only (package.json carries a 0.0.0
+      # placeholder). A release passes its tag; a preview or manual deploy
+      # falls back to the latest release tag, so an RC reads e.g.
+      # 0.16.0-rc.142.a1b2c3d.
+      - name: Resolve version
+        id: version
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          version="$VERSION_INPUT"
+          if [ -z "$version" ]; then
+            version=$(git ls-remote --tags --refs origin 'v[0-9]*' | sed 's#.*refs/tags/##' | sort -V | tail -n 1)
+          fi
+          if [ -z "$version" ]; then
+            echo "No version given and no release tag found." >&2
+            exit 1
+          fi
+          echo "version=${version#v}" >> "$GITHUB_OUTPUT"
+          echo "Building version ${version#v}"
+
       - name: Build (${{ vars.BUILD_TARGET }} target)
         working-directory: ./frontend
         env:
+          APP_VERSION: ${{ steps.version.outputs.version }}
           APP_VERSION_SUFFIX: ${{ inputs.version_suffix }}
         run: pnpm build:${{ vars.BUILD_TARGET }}
 
