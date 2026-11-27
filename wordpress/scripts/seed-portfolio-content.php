@@ -456,7 +456,7 @@ $software_projects = array(
 	array(
 		'slug'        => 'rae-dev-portfolio-2026',
 		'title'       => 'rae-dev-portfolio-2026',
-		'description' => 'This portfolio site. Headless WordPress + React/Vite SPA on AWS, fully CI/CD-deployed via GitHub Actions, OIDC, release-please, and AWS CDK. Demonstrates the full stack end-to-end: custom post types and REST API in PHP, modern React 19 frontend with TanStack Router/Query/Form, DaisyUI theming, reCAPTCHA v3 protection, and CloudFront/S3/Lightsail infrastructure-as-code.',
+		'description' => 'This portfolio site. Headless WordPress + React/Vite SPA on AWS, fully CI/CD-deployed via GitHub Actions, OIDC, automated tag-on-merge releases, and AWS CDK. Demonstrates the full stack end-to-end: custom post types and REST API in PHP, modern React 19 frontend with TanStack Router/Query/Form, DaisyUI theming, reCAPTCHA v3 protection, and CloudFront/S3/Lightsail infrastructure-as-code.',
 		'release'     => '2026-05-08',
 		'repo'        => 'https://github.com/rae004/rae-dev-portfolio-2026',
 		'demo'        => 'https://dev.rae-dev.com',
