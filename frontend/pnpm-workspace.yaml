@@ -65,6 +65,11 @@ allowBuilds:
 #   the 5.x copy in the tree is already patched. Via eslint tooling.
 # @humanfs/node ^0.16.8 — alert #109. Via eslint.
 # postcss-selector-parser@6 ^6.1.5 — alert #153. Via tailwindcss.
+#
+# @babel/core@7 7.29.13 — alert #76 (low, arbitrary file read through a
+#   sourceMappingURL comment, fixed 7.29.6). Via eslint-plugin-react-hooks,
+#   so lint tooling only. Dependabot cannot raise it: it tries 8.x, which
+#   the parent does not allow. Exact pin; 7.29.13 was published 2026-11-04.
 overrides:
   seroval: '1.6.12'
   'source-map-js': '^1.2.2'
@@ -78,3 +83,4 @@ overrides:
   'brace-expansion@1': '^1.1.21'
   '@humanfs/node': '^0.16.8'
   'postcss-selector-parser@6': '^6.1.5'
+  '@babel/core@7': '7.29.13'
