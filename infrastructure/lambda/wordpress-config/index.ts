@@ -1,12 +1,4 @@
-import {
-  LightsailClient,
-  GetCertificatesCommand,
-  AttachCertificateToDistributionCommand,
-  GetLoadBalancersCommand,
-  CreateLoadBalancerCommand,
-  AttachInstancesToLoadBalancerCommand,
-  GetDomainsCommand
-} from '@aws-sdk/client-lightsail';
+import { LightsailClient, GetCertificatesCommand } from '@aws-sdk/client-lightsail';
 
 interface CustomResourceEvent {
   RequestType: 'Create' | 'Update' | 'Delete';
@@ -85,7 +77,7 @@ async function configureSSLCertificate(
     DomainName?: string;
   }
 ): Promise<any> {
-  const { CertificateName, DomainName, InstanceName } = resourceProperties;
+  const { CertificateName, DomainName } = resourceProperties;
   
   if (!CertificateName || !DomainName) {
     console.log('Certificate name or domain name not provided, skipping SSL configuration');
