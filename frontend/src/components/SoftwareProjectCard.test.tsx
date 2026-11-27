@@ -104,8 +104,8 @@ describe('SoftwareProjectCard', () => {
       project_repo_link: 'https://github.com/org/repo',
     })
     render(<SoftwareProjectCard project={project} />)
-    expect(screen.getByText(/demo.example.com/)).toBeInTheDocument()
-    expect(screen.getByText(/github.com/)).toBeInTheDocument()
+    expect(screen.getByText('demo.example.com', { exact: false })).toBeInTheDocument()
+    expect(screen.getByText('github.com', { exact: false })).toBeInTheDocument()
   })
 
   it('renders an external "Live Demo" link in detailed layout', () => {

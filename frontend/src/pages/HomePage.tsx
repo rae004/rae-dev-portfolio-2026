@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from '@tanstack/react-router'
 import { useBlogPosts, useSoftwareProjects, useMediaProjects } from '../hooks/useWordPress'
 import { decodeHtml } from '../utils/decodeHtml'
+import { stripHtml } from '../utils/stripHtml'
 import Turntable, { TURNTABLE_SONGS } from '../components/Turntable'
 import { FEATURES } from '../config/features'
 
@@ -105,8 +106,7 @@ const HomePage: React.FC = () => {
                         <h3 className='card-title text-lg'>{decodeHtml(post.title.rendered)}</h3>
                         <p className='text-sm text-base-content/70'>
                           {post.excerpt.rendered
-                            ? post.excerpt.rendered.replace(/<[^>]*>/g, '').substring(0, 100) +
-                              '...'
+                            ? stripHtml(post.excerpt.rendered).substring(0, 100) + '...'
                             : 'Read this latest blog post...'}
                         </p>
                         <div className='card-actions justify-end'>
@@ -156,9 +156,7 @@ const HomePage: React.FC = () => {
                               </h4>
                               <p className='text-sm text-base-content/70'>
                                 {project.excerpt.rendered
-                                  ? project.excerpt.rendered
-                                      .replace(/<[^>]*>/g, '')
-                                      .substring(0, 120) + '...'
+                                  ? stripHtml(project.excerpt.rendered).substring(0, 120) + '...'
                                   : 'Explore this software project...'}
                               </p>
                               <div className='card-actions justify-end'>
@@ -191,9 +189,7 @@ const HomePage: React.FC = () => {
                               </h4>
                               <p className='text-sm text-base-content/70'>
                                 {project.excerpt.rendered
-                                  ? project.excerpt.rendered
-                                      .replace(/<[^>]*>/g, '')
-                                      .substring(0, 120) + '...'
+                                  ? stripHtml(project.excerpt.rendered).substring(0, 120) + '...'
                                   : 'Discover this media project...'}
                               </p>
                               <div className='card-actions justify-end'>

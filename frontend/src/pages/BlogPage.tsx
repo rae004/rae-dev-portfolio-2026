@@ -2,6 +2,7 @@ import React from 'react'
 import { useBlogPosts } from '../hooks/useWordPress'
 import type { WordPressPost } from '../types/wordpress'
 import { decodeHtml } from '../utils/decodeHtml'
+import { stripHtml } from '../utils/stripHtml'
 
 const BlogPage: React.FC = () => {
   const {
@@ -44,7 +45,7 @@ const BlogPage: React.FC = () => {
 
   // Transform WordPress data to match component expectations
   const transformWpBlogPost = (wp: WordPressPost) => {
-    const content = wp.content.rendered.replace(/<[^>]*>/g, '') // Strip HTML
+    const content = stripHtml(wp.content.rendered)
     const wordCount = content.split(/\s+/).length
     const readTime = Math.max(1, Math.ceil(wordCount / 200)) // ~200 words per minute
 
@@ -54,7 +55,7 @@ const BlogPage: React.FC = () => {
     return {
       title: decodeHtml(wp.title.rendered),
       excerpt: wp.excerpt.rendered
-        ? wp.excerpt.rendered.replace(/<[^>]*>/g, '').trim()
+        ? stripHtml(wp.excerpt.rendered).trim()
         : content.substring(0, 200) + '...',
       date: new Date(wp.date).toLocaleDateString('en-US', {
         year: 'numeric',
