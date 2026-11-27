@@ -6,6 +6,12 @@ fed afterwards.
 
 Status legend: ⬜ todo · 🔄 in progress · ✅ done
 
+> **Update, 2026-11:** release-please has been replaced by the shared release
+> workflow in `rae004/.github`. A squash-merged PR is tagged directly; there is
+> no release PR, so the references to it below (and the "release-please token"
+> decision) are historical. The tag → dev → prod pipeline and the prod
+> approval are unchanged. See `.github/workflows/release.yml`.
+
 ## Decisions (agreed 2026-09-27)
 
 | Topic | Decision |
